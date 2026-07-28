@@ -132,3 +132,28 @@ resolvendo.
 - file: src/parser/task.ts
   symbol: "TaskFrontmatterSchema"
 ```
+
+### REQ-FMT-009 — Unreadable delta content is rejected, never ignored
+
+**Statement.** IF a delta section contains content that is neither a requirement block nor a requirement identifier, THEN the specd parser SHALL reject the delta.
+
+**Acceptance.**
+- Seção `ADDED` ou `MODIFIED` com conteúdo e nenhum bloco de requisito reprova
+- Item de lista citando identificador fora de qualquer bloco, em `ADDED` ou `MODIFIED`, reprova
+- Seção `REMOVED` com linha que não é identificador reprova
+- Seção sem conteúdo algum é aceita
+- Marcador explícito de vazio — `Nenhum.` ou `None.` — é aceito em qualquer seção
+- Prosa antes do primeiro bloco é aceita quando a seção tem ao menos um bloco
+
+A distinção entre seção legitimamente vazia e seção que o parser não entende é
+o requisito inteiro. Uma change sem remoções escreve `REMOVED` vazio e isso é
+verdade; uma change cujo `ADDED` lista quarenta identificadores em bullets tem
+conteúdo que o parser lê como nada, e ler nada como conformidade é o modo de
+falha que a Fatia 2 expôs ao arquivar a Fatia 1 sem verificar coisa alguma.
+
+Mesma família da passagem vazia: ausência de dados apresentada como aprovação.
+
+```yaml anchors
+- file: src/parser/delta.ts
+  symbol: "assertSectionReadable"
+```

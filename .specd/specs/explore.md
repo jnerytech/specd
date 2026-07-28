@@ -118,3 +118,24 @@ realizada, e âncora que apontasse para o verificador resolveria sem provar
 coisa alguma — âncora decorativa é pior que âncora ausente, porque troca um
 silêncio honesto por um sinal falso de cobertura. P7. REQ-ANC-001 já torna a
 âncora opcional.
+
+### REQ-EXP-009 — MCP collector reads the JSON response mode
+
+**Statement.** The specd explore command SHALL collect an `mcp` source over the JSON response mode only, reporting a source failure for any other transport.
+
+**Acceptance.**
+- Resposta `application/json` é coletada e persistida
+- Resposta `text/event-stream` marca a fonte como falha e nomeia o transporte
+- A mensagem diz que o modo não é suportado nesta versão, em vez de sugerir nova tentativa
+- Nenhum payload parcial é gravado a partir de um stream
+
+**SSE está fora de escopo, e este requisito é o registro disso.** Ler um stream
+exigiria decidir quando ele terminou e o que fazer com resposta parcial — duas
+decisões que valem uma change própria. Meia-implementação gravaria um payload
+em que ninguém pode confiar, e P7 diz que o pior sinal é o falso positivo de
+trabalho pronto.
+
+```yaml anchors
+- file: src/explore/sources/mcp.ts
+  symbol: "export const mcpCollector"
+```

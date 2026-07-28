@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -86,9 +86,19 @@ describe("specd verifies this repository", () => {
     expect(report.ok).toBe(true);
   });
 
-  // The distinction the gate exists to draw. A warning here means an open
-  // change is building the code that will resolve the anchor; an error means
-  // nobody is, and the spec claims something the repository does not have.
+  // The whole spec under the whole gate, with nothing in flight and nothing
+  // switched off. This is the state the three slices were building towards: a
+  // green result that cannot be explained by a check that did not run.
+  it("runs every layer over every requirement, with nothing outstanding", async () => {
+    const report = await run();
+    expect(report.violations).toEqual([]);
+    expect(report.disabled).toEqual([]);
+    expect(readOpenChanges(REPO_ROOT)).toEqual([]);
+  });
+
+  // The distinction the gate exists to draw, asserted on whatever violations
+  // exist rather than on a count: a warning means an open change is building
+  // the code that will resolve the anchor, an error means nobody is.
   it("reports pending work as warnings and drift as errors", async () => {
     const report = await run();
     for (const violation of report.violations) {
@@ -117,10 +127,12 @@ describe("specd verifies this repository", () => {
     }
   });
 
-  it("reads every open change and never the archive", () => {
-    const changes = readOpenChanges(REPO_ROOT);
-    expect(changes.length).toBeGreaterThan(0);
-    for (const change of changes) {
+  it("never reads the archive as an open change", () => {
+    // `archive/` sits inside `.specd/changes/` and used to be excluded only by
+    // the accident that "2" sorts before "a". Every change filed away is in
+    // there now, so this asserts the exclusion rather than the alphabet.
+    expect(existsSync(join(CHANGES_DIR, "archive"))).toBe(true);
+    for (const change of readOpenChanges(REPO_ROOT)) {
       expect(change.name).not.toBe("archive");
       expect(change.delta).toBeDefined();
     }

@@ -151,3 +151,25 @@ sem qualquer lastro, e esse continua reprovando por REQ-VER-005.
 - file: src/verify/layers/evidence.ts
   symbol: "requireGitHistory"
 ```
+
+### REQ-VER-003 — Provenance layer
+
+**Statement.** WHEN a change directory exists and the configuration declares at least one required source, the specd verifier SHALL reject the change if `explore/manifest.json` is absent or if any required source has a status other than `ok`.
+
+**Acceptance.**
+- Configuração sem nenhuma fonte `required` não exige manifest de change nenhuma
+- Manifest ausente com fonte required configurada reprova
+- Fonte required com status diferente de `ok` reprova e é nomeada no erro
+- Fonte opcional falhada não reprova
+- Change escrita à mão, sem bundle, passa quando nada foi declarado como obrigatório
+
+A condição de guarda é o que faltava. Como o requisito estava escrito, ele
+exigia `explore/manifest.json` de toda change, o que reprova qualquer change
+que não tenha nascido de um card — inclusive as duas que construíram esta
+ferramenta. Provenance é sobre a procedência que o projeto declarou querer, e
+projeto que não declarou fonte obrigatória não pediu procedência nenhuma.
+
+```yaml anchors
+- file: src/verify/layers/provenance.ts
+  symbol: "export const provenanceLayer"
+```

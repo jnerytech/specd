@@ -48,10 +48,19 @@ O diferencial do specd. Uma âncora declara onde um requisito é realizado no c�
 - Exatamente um match produz `dangling-with-suggestion` contendo o caminho encontrado
 - Zero ou múltiplos matches produzem `dangling` sem sugestão
 - A busca respeita `.gitignore`
+- A busca ignora as árvores de spec, de change e de documentação do próprio repositório
+
+O último critério documenta comportamento que já existia sem requisito. Toda
+âncora com símbolo escreve esse símbolo literalmente na capability que a
+declara, e um documento de desenho o cita de novo; sem a exclusão, uma âncora
+pendurada é "encontrada" no arquivo que a declarou, e um match verdadeiro passa
+por ambíguo. Código sem requisito é o começo de drift na direção contrária.
 
 ```yaml anchors
 - file: src/anchors/search.ts
   symbol: "export function findSymbolInRepo"
+- file: src/anchors/resolve.ts
+  symbol: "SEARCH_EXCLUDE_PREFIXES"
 ```
 
 ### REQ-ANC-004 — Strategy selected by file extension
