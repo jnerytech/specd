@@ -20,22 +20,26 @@ const IN_FLIGHT_SECTIONS = new Set(["ADDED", "MODIFIED"]);
 // implementation at that requirement's anchor would make it resolve and report
 // work as finished that has not been done.
 export function readActiveChange(root: string): ActiveChange | undefined {
-  const changesDir = join(root, ".specd", "changes");
-  if (!existsSync(changesDir)) return undefined;
+  return listChanges(root)[0];
+}
 
-  const names = readdirSync(changesDir, { withFileTypes: true })
+// Every unarchived change, in stable name order.
+export function listChanges(root: string): ActiveChange[] {
+  const changesDir = join(root, ".specd", "changes");
+  if (!existsSync(changesDir)) return [];
+
+  return readdirSync(changesDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
-    .sort();
-  const name = names[0];
-  if (name === undefined) return undefined;
-
-  const directory = join(changesDir, name);
-  return {
-    name,
-    directory,
-    inFlight: readInFlightRequirements(join(directory, "delta.md")),
-  };
+    .sort()
+    .map((name) => {
+      const directory = join(changesDir, name);
+      return {
+        name,
+        directory,
+        inFlight: readInFlightRequirements(join(directory, "delta.md")),
+      };
+    });
 }
 
 function readInFlightRequirements(deltaPath: string): Set<string> {

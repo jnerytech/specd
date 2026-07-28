@@ -1,5 +1,7 @@
 import { formatSuggestReport, suggestAnchors } from "../anchors/suggest.js";
 import { explore } from "../explore/index.js";
+import { formatInitResult, init } from "../init/index.js";
+import { formatStatus, status } from "../status/index.js";
 import { verify } from "../verify/index.js";
 import { formatReport } from "../verify/report.js";
 import { EXIT, type ExitCode } from "./exit-codes.js";
@@ -21,7 +23,9 @@ const USAGE = `specd — spec-driven development with drift detection
 Usage: specd <command> [options]
 
 Commands:
+  init                              Scaffold .specd/ and write a complete config
   verify                            Run the gate over this repository
+  status                            Report drift and pending work, grouped by change
   explore <card> --change <name>    Collect the configured sources into a bundle
   anchor suggest <capability>       Report anchor candidates for a capability
   help                              Show this message
@@ -30,7 +34,10 @@ Options for verify:
   --fast        Skip the project layer
   --json        Emit the full report as JSON on stdout
 
-Options for anchor suggest:
+Options for init:
+  --force       Overwrite an existing .specd/config.toml
+
+Options for status and anchor suggest:
   --json        Emit the report as JSON on stdout
 
 Exit codes: 0 success, 1 gate failure, 2 operational failure.
@@ -41,7 +48,9 @@ Exit codes: 0 success, 1 gate failure, 2 operational failure.
 export function registerCommands(): Map<string, Command> {
   const commands = new Map<string, Command>();
   for (const command of [
+    initCommand,
     verifyCommand,
+    statusCommand,
     exploreCommand,
     anchorCommand,
     helpCommand,
@@ -68,6 +77,34 @@ const verifyCommand: Command = {
     }
 
     return report.ok ? EXIT.OK : EXIT.GATE_FAILURE;
+  },
+};
+
+const initCommand: Command = {
+  name: "init",
+  summary: "Scaffold .specd/ and write a complete config",
+  run(argv, io): Promise<ExitCode> {
+    const flags = parseFlags(argv, ["--force"]);
+    const result = init({ cwd: io.cwd, force: flags.has("--force") });
+    io.stdout(`${formatInitResult(result)}\n`);
+    return Promise.resolve(EXIT.OK);
+  },
+};
+
+// REQ-CFG-006: status always exits 0. It informs; it does not judge — only
+// `verify` is allowed to fail a build (REQ-CLI-001).
+const statusCommand: Command = {
+  name: "status",
+  summary: "Report drift and pending work",
+  async run(argv, io): Promise<ExitCode> {
+    const flags = parseFlags(argv, ["--json"]);
+    const report = await status({ cwd: io.cwd });
+    io.stdout(
+      flags.has("--json")
+        ? `${JSON.stringify(report, null, 2)}\n`
+        : `${formatStatus(report)}\n`,
+    );
+    return EXIT.OK;
   },
 };
 

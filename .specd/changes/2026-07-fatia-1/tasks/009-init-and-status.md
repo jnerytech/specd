@@ -2,7 +2,7 @@
 id: 009-init-and-status
 change: 2026-07-fatia-1
 req: [REQ-CFG-004, REQ-CFG-005, REQ-CFG-006, REQ-CLI-006]
-status: pending
+status: done
 evidence:
   commits: []
 ---

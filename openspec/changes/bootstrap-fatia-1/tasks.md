@@ -22,5 +22,5 @@ Behavior contract: REQ-IDs in `.specd/specs/`. Task details and acceptance: `.sp
 
 ## 4. Closing (depends on 2.1 and 2.5)
 
-- [ ] 4.1 Task 009 — init and status [REQ-CFG-004, REQ-CFG-005, REQ-CFG-006, REQ-CLI-006] (`009-init-and-status.md`)
+- [x] 4.1 Task 009 — init and status [REQ-CFG-004, REQ-CFG-005, REQ-CFG-006, REQ-CLI-006] (`009-init-and-status.md`)
 - [ ] 4.2 Dogfooding: `specd verify` runs on this repository and fails on real dangling anchors (Fatia 1 success criterion)
