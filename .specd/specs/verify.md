@@ -9,7 +9,7 @@ Seis camadas ordenadas. As cinco primeiras são offline e agnósticas de stack; 
 
 ### REQ-VER-001 — Ordered layer execution
 
-**Statement.** The specd verifier SHALL execute layers in the fixed order provenance, schema, coverage, anchors, evidence, project, and SHALL stop at the first failing layer.
+**Statement.** The specd verifier SHALL execute layers in the fixed order provenance, schema, coverage, anchors, evidence, project, stopping at the first failing layer.
 
 **Acceptance.**
 - Falha em schema impede a execução de coverage
@@ -75,7 +75,7 @@ Seis camadas ordenadas. As cinco primeiras são offline e agnósticas de stack; 
 
 ### REQ-VER-006 — Project layer delegates by argv
 
-**Statement.** The specd verifier SHALL execute the configured `validation_command` as an argv array without a shell and SHALL propagate its exit code.
+**Statement.** The specd verifier SHALL execute the configured `validation_command` as an argv array without a shell, propagating its exit code.
 
 **Acceptance.**
 - Comando é executado sem interpretação de shell

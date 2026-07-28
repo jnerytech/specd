@@ -1,4 +1,5 @@
 import type { AnchorDeclaration } from "../anchors/model.js";
+import { parseStatement, type ParsedStatement } from "../ears/parse.js";
 import { ANCHOR_FENCE_INFO, parseAnchorBlock } from "./anchors.js";
 import { error, warning, type Diagnostic } from "./diagnostics.js";
 import { type SourceLine } from "./markdown.js";
@@ -10,6 +11,9 @@ export interface Requirement {
   capability: string;
   // EARS statement text, without the "**Statement.**" label.
   statement: string;
+  // REQ-EARS-005: the pattern that matched, absent when the statement is
+  // missing or does not parse as EARS.
+  ears?: ParsedStatement;
   // Acceptance criteria, one entry per bullet.
   acceptance: string[];
   anchors: AnchorDeclaration[];
@@ -58,6 +62,7 @@ export function parseRequirement(
   if (statusFinding) diagnostics.push(statusFinding);
 
   const statement = extractStatement(prose);
+  let ears: ParsedStatement | undefined;
   if (statement === undefined) {
     diagnostics.push(
       error({
@@ -67,6 +72,14 @@ export function parseRequirement(
         message: `Requirement ${section.id} has no "**Statement.**" — every requirement declares exactly one EARS statement.`,
       }),
     );
+  } else {
+    const parsed = parseStatement(statement.text, {
+      file: ctx.file,
+      line: statement.line,
+      requirementId: section.id,
+    });
+    diagnostics.push(...parsed.diagnostics);
+    ears = parsed.statement;
   }
 
   const acceptance = extractAcceptance(prose);
@@ -97,7 +110,8 @@ export function parseRequirement(
       id: section.id,
       title: section.title,
       capability: ctx.capability,
-      statement: statement ?? "",
+      statement: statement?.text ?? "",
+      ...(ears === undefined ? {} : { ears }),
       acceptance,
       anchors,
       line: section.line,
@@ -130,18 +144,23 @@ export function assertNoStatus(
   return undefined;
 }
 
-function extractStatement(prose: SourceLine[]): string | undefined {
+interface ExtractedStatement {
+  text: string;
+  // 1-based line of the "**Statement.**" label.
+  line: number;
+}
+
+function extractStatement(prose: SourceLine[]): ExtractedStatement | undefined {
   const start = prose.findIndex((line) => STATEMENT_LABEL.test(line.text));
   if (start === -1) return undefined;
-  const parts = [
-    (prose[start] as SourceLine).text.replace(STATEMENT_LABEL, ""),
-  ];
+  const head = prose[start] as SourceLine;
+  const parts = [head.text.replace(STATEMENT_LABEL, "")];
   for (let i = start + 1; i < prose.length; i++) {
     const text = (prose[i] as SourceLine).text;
     if (text.trim().length === 0) break;
     parts.push(text.trim());
   }
-  return parts.join(" ").trim();
+  return { text: parts.join(" ").trim(), line: head.line };
 }
 
 function extractAcceptance(prose: SourceLine[]): string[] {

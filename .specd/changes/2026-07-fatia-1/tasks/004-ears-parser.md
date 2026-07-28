@@ -2,7 +2,7 @@
 id: 004-ears-parser
 change: 2026-07-fatia-1
 req: [REQ-EARS-001, REQ-EARS-002, REQ-EARS-003, REQ-EARS-004, REQ-EARS-005]
-status: pending
+status: done
 evidence:
   commits: []
 ---

@@ -35,7 +35,7 @@ Resolução de configuração, bootstrap do projeto e relatório de situação.
 
 ### REQ-CFG-003 — Credentials by environment reference
 
-**Statement.** The specd configuration resolver SHALL read credentials only through the environment variable named in `token_env` and SHALL reject any literal token value in the configuration file.
+**Statement.** The specd configuration resolver SHALL read credentials only through the environment variable named in `token_env`, rejecting any literal token value in the configuration file.
 
 **Acceptance.**
 - Campo contendo algo que pareça token literal reprova o carregamento
@@ -61,7 +61,7 @@ Resolução de configuração, bootstrap do projeto e relatório de situação.
 
 ### REQ-CFG-005 — Init detects the stack
 
-**Statement.** The specd init command SHALL inspect the repository for known build manifests and SHALL propose a matching `validation_command`.
+**Statement.** The specd init command SHALL propose a `validation_command` matching the build manifests found in the repository.
 
 **Acceptance.**
 - Presença de `package.json` propõe comando de teste do npm

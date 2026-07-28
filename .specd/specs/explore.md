@@ -37,7 +37,7 @@ A CLI busca as fontes configuradas e grava um bundle auditável. A síntese em d
 
 ### REQ-EXP-003 — Required sources gate the bundle
 
-**Statement.** IF any source declared as required fails to collect, THEN the specd explore command SHALL exit non-zero and SHALL NOT mark the bundle as usable.
+**Statement.** IF any source declared as required fails to collect, THEN the specd explore command SHALL exit non-zero without marking the bundle as usable.
 
 **Acceptance.**
 - Fonte required com erro de rede aborta o comando

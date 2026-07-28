@@ -69,7 +69,7 @@ O diferencial do specd. Uma âncora declara onde um requisito é realizado no c�
 
 ### REQ-ANC-005 — Grep is the only v1 strategy
 
-**Statement.** The specd anchor resolver SHALL implement the grep strategy in version 1 and SHALL report a configuration error when treesitter is requested.
+**Statement.** The specd anchor resolver SHALL implement grep as the only version 1 strategy, reporting a configuration error when treesitter is requested.
 
 **Acceptance.**
 - `strategy = "treesitter"` no TOML produz erro de configuração legível
