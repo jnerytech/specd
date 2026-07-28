@@ -4,7 +4,7 @@ change: 2026-07-fatia-1
 req: [REQ-ANC-002, REQ-ANC-003, REQ-ANC-004, REQ-ANC-005]
 status: done
 evidence:
-  commits: []
+  commits: [dd67478cfe7dfaabbffc7116acf93a1277f5aba5]
 ---
 
 ## Objetivo
