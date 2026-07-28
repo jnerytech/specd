@@ -62,11 +62,30 @@ export function findSymbolInRepo(
   );
 }
 
+export type ListingMode = "git" | "walk";
+
+export interface RepositoryListing {
+  files: string[];
+  mode: ListingMode;
+}
+
 // REQ-ANC-003: the search respects `.gitignore`. Asking git is both the exact
-// definition of that rule and cheaper than reimplementing it; the manual walk
-// is only a fallback for trees that are not git repositories.
+// definition of that rule and cheaper than reimplementing it.
+//
+// REQ-ANC-009: git succeeding with zero results is not an empty repository, it
+// is a blind lister. Inside a tree the parent repository ignores,
+// `git ls-files` exits 0 and returns nothing — and the ladder silently lost its
+// whole fifth step. Git is used only when it both succeeds and sees something.
+export function listRepository(root: string): RepositoryListing {
+  const fromGit = listFilesWithGit(root);
+  if (fromGit !== undefined && fromGit.length > 0) {
+    return { files: fromGit, mode: "git" };
+  }
+  return { files: walk(root, ""), mode: "walk" };
+}
+
 export function listFiles(root: string): string[] {
-  return listFilesWithGit(root) ?? walk(root, "");
+  return listRepository(root).files;
 }
 
 function listFilesWithGit(root: string): string[] | undefined {

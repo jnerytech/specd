@@ -1,3 +1,4 @@
+import { requireProjectRoot } from "../core/root.js";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { relative } from "node:path";
 import { resolveConfig } from "../config/resolve.js";
@@ -37,7 +38,9 @@ export interface ExploreResult {
 // returns a result rather than a verdict. Its failures are operational
 // (REQ-CLI-001, REQ-CLI-004).
 export async function explore(options: ExploreOptions): Promise<ExploreResult> {
-  const root = options.cwd ?? process.cwd();
+  // REQ-CFG-010: the project is the directory holding `.specd/`, not the
+  // working directory and not the git toplevel.
+  const root = requireProjectRoot(options.cwd ?? process.cwd());
   const config =
     options.config ??
     resolveConfig({

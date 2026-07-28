@@ -1,3 +1,4 @@
+import { requireProjectRoot } from "../core/root.js";
 import { existsSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { resolveAnchor } from "../anchors/resolve.js";
@@ -40,7 +41,9 @@ export async function archive(
   name: string | undefined,
   options: ArchiveOptions = {},
 ): Promise<ArchiveResult> {
-  const root = options.cwd ?? process.cwd();
+  // REQ-CFG-010: the project is the directory holding `.specd/`, not the
+  // working directory and not the git toplevel.
+  const root = requireProjectRoot(options.cwd ?? process.cwd());
   const config =
     options.config ??
     resolveConfig({

@@ -17,6 +17,9 @@ export interface LayerReport {
   exitCode?: number;
   stdout?: string;
   stderr?: string;
+  // Anchors layer only (REQ-VER-012): how the repository was listed for the
+  // fallback search, and how much of it that listing could see.
+  listing?: { mode: "git" | "walk"; files: number };
 }
 
 export interface VerifyReport {
@@ -59,6 +62,11 @@ export function formatReport(report: VerifyReport): string {
       const id = violation.requirementId ? ` [${violation.requirementId}]` : "";
       lines.push(
         `    ${violation.severity} ${where}${id} ${violation.message}`,
+      );
+    }
+    if (layer.listing) {
+      lines.push(
+        `    listed ${layer.listing.files} file${layer.listing.files === 1 ? "" : "s"} via ${layer.listing.mode}`,
       );
     }
     if (layer.stdout) lines.push(indent(layer.stdout));

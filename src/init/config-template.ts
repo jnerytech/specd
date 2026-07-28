@@ -1,9 +1,14 @@
+import { VERIFY_LEVELS } from "../config/schema.js";
 import type { StackDetection } from "./detect-stack.js";
 
-// Layers implemented in this version. The generated file lists exactly these:
-// naming a layer specd cannot run would make `verify` fail with a configuration
-// error on the first run after `init` (REQ-CFG-004).
-const IMPLEMENTED_LEVELS = ["schema", "anchors", "project"];
+// REQ-CFG-004: the generated file lists every layer, derived from the one list
+// the pipeline itself reads.
+//
+// This used to be a hand-kept copy, and it drifted: three layers shipped in
+// later slices and the template kept offering three of six, so every project
+// scaffolded after them started with half the gate switched off and no way to
+// know. A duplicated list is a promise to remember.
+const IMPLEMENTED_LEVELS: readonly string[] = VERIFY_LEVELS;
 
 // REQ-CFG-004 — Init writes complete defaults.
 //
@@ -53,10 +58,11 @@ levels = [${IMPLEMENTED_LEVELS.map((level) => `"${level}"`).join(", ")}]
 __VALIDATION_COMMAND__
 
 [verify.anchors]
-# strict    — every dangling anchor is an error
-# graduated — a dangling anchor is a warning while its requirement is in the
-#             active change delta, and an error otherwise
-# lenient   — every dangling anchor is a warning
+# Severity of a dangling anchor, by where the requirement is written.
+# strict    — error whether it is realized or in flight
+# graduated — error in .specd/specs/, which is realized truth, and a warning in
+#             the delta of an open change, which is work not written yet
+# lenient   — warning in both, for adopting specd on an existing repository
 policy = "graduated"
 
 [anchors]

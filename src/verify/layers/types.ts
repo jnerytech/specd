@@ -21,6 +21,8 @@ export interface LayerResult {
   exitCode?: number;
   stdout?: string;
   stderr?: string;
+  // Anchors layer only (REQ-VER-012).
+  listing?: { mode: "git" | "walk"; files: number };
 }
 
 export interface VerifyLayer {

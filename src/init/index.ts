@@ -2,7 +2,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ConfigError } from "../config/errors.js";
 import { renderConfig } from "./config-template.js";
-import { detectStack, type StackDetection } from "./detect-stack.js";
+import {
+  detectStack,
+  unrecognisedManifests,
+  type StackDetection,
+} from "./detect-stack.js";
 import { GENERATED_PATTERNS, GITATTRIBUTES_HEADER } from "./gitattributes.js";
 
 export interface InitOptions {
@@ -16,12 +20,19 @@ export interface InitResult {
   createdDirectories: string[];
   detection?: StackDetection;
   gitattributesUpdated: boolean;
+  // REQ-CFG-005: build manifests found but not understood. Named so the
+  // message can be true when no command could be proposed.
+  unrecognisedManifests: string[];
 }
 
+// REQ-CFG-004. `.specd/changes/archive/` and not `.specd/archive/`: the second
+// is where `init` used to put it and where nothing ever looked, while
+// `archive` writes inside `changes/` (REQ-ARC-006). Every project scaffolded
+// before this carried an orphan directory.
 const DIRECTORIES = [
   join(".specd", "specs"),
   join(".specd", "changes"),
-  join(".specd", "archive"),
+  join(".specd", "changes", "archive"),
 ];
 
 // REQ-CFG-004 / REQ-CFG-005 — writes the project scaffold and a complete,
@@ -46,11 +57,14 @@ export function init(options: InitOptions = {}): InitResult {
   }
 
   const detection = detectStack(root);
+  const unrecognised =
+    detection === undefined ? unrecognisedManifests(root) : [];
   writeFileSync(configPath, renderConfig(detection), "utf8");
 
   return {
     configPath,
     createdDirectories,
+    unrecognisedManifests: unrecognised,
     ...(detection === undefined ? {} : { detection }),
     gitattributesUpdated: updateGitattributes(root),
   };
@@ -85,12 +99,24 @@ export function formatInitResult(result: InitResult): string {
   for (const directory of result.createdDirectories) {
     lines.push(`Created ${directory}/`);
   }
-  lines.push(
-    result.detection === undefined
-      ? "No build manifest recognised — fill in verify.validation_command by hand."
-      : `Detected ${result.detection.name} from ${result.detection.manifest}; ` +
-          `proposed validation_command = ${JSON.stringify(result.detection.validationCommand)}`,
-  );
+  // REQ-CFG-005: never claim there was no manifest when there was one. The
+  // field is still left commented — guessing a command is worse than admitting
+  // ignorance — but the reason has to be accurate.
+  if (result.detection !== undefined) {
+    lines.push(
+      `Detected ${result.detection.name} from ${result.detection.manifest}; ` +
+        `proposed validation_command = ${JSON.stringify(result.detection.validationCommand)}`,
+    );
+  } else if (result.unrecognisedManifests.length > 0) {
+    lines.push(
+      `Found ${result.unrecognisedManifests.join(", ")}, but no validation command is known for it — ` +
+        "fill in verify.validation_command by hand.",
+    );
+  } else {
+    lines.push(
+      "No build manifest found — fill in verify.validation_command by hand.",
+    );
+  }
   if (result.gitattributesUpdated) {
     lines.push("Registered the explore bundle in .gitattributes");
   }

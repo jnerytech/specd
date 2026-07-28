@@ -1,3 +1,4 @@
+import { requireProjectRoot } from "../core/root.js";
 import { existsSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
 import { ConflictError } from "../core/conflict.js";
@@ -25,6 +26,8 @@ export interface RequirementSuggestion {
   // produced, so an existing anchor can be reviewed against them.
   hasAnchors: boolean;
   candidates: AnchorCandidate[];
+  // REQ-ANC-011: terms dropped for matching more files than the ceiling.
+  discardedTerms?: number;
 }
 
 export interface SuggestReport {
@@ -105,7 +108,8 @@ const STRUCTURED_TERM = /[A-Z_./-]/;
 // tool invented would report drift that never happened and burn the gate's
 // credibility on first use.
 export function suggestAnchors(options: SuggestOptions): SuggestReport {
-  const specsDir = join(options.root, ".specd", "specs");
+  const root = requireProjectRoot(options.root);
+  const specsDir = join(root, ".specd", "specs");
   if (!existsSync(specsDir)) {
     throw new ConflictError(
       `No capabilities found: "${specsDir}" does not exist.`,
@@ -113,12 +117,12 @@ export function suggestAnchors(options: SuggestOptions): SuggestReport {
     );
   }
 
-  const capability = selectCapability(specsDir, options);
+  const capability = selectCapability(specsDir, options, root);
   return {
     capability: capability.name,
     file: capability.file,
     requirements: capability.requirements.map((requirement) =>
-      suggestForRequirement(requirement, options.root),
+      suggestForRequirement(requirement, root),
     ),
   };
 }
@@ -128,9 +132,10 @@ export function suggestAnchors(options: SuggestOptions): SuggestReport {
 function selectCapability(
   specsDir: string,
   options: SuggestOptions,
+  root: string,
 ): Capability {
   const { capabilities } = loadCapabilities(specsDir, {
-    pathsRelativeTo: options.root,
+    pathsRelativeTo: root,
   });
   const wanted = options.capability.toLowerCase();
   const matches = capabilities.filter(
@@ -162,9 +167,20 @@ function suggestForRequirement(
   root: string,
 ): RequirementSuggestion {
   const candidates: AnchorCandidate[] = [];
+  let discarded = 0;
   for (const term of extractTerms(requirement)) {
     const candidate = candidateFor(term, root);
-    if (candidate) candidates.push(candidate);
+    if (candidate === undefined) continue;
+    // REQ-ANC-011: a term matching more files than the ceiling is a namespace,
+    // not a symbol. In one real repository the product name matched 119 files
+    // — solution file, editor rules, every test — and the report came out with
+    // fifteen candidates and none usable. A report nobody reads is worse than
+    // an empty one, because it costs the reading before being discarded.
+    if (candidate.matches.length > TERM_FILE_CEILING) {
+      discarded++;
+      continue;
+    }
+    candidates.push(candidate);
   }
 
   // Unique matches first, then ambiguous, then terms found nowhere: the reader
@@ -184,8 +200,16 @@ function suggestForRequirement(
     title: requirement.title,
     hasAnchors: requirement.anchors.length > 0,
     candidates,
+    ...(discarded === 0 ? {} : { discardedTerms: discarded }),
   };
 }
+
+// REQ-ANC-011 — the ceiling above which a term stops being a symbol.
+//
+// Deliberately generous: the point is to kill the namespace-wide term, not to
+// second-guess a symbol that legitimately appears in a handful of places. A
+// declaration form matching more than this many files is not a declaration.
+export const TERM_FILE_CEILING = 8;
 
 // Candidate terms come from the statement and the acceptance criteria: inline
 // code spans first, since an author who wrote backticks already named a symbol.
@@ -267,6 +291,12 @@ export function formatSuggestReport(report: SuggestReport): string {
     );
     if (requirement.candidates.length === 0) {
       lines.push("    no candidate term resolved to a declaration");
+      if (requirement.discardedTerms) {
+        lines.push(
+          `    ${requirement.discardedTerms} term(s) discarded for matching more than ${TERM_FILE_CEILING} files — ` +
+            "a term that wide is a namespace, not a symbol",
+        );
+      }
     }
     for (const candidate of requirement.candidates) {
       if (candidate.confidence === "unique") {

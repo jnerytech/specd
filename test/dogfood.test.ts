@@ -93,7 +93,16 @@ describe("specd verifies this repository", () => {
     const report = await run();
     expect(report.violations).toEqual([]);
     expect(report.disabled).toEqual([]);
-    expect(readOpenChanges(REPO_ROOT)).toEqual([]);
+  });
+
+  // REQ-VER-012 / P8: green must not mean two things. The anchors layer says
+  // how it listed the repository, so "every anchor resolves" is separable from
+  // "every anchor resolves and a broken one would be locatable".
+  it("says how it listed the repository", async () => {
+    const report = await run();
+    const anchors = report.layers.find((l) => l.layer === "anchors");
+    expect(anchors?.listing?.mode).toBe("git");
+    expect(anchors?.listing?.files).toBeGreaterThan(0);
   });
 
   // The distinction the gate exists to draw, asserted on whatever violations

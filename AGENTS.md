@@ -35,6 +35,17 @@ Daí a disciplina: âncora nunca aponta para implementação parcial. Deixar ân
 
 Isto é princípio e não requisito porque não é checável por máquina. Decidir se o código satisfaz o requisito é julgamento semântico, e P1 mantém julgamento semântico fora do caminho de decisão — não só na v1, sempre.
 
+**P8 — Ausência de dado não é conformidade.**
+Toda capacidade que lê estado externo distingue três resultados: verificou e está certo, verificou e está errado, não conseguiu verificar. O terceiro nunca é verde.
+
+O modo de falha é sempre o mesmo — silêncio apresentado como aprovação — e sempre na direção que ninguém investiga. Três instâncias reais, para que a regra não pareça abstrata:
+
+- **Diretório sem `.specd/specs/` passava no gate.** `verify` saía 0 num diretório onde não havia nada para checar, então "verde" e "não achei spec" eram indistinguíveis, e rodar do diretório errado virava aprovação. Corrigido na Fatia 2 com exit 2.
+- **Delta ilegível era lido como delta vazio.** O `delta.md` da Fatia 1 está no formato antigo; o parser novo lia zero blocos de requisito nele e `archive` saía 0 tendo verificado coisa nenhuma. Corrigido na Fatia 3 por REQ-FMT-009.
+- **A busca de âncora enxergava zero arquivos.** Em diretório ignorado pelo repositório pai, `git ls-files` sucede e devolve vazio; o passo 5 da escada morria, `anchor suggest` emudecia, e o gate ficava verde sem dizer que a rede de segurança não existia. Corrigido na Fatia 4.
+
+Nenhuma das três foi descoberta por teste. As três foram descobertas rodando a ferramenta contra algo que ela não tinha visto antes.
+
 ## Contrato de exit code
 
 | Código | Significado                                          |
@@ -47,9 +58,9 @@ CI precisa distinguir "spec reprovou" de "ferramenta quebrou".
 
 ## Onde está a especificação
 
-`.specd/specs/` contém sete capabilities. Todo requisito tem ID estável, statement em EARS e âncoras.
+`.specd/specs/` contém as capabilities realizadas. Todo requisito tem ID estável, statement em EARS e âncoras.
 
-`.specd/changes/` contém as changes abertas. A Fatia 1 está encerrada e espera o comando `archive`; a Fatia 2 é o escopo corrente; a Fatia 3 existe para segurar REQ-VER-003, que nenhuma outra change implementa.
+`.specd/changes/` contém as changes abertas; `archive/` dentro dela guarda as encerradas. As Fatias 1, 2 e 3 estão arquivadas.
 
 **A spec é o contrato.** Ao implementar uma tarefa, leia os requisitos listados em `req` no frontmatter e trate os critérios de aceite como especificação de teste.
 
@@ -67,22 +78,21 @@ Daí a política de âncora graduar por origem — pendurada em `specs/` é erro
 
 **Testes.** Todo critério de aceite vira teste. Tarefa marcada `done` precisa de SHA em `evidence.commits`.
 
-**Escopo.** Não implemente `propose`, `apply`, `sync`, memória, hooks nem a camada `provenance`. Estão especificados ou previstos e ficam fora da Fatia 2.
+**Escopo.** Não implemente `propose`, `apply`, `sync`, memória nem hooks. Ficam fora da Fatia 4.
 
-## Ordem sugerida — Fatia 2
+## Ordem sugerida — Fatia 4
 
 **Passo 0 — humano, não agente.** Reservar `specd` no npm sem escopo antes de qualquer anúncio público; opcionalmente reservar `@jnerytech/specd`. Não é tarefa de implementação e não está em `tasks/` — ver "Primeiros passos" no README.
 
 ```
-readOpenChanges + exclusão de archive/ + passagem vazia
-      ├── parseDelta ──┬── coverage
-      │                └── archive
-      └── parseTask  ──┴── evidence
-                          anchor fix  (independente, cauda opcional)
-                          status      (depende dos anteriores)
+raiz do projeto  ──▶ listagem com fallback ──▶ relatório de modo degradado
+                          │
+                     fronteira de palavra
+                          │
+ detect-stack .NET ── init ── anchor suggest (cauda opcional)
 ```
 
-Os três primeiros vêm antes porque `coverage`, `evidence` e `archive` precisam saber de qual change estão falando, e `readActiveChange` hoje devolve a mais antiga.
+A raiz vem primeiro porque tudo depende dela: hoje o passo 3 da escada usa o `cwd` e o passo 5 usa o toplevel do git, e as duas definições divergem exatamente no caso que motivou a fatia.
 
 ## Validação
 

@@ -5,7 +5,8 @@ import { ConfigError } from "../../src/config/errors.js";
 import { resolveConfig } from "../../src/config/resolve.js";
 import { detectStack } from "../../src/init/detect-stack.js";
 import { GENERATED_PATTERNS } from "../../src/init/gitattributes.js";
-import { init } from "../../src/init/index.js";
+import { LAYER_ORDER } from "../../src/verify/index.js";
+import { formatInitResult, init } from "../../src/init/index.js";
 import { verify } from "../../src/verify/index.js";
 import { cleanupWorkspaces, makeWorkspace } from "../verify/helpers.js";
 
@@ -105,9 +106,12 @@ describe("init", () => {
   it("creates the specd directories", () => {
     const root = freshRepo();
     init({ cwd: root, force: true });
-    for (const directory of ["specs", "changes", "archive"]) {
+    // REQ-CFG-004: the archive lives inside `changes/`, where `specd archive`
+    // writes it. `init` used to create `.specd/archive/`, which nothing read.
+    for (const directory of ["specs", "changes", "changes/archive"]) {
       expect(existsSync(join(root, ".specd", directory))).toBe(true);
     }
+    expect(existsSync(join(root, ".specd", "archive"))).toBe(false);
   });
 
   // REQ-CFG-004 acceptance: running verify right after init raises no
@@ -121,11 +125,12 @@ describe("init", () => {
       fast: true,
       globalPath: join(root, "absent"),
     });
-    expect(report.layers.map((l) => l.layer)).toEqual([
-      "schema",
-      "anchors",
-      "project",
-    ]);
+    // REQ-CFG-004: every layer the pipeline knows runs on the first verify
+    // after init. The template used to hand-maintain this list and offered
+    // three of six, so a project scaffolded after Fatia 2 started with half the
+    // gate switched off and nothing said so. This assertion is what stops the
+    // divergence from coming back.
+    expect(report.layers.map((l) => l.layer)).toEqual([...LAYER_ORDER]);
     expect(() => resolveConfig({ cwd: root })).not.toThrow();
   });
 
@@ -171,3 +176,59 @@ describe("init", () => {
 
 // REQ-CLI-006 is covered by test/distribution/package.test.ts, which exercises
 // the packaged tarball rather than the manifest alone.
+
+// REQ-CFG-005 — Init detects the stack
+describe("stack detection", () => {
+  it("proposes dotnet test for a solution file", () => {
+    const root = freshRepo({
+      "GymErp.sln": "Microsoft Visual Studio Solution\n",
+    });
+    expect(init({ cwd: root, force: true }).detection).toMatchObject({
+      name: "dotnet",
+      manifest: "GymErp.sln",
+      validationCommand: ["dotnet", "test"],
+    });
+  });
+
+  it("proposes dotnet test for a bare project file", () => {
+    const root = freshRepo({ "App.csproj": "<Project />\n" });
+    expect(
+      init({ cwd: root, force: true }).detection?.validationCommand,
+    ).toEqual(["dotnet", "test"]);
+  });
+
+  it("proposes the verification target declared in a Makefile", () => {
+    const root = freshRepo({ Makefile: "build:\n\techo\n\nverify:\n\techo\n" });
+    expect(init({ cwd: root, force: true }).detection).toMatchObject({
+      name: "make",
+      validationCommand: ["make", "verify"],
+    });
+  });
+
+  it("prefers a language manifest over a Makefile", () => {
+    // A repository with both usually has the Makefile wrapping the other one,
+    // and the language manifest is the more specific answer.
+    const root = freshRepo({
+      Makefile: "verify:\n\techo\n",
+      "package.json": '{"name":"x","scripts":{"test":"vitest"}}',
+    });
+    expect(init({ cwd: root, force: true }).detection?.name).toBe("node");
+  });
+
+  // The message used to say "no build manifest recognised" in a repository with
+  // a solution file at the root and twelve project files under it.
+  it("names a manifest it found but does not understand", () => {
+    const root = freshRepo({ "build.gradle": "plugins {}\n" });
+    const result = init({ cwd: root, force: true });
+    expect(result.detection).toBeUndefined();
+    expect(result.unrecognisedManifests).toEqual(["build.gradle"]);
+    expect(formatInitResult(result)).toContain("Found build.gradle");
+    expect(formatInitResult(result)).not.toContain("No build manifest found");
+  });
+
+  it("says there was nothing when there was nothing", () => {
+    const result = init({ cwd: freshRepo(), force: true });
+    expect(result.unrecognisedManifests).toEqual([]);
+    expect(formatInitResult(result)).toContain("No build manifest found");
+  });
+});

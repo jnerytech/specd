@@ -1,3 +1,4 @@
+import { requireProjectRoot } from "../core/root.js";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { resolveConfig } from "../config/resolve.js";
@@ -37,7 +38,9 @@ export async function fixAnchor(
   requirementId: string | undefined,
   options: FixOptions = {},
 ): Promise<FixResult> {
-  const root = options.cwd ?? process.cwd();
+  // REQ-CFG-010: the project is the directory holding `.specd/`, not the
+  // working directory and not the git toplevel.
+  const root = requireProjectRoot(options.cwd ?? process.cwd());
   const config =
     options.config ??
     resolveConfig({

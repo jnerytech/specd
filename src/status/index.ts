@@ -1,3 +1,4 @@
+import { requireProjectRoot } from "../core/root.js";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { resolveAnchor } from "../anchors/resolve.js";
@@ -65,7 +66,9 @@ export interface StatusOptions {
 export async function status(
   options: StatusOptions = {},
 ): Promise<StatusReport> {
-  const root = options.cwd ?? process.cwd();
+  // REQ-CFG-010: the project is the directory holding `.specd/`, not the
+  // working directory and not the git toplevel.
+  const root = requireProjectRoot(options.cwd ?? process.cwd());
   const config =
     options.config ??
     resolveConfig({

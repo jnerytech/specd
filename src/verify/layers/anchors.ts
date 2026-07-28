@@ -1,5 +1,6 @@
 import type { AnchorDeclaration } from "../../anchors/model.js";
 import { resolveAnchor, type AnchorResolution } from "../../anchors/resolve.js";
+import { listRepository } from "../../anchors/search.js";
 import type { AnchorPolicy } from "../../config/schema.js";
 import { error, warning, type Diagnostic } from "../../parser/diagnostics.js";
 import type { Requirement } from "../../parser/requirement.js";
@@ -48,6 +49,24 @@ export const anchorsLayer: VerifyLayer = {
   run(ctx) {
     const violations: Diagnostic[] = [];
 
+    // REQ-VER-012 / P8. A green anchors layer used to mean two different
+    // things: "every anchor resolves" and "every anchor resolves, and if one
+    // broke I would know where to look". They are not the same state, and the
+    // second is false wherever the listing sees nothing.
+    const listing = listRepository(ctx.root);
+    if (listing.files.length === 0) {
+      violations.push(
+        warning({
+          file: ".specd",
+          line: 1,
+          message:
+            "The repository listing sees no file at all, so ladder step 5 cannot search for a moved symbol " +
+            "and cannot suggest anything. Every anchor below was checked only against its declared file; " +
+            "a broken one would be reported without a location.",
+        }),
+      );
+    }
+
     for (const entry of ctx.effective.requirements) {
       for (const declaration of entry.requirement.anchors) {
         const resolution = resolveAnchor(declaration.anchor, {
@@ -68,7 +87,10 @@ export const anchorsLayer: VerifyLayer = {
       }
     }
 
-    return Promise.resolve(resultFrom(violations));
+    return Promise.resolve({
+      ...resultFrom(violations),
+      listing: { mode: listing.mode, files: listing.files.length },
+    });
   },
 };
 

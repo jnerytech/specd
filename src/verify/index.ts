@@ -1,8 +1,13 @@
+import { requireProjectRoot } from "../core/root.js";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { ConfigError } from "../config/errors.js";
 import { resolveConfig } from "../config/resolve.js";
-import type { SpecdConfig, VerifyLevel } from "../config/schema.js";
+import {
+  VERIFY_LEVELS,
+  type SpecdConfig,
+  type VerifyLevel,
+} from "../config/schema.js";
 import { OperationalError } from "../core/operational.js";
 import { readOpenChanges } from "./changes.js";
 import { effectiveSpecs } from "./effective.js";
@@ -17,14 +22,11 @@ import type { LayerReport, VerifyReport, Violation } from "./report.js";
 
 // REQ-VER-001: the order is fixed and not configurable. Only which layers run
 // is configurable (REQ-VER-002).
-export const LAYER_ORDER: readonly VerifyLevel[] = [
-  "provenance",
-  "schema",
-  "coverage",
-  "anchors",
-  "evidence",
-  "project",
-] as const;
+//
+// The order is `VERIFY_LEVELS` itself rather than a second list beside it. Two
+// lists of the same six names is two chances to disagree, and the init template
+// held a third that had already drifted.
+export const LAYER_ORDER: readonly VerifyLevel[] = VERIFY_LEVELS;
 
 // Every layer of LAYER_ORDER is implemented as of Fatia 3. The map stays, and
 // so does the check below: a layer named in the configuration but absent here
@@ -55,7 +57,9 @@ export interface VerifyOptions {
 export async function verify(
   options: VerifyOptions = {},
 ): Promise<VerifyReport> {
-  const root = options.cwd ?? process.cwd();
+  // REQ-CFG-010: the project is the directory holding `.specd/`, not the
+  // working directory and not the git toplevel.
+  const root = requireProjectRoot(options.cwd ?? process.cwd());
   const config =
     options.config ??
     resolveConfig({
