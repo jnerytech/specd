@@ -4,7 +4,7 @@ change: 2026-07-fatia-1
 req: [REQ-FMT-001, REQ-FMT-002, REQ-FMT-003, REQ-FMT-008]
 status: done
 evidence:
-  commits: []
+  commits: [9cadaab55d3b86d8dec75cd47e78676a6040c401]
 ---
 
 ## Objetivo
