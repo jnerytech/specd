@@ -4,7 +4,7 @@ change: 2026-07-fatia-1
 req: [REQ-EARS-001, REQ-EARS-002, REQ-EARS-003, REQ-EARS-004, REQ-EARS-005]
 status: done
 evidence:
-  commits: []
+  commits: [c5b18943420e137a80c1c9342524b3b426f8f006]
 ---
 
 ## Objetivo
