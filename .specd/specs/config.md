@@ -85,3 +85,52 @@ Resolução de configuração, bootstrap do projeto e relatório de situação.
 - file: src/status/index.ts
   symbol: "export async function status"
 ```
+
+### REQ-CFG-007 — Requirement location is reported
+
+**Statement.** The specd status command SHALL report, for every requirement identifier, the file that currently holds it and whether it is realized or in flight.
+
+**Acceptance.**
+- ID em `.specd/specs/` é reportado como realizado, com o caminho da capability
+- ID em delta de change aberta é reportado como em voo, com o caminho e o nome da change
+- ID presente nos dois é reportado como em modificação, com os dois caminhos
+- ID desconhecido é reportado como tal, sem exit code diferente de zero
+
+Sob o Modelo B o identificador continua estável e o endereço não. Sem este
+relatório, achar um requisito passa a exigir busca em dois lugares.
+
+```yaml anchors
+- file: src/status/locate.ts
+  symbol: "export function locateRequirement"
+```
+
+### REQ-CFG-008 — Open change age is reported
+
+**Statement.** The specd status command SHALL report how long each open change has been open.
+
+**Acceptance.**
+- Idade vem da primeira aparição de `delta.md` no histórico
+- Histórico indisponível reporta idade desconhecida, sem erro
+- Change arquivada não aparece
+
+```yaml anchors
+- file: src/status/changes.ts
+  symbol: "changeAge"
+```
+
+### REQ-CFG-009 — Warning debt per open change is reported
+
+**Statement.** The specd status command SHALL report how many requirements each open change holds with a dangling anchor.
+
+**Acceptance.**
+- Contagem por change, não agregada
+- Change com zero pendurada aparece com zero, não some
+- Comando continua retornando código 0, por REQ-CFG-006
+
+Change que segura órfão e não fecha rebaixa a warning tudo que lista. Idade e
+dívida juntas tornam o encalhe visível sem que a ferramenta julgue.
+
+```yaml anchors
+- file: src/status/changes.ts
+  symbol: "warningDebt"
+```

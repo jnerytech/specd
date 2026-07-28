@@ -82,14 +82,44 @@ O diferencial do specd. Uma âncora declara onde um requisito é realizado no c�
 
 ### REQ-ANC-006 — Graduated policy
 
-**Statement.** WHERE the anchor policy is `graduated`, the specd verifier SHALL report a dangling anchor as a warning when its requirement is listed in the active change delta, and as an error otherwise.
+**Statement.** The specd verifier SHALL grade a dangling anchor by the origin of its requirement, treating `.specd/specs/` as realized and a change delta as work in flight.
 
 **Acceptance.**
-- REQ presente em ADDED ou MODIFIED da change ativa produz warning
-- REQ ausente do delta produz erro
-- Sem change ativa, toda âncora pendurada produz erro
+- Requisito de `.specd/specs/` com âncora pendurada produz erro sob `graduated`
+- Requisito de delta de change aberta produz warning sob `graduated`
+- `strict` produz erro nas duas origens
+- `lenient` produz warning nas duas origens
+- Nenhuma consulta a "change ativa" participa da decisão
 
 ```yaml anchors
 - file: src/verify/layers/anchors.ts
   symbol: "applyAnchorPolicy"
+```
+
+### REQ-ANC-007 — Archive tolerates nothing
+
+**Statement.** The specd archive command SHALL reject the operation when any anchor of any affected requirement is dangling, regardless of the configured policy.
+
+**Acceptance.**
+- Política `lenient` não afeta o comportamento do archive
+- Mensagem lista todas as âncoras penduradas antes de abortar
+- Afetado é o requisito citado em `ADDED` ou `MODIFIED` da change sendo arquivada
+
+```yaml anchors
+- file: src/archive/index.ts
+  symbol: "assertAllAnchorsResolved"
+```
+
+### REQ-ANC-008 — Fix rewrites with review
+
+**Statement.** WHEN `specd anchor fix` is invoked for a requirement holding a suggestion, specd SHALL rewrite the anchor to the suggested location and leave the change unstaged.
+
+**Acceptance.**
+- Arquivo de capability é modificado no disco
+- Nenhum commit é criado automaticamente
+- Âncora sem sugestão faz o comando sair com código 2, porque é recusa de agir e não veredito
+
+```yaml anchors
+- file: src/anchors/fix.ts
+  symbol: "export async function fixAnchor"
 ```

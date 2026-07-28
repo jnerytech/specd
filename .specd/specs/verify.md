@@ -87,3 +87,67 @@ Seis camadas ordenadas. As cinco primeiras são offline e agnósticas de stack; 
 - file: src/verify/report.ts
   symbol: "export interface VerifyReport"
 ```
+
+### REQ-VER-004 — Coverage layer
+
+**Statement.** The specd verifier SHALL reject any change in which a requirement listed under ADDED or MODIFIED has no task referencing it.
+
+**Acceptance.**
+- REQ sem task apontando reprova
+- Referência é o campo `req` do frontmatter da task, e nada mais
+- Task em qualquer status conta como cobertura, inclusive `pending`
+- Só tasks da própria change contam
+- Requisito listado em `REMOVED` não exige task
+- Task apontando para REQ inexistente reprova na camada schema, não aqui
+
+```yaml anchors
+- file: src/verify/layers/coverage.ts
+  symbol: "export const coverageLayer"
+```
+
+### REQ-VER-005 — Evidence layer
+
+**Statement.** IF a task declares status `done`, THEN the specd verifier SHALL reject it when `evidence.commits` is empty.
+
+**Acceptance.**
+- Task `done` sem commits reprova
+- Task em qualquer outro status não é avaliada
+
+```yaml anchors
+- file: src/verify/layers/evidence.ts
+  symbol: "export const evidenceLayer"
+```
+
+### REQ-VER-010 — Unreachable commit is reported, not rejected
+
+**Statement.** IF a commit listed in `evidence.commits` is not reachable in the repository history, THEN the specd verifier SHALL report it as a warning.
+
+**Acceptance.**
+- SHA inalcançável produz warning e não reprova a camada
+- Mensagem cita a task, o identificador e o SHA
+- Squash, rebase e clone raso não reprovam o gate
+
+Âncora prova que existe código agora; evidência prova que houve trabalho então.
+São eixos diferentes, por P7. Um SHA que o histórico não alcança mais é sinal
+degradado, não fraude: o fluxo de merge do projeto pode tê-lo reescrito. O que
+permanece antifraude é `evidence.commits` vazio, que é declaração de trabalho
+sem qualquer lastro, e esse continua reprovando por REQ-VER-005.
+
+```yaml anchors
+- file: src/verify/layers/evidence.ts
+  symbol: "assertCommitsReachable"
+```
+
+### REQ-VER-011 — Evidence without history is operational
+
+**Statement.** WHEN the repository history is unavailable, the specd verifier SHALL exit with code 2 instead of producing a verdict for the evidence layer.
+
+**Acceptance.**
+- Diretório sem `.git` acessível sai com código 2
+- Mensagem distingue "não consegui verificar" de "verifiquei e reprovou"
+- Nenhuma violação de evidência é reportada quando o histórico falta
+
+```yaml anchors
+- file: src/verify/layers/evidence.ts
+  symbol: "requireGitHistory"
+```

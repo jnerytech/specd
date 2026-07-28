@@ -9,11 +9,12 @@ Comandos, códigos de saída e regras invioláveis de comportamento da CLI `spec
 
 ### REQ-CLI-001 — Single gate
 
-**Statement.** The specd CLI SHALL expose exactly one command that returns a non-zero exit code as a quality gate, namely `specd verify`.
+**Statement.** The specd CLI SHALL expose exactly one command whose non-zero exit code is a verdict on quality, namely `specd verify`.
 
 **Acceptance.**
-- Nenhum outro comando retorna exit code 1 por reprovação de qualidade
-- `explore`, `sync` e `archive` retornam não-zero apenas por falha operacional (rede, I/O, argumento inválido)
+- Nenhum outro comando retorna exit code 1
+- Comando que não pode agir porque a qualidade não permite retorna 2 e nomeia `specd verify`
+- `explore`, `sync` e `archive` retornam não-zero apenas por falha operacional ou recusa de agir
 
 ```yaml anchors
 - file: src/cli/index.ts
@@ -57,6 +58,7 @@ Comandos, códigos de saída e regras invioláveis de comportamento da CLI `spec
 **Acceptance.**
 - Falha de rede no `explore` retorna 2, não 1
 - Âncora pendurada em contexto de erro retorna 1
+- Comando que recusa agir por precondição de qualidade retorna 2
 - CI consegue distinguir "spec reprovou" de "ferramenta quebrou"
 
 ```yaml anchors

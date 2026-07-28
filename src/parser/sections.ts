@@ -99,11 +99,20 @@ export function renderSection(
     section.title.length === 0
       ? `### ${section.id}`
       : `### ${section.id} — ${section.title}`;
-  const body = section.body
+  const kept = section.body
     .filter((line) => !omit(line))
     .map((line) => line.text);
+  // Removing a line leaves its blank neighbours behind. Collapsing runs keeps
+  // the block looking as the author wrote it once the field archive strips is
+  // gone, instead of growing a blank line per application.
+  const body: string[] = [];
+  for (const line of kept) {
+    if (line.trim() === "" && body[body.length - 1]?.trim() === "") continue;
+    body.push(line);
+  }
   while (body.length > 0 && (body[body.length - 1] as string).trim() === "") {
     body.pop();
   }
-  return [heading, ...body].join("\n");
+  while (body.length > 0 && (body[0] as string).trim() === "") body.shift();
+  return [heading, "", ...body].join("\n");
 }

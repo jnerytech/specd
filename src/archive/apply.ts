@@ -153,10 +153,12 @@ export function replaceRequirement(
       [`MODIFIED replaces a section that already exists; this one does not.`],
     );
   }
+  const tail = source.slice(existing.end);
+  // A section is followed by a blank line unless it ended the file; without
+  // this the next heading would end up glued to the block just written.
+  const separator = tail.length === 0 ? "\n" : "\n\n";
   return (
-    source.slice(0, existing.start) +
-    `${entry.text.trimEnd()}\n` +
-    source.slice(existing.end)
+    source.slice(0, existing.start) + entry.text.trimEnd() + separator + tail
   );
 }
 

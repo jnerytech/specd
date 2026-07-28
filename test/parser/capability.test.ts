@@ -1,3 +1,4 @@
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -25,22 +26,24 @@ function messages(diagnostics: Diagnostic[]): string {
   return diagnostics.map((d) => `${d.severity}: ${d.message}`).join("\n");
 }
 
-// Task 003 "done when": the parser reads the seven capabilities of this very
-// repository without error.
+// The parser reads this very repository's capabilities without error.
+//
+// The list is derived from the directory rather than written out: `archive`
+// arrived when `specd archive` created it, and a hardcoded list would have to
+// be edited every time the tool does its job. What is worth asserting is that
+// every file on disk parses and that the name inside matches the file.
 describe("this repository's capabilities", () => {
   const { capabilities, diagnostics } = loadCapabilities(SPECS_DIR);
 
-  it("parses all seven capabilities with no diagnostics", () => {
+  it("parses every capability file with no diagnostics", () => {
+    const onDisk = readdirSync(SPECS_DIR)
+      .filter((name) => name.endsWith(".md"))
+      .map((name) => name.replace(/\.md$/, ""))
+      .sort();
+
     expect(messages(diagnostics)).toBe("");
-    expect(capabilities.map((c) => c.name).sort()).toEqual([
-      "anchors",
-      "cli",
-      "config",
-      "ears",
-      "explore",
-      "spec-format",
-      "verify",
-    ]);
+    expect(capabilities.map((c) => c.name).sort()).toEqual(onDisk);
+    expect(onDisk.length).toBeGreaterThan(0);
   });
 
   it("turns every `### REQ-…` heading into a requirement", () => {
