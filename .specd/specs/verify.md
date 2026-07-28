@@ -33,46 +33,6 @@ Seis camadas ordenadas. As cinco primeiras são offline e agnósticas de stack; 
   symbol: "VerifyLevelsSchema"
 ```
 
-### REQ-VER-003 — Provenance layer
-
-**Statement.** WHEN a change directory exists, the specd verifier SHALL reject it if `explore/manifest.json` is absent or if any source marked required has a status other than `ok`.
-
-**Acceptance.**
-- Manifest ausente reprova
-- Fonte required com status `failed` reprova e é nomeada no erro
-- Fonte opcional falhada não reprova
-
-```yaml anchors
-- file: src/verify/layers/provenance.ts
-  symbol: "export const provenanceLayer"
-```
-
-### REQ-VER-004 — Coverage layer
-
-**Statement.** The specd verifier SHALL reject any change in which a requirement listed under ADDED or MODIFIED has no task referencing it.
-
-**Acceptance.**
-- REQ sem task apontando reprova
-- Task apontando para REQ inexistente reprova na camada schema, não aqui
-
-```yaml anchors
-- file: src/verify/layers/coverage.ts
-  symbol: "export const coverageLayer"
-```
-
-### REQ-VER-005 — Evidence layer
-
-**Statement.** IF a task declares status `done`, THEN the specd verifier SHALL reject it when `evidence.commits` is empty.
-
-**Acceptance.**
-- Task `done` sem commits reprova
-- SHA listado é validado como existente no repositório
-
-```yaml anchors
-- file: src/verify/layers/evidence.ts
-  symbol: "export const evidenceLayer"
-```
-
 ### REQ-VER-006 — Project layer delegates by argv
 
 **Statement.** The specd verifier SHALL execute the configured `validation_command` as an argv array without a shell, propagating its exit code.

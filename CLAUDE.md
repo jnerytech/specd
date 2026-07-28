@@ -49,9 +49,13 @@ CI precisa distinguir "spec reprovou" de "ferramenta quebrou".
 
 `.specd/specs/` contém sete capabilities. Todo requisito tem ID estável, statement em EARS e âncoras.
 
-`.specd/changes/2026-07-fatia-1/` contém o escopo atual: proposal, delta e nove tarefas.
+`.specd/changes/` contém as changes abertas. A Fatia 1 está encerrada e espera o comando `archive`; a Fatia 2 é o escopo corrente; a Fatia 3 existe para segurar REQ-VER-003, que nenhuma outra change implementa.
 
 **A spec é o contrato.** Ao implementar uma tarefa, leia os requisitos listados em `req` no frontmatter e trate os critérios de aceite como especificação de teste.
+
+**Modelo B — o delta é a superfície de escrita.** `.specd/specs/` contém só verdade realizada. Requisito de comportamento que ainda não existe em código mora no `delta.md` de uma change aberta, com texto completo, e só entra na capability quando `specd archive` o aplica. Escrever requisito novo direto em `.specd/specs/` recria o estado ilegal que a change `migracao-modelo-b` corrigiu: âncora pendurada permanente em pasta que promete código existente.
+
+Daí a política de âncora graduar por origem — pendurada em `specs/` é erro, pendurada em delta é warning — e não por consulta a "change ativa".
 
 ## Convenções
 
@@ -61,18 +65,22 @@ CI precisa distinguir "spec reprovou" de "ferramenta quebrou".
 
 **Testes.** Todo critério de aceite vira teste. Tarefa marcada `done` precisa de SHA em `evidence.commits`.
 
-**Escopo.** Não implemente `propose`, `apply`, `sync`, `archive`, `anchor fix`, memória ou hooks. Estão especificados mas fora da Fatia 1.
+**Escopo.** Não implemente `propose`, `apply`, `sync`, memória, hooks nem a camada `provenance`. Estão especificados ou previstos e ficam fora da Fatia 2.
 
-## Ordem sugerida
+## Ordem sugerida — Fatia 2
 
 **Passo 0 — humano, não agente.** Reservar `specd` no npm sem escopo antes de qualquer anúncio público; opcionalmente reservar `@jnerytech/specd`. Não é tarefa de implementação e não está em `tasks/` — ver "Primeiros passos" no README.
 
 ```
-002 config → 003 parser → 004 EARS → 005 âncoras → 006 verify → 007 testes de arquitetura
-001 anchor suggest  (independente, pode ir em paralelo)
-008 explore         (independente do verify)
-009 init e status   (depende de 002 e 006)
+readOpenChanges + exclusão de archive/ + passagem vazia
+      ├── parseDelta ──┬── coverage
+      │                └── archive
+      └── parseTask  ──┴── evidence
+                          anchor fix  (independente, cauda opcional)
+                          status      (depende dos anteriores)
 ```
+
+Os três primeiros vêm antes porque `coverage`, `evidence` e `archive` precisam saber de qual change estão falando, e `readActiveChange` hoje devolve a mais antiga.
 
 ## Validação
 

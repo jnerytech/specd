@@ -112,7 +112,9 @@ A CLI busca as fontes configuradas e grava um bundle auditável. A síntese em d
 - Draft ausente não reprova nenhuma camada
 - Draft malformado não reprova nenhuma camada
 
-```yaml anchors
-- file: src/verify/layers/provenance.ts
-  symbol: "export const provenanceLayer"
-```
+**Sem âncora, deliberadamente.** O requisito é negativo: ele exige que nada
+valide `draft.md`. Não existe caminho de código onde essa ausência seja
+realizada, e âncora que apontasse para o verificador resolveria sem provar
+coisa alguma — âncora decorativa é pior que âncora ausente, porque troca um
+silêncio honesto por um sinal falso de cobertura. P7. REQ-ANC-001 já torna a
+âncora opcional.
