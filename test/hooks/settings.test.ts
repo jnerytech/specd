@@ -153,6 +153,34 @@ describe("reinstall", () => {
     expect(commands(root, "PostToolUse")).toHaveLength(1);
   });
 
+  // The regression the unit tests missed and the field test caught. Every case
+  // above used the default executable, so recognising our own entry by the
+  // literal string "specd hooks run" held — and broke the first time the hook
+  // was installed with `--command "node dist/cli.js"`, whose path contains
+  // "specd" but never "specd hooks run". Install stopped seeing its own entry
+  // and appended a second one on every run.
+  it("recognises its own entry whatever the executable is", () => {
+    const root = project();
+    const executable = "node /somewhere/repos/specd/dist/cli.js";
+    installHooks({ cwd: root, executable });
+    const second = installHooks({ cwd: root, executable });
+    expect(second.wrote).toBe(false);
+    expect(second.unchanged).toHaveLength(2);
+    expect(commands(root, "Stop")).toHaveLength(1);
+    expect(commands(root, "PostToolUse")).toHaveLength(1);
+  });
+
+  it("sees an entry installed under a different executable as divergent", () => {
+    const root = project();
+    installHooks({ cwd: root, executable: "node dist/cli.js" });
+    // Not two hooks: the same hook, invoked differently. Two possible states,
+    // no basis for choosing — P4.
+    expect(() => installHooks({ cwd: root })).toThrow(OperationalError);
+    expect(commands(root, "Stop")).toEqual([
+      "node dist/cli.js hooks run stop --fast",
+    ]);
+  });
+
   it("refuses when the existing specd entry differs", () => {
     const root = project();
     installHooks({ cwd: root });

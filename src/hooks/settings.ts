@@ -25,14 +25,22 @@ export interface Settings {
   raw: SettingsObject;
 }
 
-// Every command specd writes carries this. Recognising our own entries by the
-// command they run — rather than by position, order or a marker key we would
-// have to keep in sync — is what makes uninstall safe next to third-party hooks.
-export const SPECD_HOOK_MARKER = "specd hooks run";
+// Recognising our own entries by the command they run — rather than by
+// position, order, or a marker key we would have to keep in sync — is what makes
+// uninstall safe next to third-party hooks.
+//
+// The subcommand and the event name, not the executable. This started life as
+// the literal `"specd hooks run"`, which held for the default invocation and
+// broke the moment `--command "node dist/cli.js"` was used: the path
+// `.../repos/specd/dist/cli.js hooks run stop` never contains `specd hooks run`,
+// so install stopped recognising its own entry and duplicated it on every run.
+// The unit tests all passed, because they all used the default executable.
+export const SPECD_HOOK_MARKER =
+  /(?:^|\s)hooks\s+run\s+(?:stop|post-tool-use)\b/;
 
 export function isSpecdHook(entry: HookCommand): boolean {
   return typeof entry.command === "string"
-    ? entry.command.includes(SPECD_HOOK_MARKER)
+    ? SPECD_HOOK_MARKER.test(entry.command)
     : false;
 }
 

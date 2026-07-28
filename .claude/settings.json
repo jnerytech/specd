@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/dev/repos/specd/dist/cli.js hooks run stop --fast"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/dev/repos/specd/dist/cli.js hooks run post-tool-use --fast"
+          }
+        ]
+      }
+    ]
+  }
+}
