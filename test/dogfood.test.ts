@@ -52,10 +52,14 @@ describe("specd verifies this repository", () => {
     const report = await run();
     expect(report.layers.map((l) => l.layer)).toEqual([
       "schema",
+      "coverage",
       "anchors",
+      "evidence",
       "project",
     ]);
-    expect(report.disabled).toEqual(["provenance", "coverage", "evidence"]);
+    // `provenance` waits on Fatia 3: REQ-VER-003 as written rejects any change
+    // without an explore bundle, which would reject the hand-written ones.
+    expect(report.disabled).toEqual(["provenance"]);
   });
 
   // Deliberately no count: requirements get added, and a number in the name
