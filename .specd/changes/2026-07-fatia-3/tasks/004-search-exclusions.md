@@ -2,9 +2,9 @@
 id: "004-search-exclusions"
 change: 2026-07-fatia-3
 req: [REQ-ANC-003]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["e59b79667ba4edee66a3c32156868eaba95b88f8"]
 ---
 
 ## Objetivo
