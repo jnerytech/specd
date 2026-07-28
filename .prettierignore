@@ -1,0 +1,9 @@
+# Build output and deps
+dist/
+node_modules/
+package-lock.json
+
+# Spec artifacts are contract, not code — formatter must not rewrite them
+.specd/
+openspec/
+.claude/

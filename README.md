@@ -45,7 +45,7 @@ Se o agente voltar pedindo uma decisão que a spec deveria ter tomado, o ajuste 
 
 Cada requisito declara **âncoras** — onde ele é realizado no código:
 
-```markdown
+````markdown
 ### REQ-AUTH-003 — Refresh token rotation
 
 **Statement.** WHEN a valid refresh token is presented to the renewal endpoint,
@@ -55,6 +55,8 @@ the authentication service SHALL issue a new access+refresh pair.
 - file: src/Auth/TokenService.php
   symbol: "function rotate"
 ```
+````
+
 ```
 
 `specd verify` resolve cada âncora contra o working tree. Âncora que não resolve é drift, e drift retorna exit code 1.
@@ -77,10 +79,12 @@ P1 e P3 têm testes de arquitetura que quebram o CI se violados.
 ## Ciclo
 
 ```
-explore  →  propose  →  apply  →  archive
-   ↑                       ↓
-   └────  specd verify  ───┘
-```
+
+explore → propose → apply → archive
+↑ ↓
+└──── specd verify ───┘
+
+````
 
 | Fase | O que faz |
 |---|---|
@@ -107,19 +111,19 @@ As cinco primeiras rodam offline em milissegundos e não conhecem sua stack. A �
 ```toml
 [verify]
 validation_command = ["make", "lint"]
-```
+````
 
 ## Requisitos são EARS
 
 Cinco padrões, validados por parser. Keywords em inglês são sintaxe; a prosa fica no idioma que você configurar.
 
-| Padrão | Forma |
-|---|---|
-| Ubíquo | `The <sistema> SHALL <resposta>` |
-| Evento | `WHEN <gatilho> the <sistema> SHALL <resposta>` |
-| Estado | `WHILE <estado> the <sistema> SHALL <resposta>` |
+| Padrão     | Forma                                               |
+| ---------- | --------------------------------------------------- |
+| Ubíquo     | `The <sistema> SHALL <resposta>`                    |
+| Evento     | `WHEN <gatilho> the <sistema> SHALL <resposta>`     |
+| Estado     | `WHILE <estado> the <sistema> SHALL <resposta>`     |
 | Indesejado | `IF <condição> THEN the <sistema> SHALL <resposta>` |
-| Opcional | `WHERE <feature> the <sistema> SHALL <resposta>` |
+| Opcional   | `WHERE <feature> the <sistema> SHALL <resposta>`    |
 
 Um comportamento por requisito. Dois `SHALL` no mesmo statement reprovam.
 
@@ -147,12 +151,12 @@ Quando o `verify` existir, o primeiro repositório que ele valida é este.
 
 ## Roadmap
 
-| Fatia | Escopo | Status |
-|---|---|---|
-| 1 | `init` · `explore` · `verify` · `status` | Especificada |
-| 2 | `propose` · `sync` | Especificada parcialmente |
-| 3 | `apply` · memória | Especificada parcialmente |
-| 4 | hooks · `archive` | Especificada parcialmente |
+| Fatia | Escopo                                   | Status                    |
+| ----- | ---------------------------------------- | ------------------------- |
+| 1     | `init` · `explore` · `verify` · `status` | Especificada              |
+| 2     | `propose` · `sync`                       | Especificada parcialmente |
+| 3     | `apply` · memória                        | Especificada parcialmente |
+| 4     | hooks · `archive`                        | Especificada parcialmente |
 
 ## Nota de desambiguação
 

@@ -30,11 +30,11 @@ Só `specd verify` retorna 1 por reprovação de qualidade. Outros comandos reto
 
 ## Contrato de exit code
 
-| Código | Significado |
-|---|---|
-| 0 | Sucesso |
-| 1 | Gate reprovou — a spec ou o código estão errados |
-| 2 | Falha operacional — rede, I/O, configuração inválida |
+| Código | Significado                                          |
+| ------ | ---------------------------------------------------- |
+| 0      | Sucesso                                              |
+| 1      | Gate reprovou — a spec ou o código estão errados     |
+| 2      | Falha operacional — rede, I/O, configuração inválida |
 
 CI precisa distinguir "spec reprovou" de "ferramenta quebrou".
 
