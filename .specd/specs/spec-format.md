@@ -7,6 +7,18 @@ retired: []
 
 Estrutura dos artefatos que o specd lê e valida.
 
+**Requisito é maleável em voo e congela ao ser realizado.** Dividir, renomear ou
+reescrever requisito que está num delta não custa nada: ele ainda não tem
+identificador citado por task, nem âncora com histórico, nem código apontando
+para ele. O mesmo em `.specd/specs/` custa churn de ID e perda de rastro de
+âncora. Logo refatoração de requisito acontece antes do archive, não depois.
+
+Isto é disciplina e não requisito porque não é checável por máquina — decidir se
+uma reescrita melhorou o requisito é julgamento semântico, que P1 mantém fora do
+caminho de decisão. O que a máquina checa é a consequência: sob o Modelo B, o
+texto só entra em `specs/` pelo `archive`, e o `archive` só roda com âncora
+resolvendo.
+
 ### REQ-FMT-001 — Capability file layout
 
 **Statement.** The specd parser SHALL read each capability as a Markdown file under `.specd/specs/` containing YAML frontmatter with `capability` and `retired`, followed by requirements as level-3 headings.

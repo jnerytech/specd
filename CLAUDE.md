@@ -57,6 +57,8 @@ CI precisa distinguir "spec reprovou" de "ferramenta quebrou".
 
 Daí a política de âncora graduar por origem — pendurada em `specs/` é erro, pendurada em delta é warning — e não por consulta a "change ativa".
 
+**Requisito é maleável em voo e congela ao ser realizado.** Dividir, renomear ou reescrever requisito que está num delta não custa nada: ainda não há task citando o ID, nem âncora com histórico, nem código apontando. O mesmo em `.specd/specs/` custa churn de ID e rastro de âncora. Refatoração de requisito acontece antes do archive, não depois — e é por isso que revisar o delta com cuidado é mais barato que revisar a capability.
+
 ## Convenções
 
 **Idioma.** Artefatos de infraestrutura e código em inglês. Statements EARS com keywords em inglês; prosa dos requisitos pode ser em qualquer idioma. Comentários e mensagens de erro em inglês.
