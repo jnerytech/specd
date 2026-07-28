@@ -4,7 +4,7 @@ change: 2026-07-fatia-1
 req: [REQ-CLI-002, REQ-CLI-005]
 status: done
 evidence:
-  commits: []
+  commits: [91c1ba01f5ff8320182ecde92b9c100bbb4c834e]
 ---
 
 ## Objetivo
