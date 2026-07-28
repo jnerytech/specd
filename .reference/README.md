@@ -11,10 +11,10 @@ parecido.
 
 ## Repositórios clonados
 
-| Pasta        | Origem                          | Licença | Copyright                    |
-| ------------ | ------------------------------- | ------- | ---------------------------- |
-| `openspec/`  | github.com/Fission-AI/openspec  | MIT     | 2024 OpenSpec Contributors   |
-| `compozy/`   | github.com/compozy/compozy      | MIT     | 2026 NauckGroup LTDA         |
+| Pasta       | Origem                         | Licença | Copyright                  |
+| ----------- | ------------------------------ | ------- | -------------------------- |
+| `openspec/` | github.com/Fission-AI/openspec | MIT     | 2024 OpenSpec Contributors |
+| `compozy/`  | github.com/compozy/compozy     | MIT     | 2026 NauckGroup LTDA       |
 
 Ambos foram clonados com `--depth 1` e tiveram o `.git` removido, para
 evitar submódulo acidental e economizar espaço.
@@ -51,14 +51,14 @@ responde → ler só ele → voltar para a spec.
 
 O Compozy resolve problemas adjacentes com decisões opostas às nossas:
 
-| specd                                     | Compozy                                     |
-| ----------------------------------------- | ------------------------------------------- |
-| Sem daemon; processo efêmero              | Daemon home-scoped                          |
-| Sem worktrees; execução sequencial        | Worktrees paralelos                         |
-| CLI nunca chama LLM na decisão            | Agente de recovery dentro da CLI            |
-| Gate por exit code no hook `Stop`         | `cy-final-verify` por atestação do agente   |
-| Estado no repositório                     | Estado em `~/.compozy/`                     |
-| Memória efêmera, vai para o archive       | Memória persistente                         |
+| specd                               | Compozy                                   |
+| ----------------------------------- | ----------------------------------------- |
+| Sem daemon; processo efêmero        | Daemon home-scoped                        |
+| Sem worktrees; execução sequencial  | Worktrees paralelos                       |
+| CLI nunca chama LLM na decisão      | Agente de recovery dentro da CLI          |
+| Gate por exit code no hook `Stop`   | `cy-final-verify` por atestação do agente |
+| Estado no repositório               | Estado em `~/.compozy/`                   |
+| Memória efêmera, vai para o archive | Memória persistente                       |
 
 Encontrar essas soluções no código-fonte não é permissão para adotá-las.
 Elas foram rejeitadas com motivo, registrado nos princípios P1 a P6 do
@@ -66,12 +66,12 @@ AGENTS.md.
 
 ## Quando consultar
 
-| Pergunta                                          | Onde        | Quando       |
-| ------------------------------------------------- | ----------- | ------------ |
-| Máquina de estados delta → specs → archive        | `openspec/` | Fatia 2      |
-| Geração de config para múltiplos agentes          | `openspec/` | hooks install|
-| Precedência de TOML                               | `compozy/`  | design apenas — é Go |
-| Compactação de memória por limite numérico        | `compozy/`  | Fatia 3      |
+| Pergunta                                   | Onde        | Quando               |
+| ------------------------------------------ | ----------- | -------------------- |
+| Máquina de estados delta → specs → archive | `openspec/` | Fatia 2              |
+| Geração de config para múltiplos agentes   | `openspec/` | hooks install        |
+| Precedência de TOML                        | `compozy/`  | design apenas — é Go |
+| Compactação de memória por limite numérico | `compozy/`  | Fatia 3              |
 
 A linha do TOML merece ênfase: o Compozy é escrito em Go. O que se aproveita
 dali é o desenho da precedência entre camadas de configuração, não código.

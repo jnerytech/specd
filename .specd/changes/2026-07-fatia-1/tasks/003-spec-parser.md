@@ -2,7 +2,7 @@
 id: 003-spec-parser
 change: 2026-07-fatia-1
 req: [REQ-FMT-001, REQ-FMT-002, REQ-FMT-003, REQ-FMT-008]
-status: pending
+status: done
 evidence:
   commits: []
 ---

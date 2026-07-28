@@ -14,14 +14,14 @@ de teste verde.
 
 ## Fixtures
 
-| Fixture                  | Estado                              | Passo | Resultado esperado          |
-| ------------------------ | ----------------------------------- | ----- | --------------------------- |
-| `resolved-with-symbol/`  | Arquivo e símbolo presentes         | 3     | `resolved`                  |
-| `resolved-file-only/`    | Âncora sem `symbol`                 | 2     | `resolved`                  |
-| `missing-file/`          | Arquivo removido                    | 1     | `dangling`                  |
-| `renamed-symbol/`        | Arquivo existe, símbolo renomeado   | 5     | `dangling`                  |
-| `moved-symbol/`          | Símbolo migrou, único match         | 5     | `dangling-with-suggestion`  |
-| `ambiguous-symbol/`      | Símbolo em vários arquivos          | 5     | `dangling` sem sugestão     |
+| Fixture                 | Estado                            | Passo | Resultado esperado         |
+| ----------------------- | --------------------------------- | ----- | -------------------------- |
+| `resolved-with-symbol/` | Arquivo e símbolo presentes       | 3     | `resolved`                 |
+| `resolved-file-only/`   | Âncora sem `symbol`               | 2     | `resolved`                 |
+| `missing-file/`         | Arquivo removido                  | 1     | `dangling`                 |
+| `renamed-symbol/`       | Arquivo existe, símbolo renomeado | 5     | `dangling`                 |
+| `moved-symbol/`         | Símbolo migrou, único match       | 5     | `dangling-with-suggestion` |
+| `ambiguous-symbol/`     | Símbolo em vários arquivos        | 5     | `dangling` sem sugestão    |
 
 A coluna "Passo" é o degrau da escada onde a resolução para. É ela que dá
 sentido ao conjunto: cada degrau tem pelo menos um fixture que o exercita, e

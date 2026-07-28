@@ -91,3 +91,4 @@ Comandos, códigos de saída e regras invioláveis de comportamento da CLI `spec
 ```yaml anchors
 - file: package.json
   symbol: "\"bin\""
+```

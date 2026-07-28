@@ -5,9 +5,9 @@
 
 ## O que foi baixado
 
-| Pasta        | Origem                                                              | Stack     | Observação                                            |
-| ------------ | ------------------------------------------------------------------- | --------- | ----------------------------------------------------- |
-| `sample05/`  | eximiaco/csharp_jeito_certo — Masterclass/engenharia_projetos/sample05 | C# / .NET | Sem LICENSE declarada. Não copiar código dele para `src/` |
+| Pasta       | Origem                                                                 | Stack     | Observação                                                |
+| ----------- | ---------------------------------------------------------------------- | --------- | --------------------------------------------------------- |
+| `sample05/` | eximiaco/csharp_jeito_certo — Masterclass/engenharia_projetos/sample05 | C# / .NET | Sem LICENSE declarada. Não copiar código dele para `src/` |
 
 ## Para que serve
 

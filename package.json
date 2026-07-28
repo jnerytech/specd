@@ -50,6 +50,7 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
-    "smol-toml": "^1.7.1"
+    "smol-toml": "^1.7.1",
+    "yaml": "^2.9.0"
   }
 }
