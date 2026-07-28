@@ -5,8 +5,11 @@ client = "jnerytech"
 language = "pt-BR"
 
 [verify]
-# Fatia 1: coverage e evidence dependem de tasks, que chegam com `propose`
-levels = ["provenance", "schema", "anchors", "project"]
+# Fatia 1 implementa schema, anchors e project. coverage e evidence dependem de
+# tasks, que chegam com `propose`; provenance depende do manifest do `explore`,
+# que esta change ainda não produziu. Listar uma camada não implementada é erro
+# de configuração, não um pulo silencioso.
+levels = ["schema", "anchors", "project"]
 validation_command = ["npm", "run", "verify"]
 
 [verify.anchors]

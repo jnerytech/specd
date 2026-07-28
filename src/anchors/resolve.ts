@@ -29,11 +29,21 @@ export const LADDER_STEPS = {
 
 export type LadderStep = (typeof LADDER_STEPS)[keyof typeof LADDER_STEPS];
 
+// The specification tree is excluded from the fallback search. Every symbol
+// anchor writes its symbol verbatim inside a capability file, so without this
+// the search would always find at least that declaration: an anchor with no
+// real match would be "suggested" its own spec, and one with a real match would
+// look ambiguous and lose the suggestion. Anchors pointing into `.specd/` still
+// resolve normally at steps 1 to 3.
+export const SEARCH_EXCLUDE_PREFIXES: readonly string[] = [".specd/"];
+
 export interface ResolveContext {
   // Repository root; every anchor path is resolved from here (REQ-ANC-001).
   root: string;
   // `anchors.default` from the resolved configuration (REQ-ANC-004).
   defaultStrategy: AnchorStrategy;
+  // Overrides SEARCH_EXCLUDE_PREFIXES for the step 5 search.
+  searchExcludePrefixes?: readonly string[];
 }
 
 // REQ-ANC-002: five ordered steps, first match wins. The same input always
@@ -80,6 +90,7 @@ export function resolveAnchor(
   const matches = findSymbolInRepo(anchor.symbol, {
     root: ctx.root,
     exclude: [anchor.file],
+    excludePrefixes: ctx.searchExcludePrefixes ?? SEARCH_EXCLUDE_PREFIXES,
   });
   if (matches.length === 1) {
     return {

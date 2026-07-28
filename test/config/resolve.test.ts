@@ -69,12 +69,7 @@ describe("resolveConfig precedence", () => {
     const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
     const f = fixture({});
     const config = resolveConfig({ cwd: repoRoot, globalPath: f.globalPath });
-    expect(config.verify.levels).toEqual([
-      "provenance",
-      "schema",
-      "anchors",
-      "project",
-    ]);
+    expect(config.verify.levels).toEqual(["schema", "anchors", "project"]);
     expect(config.verify.validation_command).toEqual(["npm", "run", "verify"]);
     expect(config.project.client).toBe("jnerytech");
   });

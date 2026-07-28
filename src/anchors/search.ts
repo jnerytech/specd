@@ -16,6 +16,8 @@ export interface SearchOptions {
   // Files skipped entirely, relative to root — normally the anchor's own file,
   // which has already been checked.
   exclude?: readonly string[];
+  // Path prefixes skipped entirely, relative to root.
+  excludePrefixes?: readonly string[];
 }
 
 // Files above this size are not spec anchors; reading them would only cost
@@ -39,10 +41,12 @@ export function findSymbolInRepo(
   options: SearchOptions,
 ): SymbolMatch[] {
   const excluded = new Set(options.exclude ?? []);
+  const prefixes = options.excludePrefixes ?? [];
   const matches: SymbolMatch[] = [];
 
   for (const file of listFiles(options.root)) {
     if (excluded.has(file)) continue;
+    if (prefixes.some((prefix) => file.startsWith(prefix))) continue;
     const content = readTextFile(join(options.root, file));
     if (content === undefined) continue;
     const line = grepStrategy.find(content, symbol);

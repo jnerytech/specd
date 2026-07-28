@@ -65,7 +65,7 @@ export type FieldSpec =
   | { kind: "boolean" }
   | { kind: "integer" }
   | { kind: "enum"; values: readonly string[] }
-  | { kind: "string-array"; values?: readonly string[] }
+  | { kind: "string-array"; values?: readonly string[]; nonEmpty?: boolean }
   | { kind: "section"; fields: Record<string, FieldSpec> };
 
 function section(fields: Record<string, FieldSpec>): FieldSpec {
@@ -75,6 +75,15 @@ function section(fields: Record<string, FieldSpec>): FieldSpec {
 // Declarative schema of every supported key. Unknown keys and wrong types are
 // rejected at load time (REQ-CFG-002); this object is the single source of
 // truth for what "known" means.
+// REQ-VER-002: which layers run is configurable; the order they run in is not.
+// An empty list is rejected at load time — a gate that checks nothing would
+// pass silently, which is worse than no gate at all.
+export const VerifyLevelsSchema: FieldSpec = {
+  kind: "string-array",
+  values: VERIFY_LEVELS,
+  nonEmpty: true,
+};
+
 export const ConfigSchema: Record<string, FieldSpec> = {
   project: section({
     client: { kind: "string" },
@@ -86,7 +95,7 @@ export const ConfigSchema: Record<string, FieldSpec> = {
     token_env: { kind: "string", envName: true },
   }),
   verify: section({
-    levels: { kind: "string-array", values: VERIFY_LEVELS },
+    levels: VerifyLevelsSchema,
     validation_command: { kind: "string-array" },
     anchors: section({
       policy: { kind: "enum", values: ANCHOR_POLICIES },
@@ -194,6 +203,12 @@ function validateField(
     case "string-array": {
       if (!Array.isArray(value)) {
         throw typeMismatch(file, keyPath, "an array of strings", value);
+      }
+      if (spec.nonEmpty && value.length === 0) {
+        throw new ConfigError(
+          `Invalid configuration in ${file}: "${keyPath}" is empty. ` +
+            `Remove the key to keep the defaults, or list the values you want.`,
+        );
       }
       for (const item of value) {
         if (typeof item !== "string") {

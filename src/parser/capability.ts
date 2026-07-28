@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import { parse as parseYaml, YAMLParseError } from "yaml";
 import { ANCHOR_FENCE_INFO } from "./anchors.js";
 import { error, warning, type Diagnostic } from "./diagnostics.js";
@@ -131,16 +131,30 @@ export interface LoadedCapabilities {
   diagnostics: Diagnostic[];
 }
 
+export interface LoadOptions {
+  // Report paths relative to this root instead of as given. Diagnostics read
+  // better as `.specd/specs/cli.md:36` than as an absolute path.
+  pathsRelativeTo?: string;
+}
+
 // Reads every `*.md` under a `.specd/specs/` directory, in stable name order so
 // that two runs over the same tree report findings identically.
-export function loadCapabilities(specsDir: string): LoadedCapabilities {
+export function loadCapabilities(
+  specsDir: string,
+  options: LoadOptions = {},
+): LoadedCapabilities {
   const capabilities: Capability[] = [];
   const diagnostics: Diagnostic[] = [];
   const files = readdirSync(specsDir)
     .filter((name) => name.endsWith(".md"))
     .sort();
   for (const name of files) {
-    const parsed = parseCapabilityFile(join(specsDir, name));
+    const path = join(specsDir, name);
+    const display =
+      options.pathsRelativeTo === undefined
+        ? path
+        : relative(options.pathsRelativeTo, path).split(sep).join("/");
+    const parsed = parseCapability(readFileSync(path, "utf8"), display);
     diagnostics.push(...parsed.diagnostics);
     if (parsed.capability) capabilities.push(parsed.capability);
   }
