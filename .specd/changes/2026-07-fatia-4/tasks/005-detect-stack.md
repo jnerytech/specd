@@ -2,9 +2,9 @@
 id: "005-detect-stack"
 change: 2026-07-fatia-4
 req: [REQ-CFG-005]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["86c964643e7a6a4b995a7c5a25e902cdfbae70a3"]
 ---
 
 ## Objetivo

@@ -2,9 +2,9 @@
 id: "001-project-root"
 change: 2026-07-fatia-4
 req: [REQ-CFG-010, REQ-ANC-001]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["86c964643e7a6a4b995a7c5a25e902cdfbae70a3"]
 ---
 
 ## Objetivo

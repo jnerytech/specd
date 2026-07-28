@@ -2,9 +2,9 @@
 id: "002-listing-fallback"
 change: 2026-07-fatia-4
 req: [REQ-ANC-009]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["86c964643e7a6a4b995a7c5a25e902cdfbae70a3"]
 ---
 
 ## Objetivo
