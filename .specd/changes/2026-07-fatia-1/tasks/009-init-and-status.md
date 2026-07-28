@@ -4,7 +4,7 @@ change: 2026-07-fatia-1
 req: [REQ-CFG-004, REQ-CFG-005, REQ-CFG-006, REQ-CLI-006]
 status: done
 evidence:
-  commits: []
+  commits: [68e3f86e9e0df3f10a04be5fe3d6e304e25314a1]
 ---
 
 ## Objetivo
