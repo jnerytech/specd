@@ -9,13 +9,14 @@ evidence:
 
 ## Objetivo
 
-Camada provenance, com REQ-VER-003 reescrito.
+Camada provenance com condição de guarda
 
 ## Escopo
 
-Distinguir change dirigida por card, que exige `explore/manifest.json`, de change escrita à mão, que não exige. Reabilitar `provenance` em `verify.levels`.
+A camada só exige `explore/manifest.json` quando a configuração declara ao menos uma fonte `required`. Reativada em `verify.levels`.
 
 ## Restrições
 
-- Como REQ-VER-003 está escrito hoje, ele reprovaria qualquer change sem bundle, inclusive esta e a Fatia 2
-- Depende do transporte MCP estar decidido: reescrever agora seria decidir duas vezes
+- Projeto que não declarou fonte obrigatória não pediu procedência nenhuma
+- Fonte required com status diferente de `ok` reprova e é nomeada
+- `draft.md` nunca é lido aqui, por REQ-EXP-007

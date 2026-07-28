@@ -5,11 +5,11 @@ client = "jnerytech"
 language = "pt-BR"
 
 [verify]
-# Fatia 2 liga coverage e evidence. `provenance` continua fora: como REQ-VER-003
-# está escrito, ele reprova qualquer change sem bundle de `explore`, o que inclui
-# as changes escritas à mão. Espera a Fatia 3. Listar uma camada não implementada
-# é erro de configuração, não um pulo silencioso.
-levels = ["schema", "coverage", "anchors", "evidence", "project"]
+# As seis camadas. `provenance` voltou na Fatia 3, com a condição de guarda que
+# faltava: ele só exige bundle quando a configuração declara alguma fonte
+# `required`. Este repositório não declara nenhuma, então a camada roda e não
+# cobra nada — e volta a cobrar no dia em que uma fonte obrigatória aparecer.
+levels = ["provenance", "schema", "coverage", "anchors", "evidence", "project"]
 validation_command = ["npm", "run", "verify"]
 
 [verify.anchors]

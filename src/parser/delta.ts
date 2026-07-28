@@ -15,6 +15,10 @@ export const DELTA_SECTIONS = ["ADDED", "MODIFIED", "REMOVED"] as const;
 export type DeltaSection = (typeof DELTA_SECTIONS)[number];
 
 const CAPABILITY_LABEL = /^\s*\*\*Capability\.?\*\*\s*(.*)$/;
+// How a section says "deliberately nothing here". Both languages, because the
+// prose of a requirement may be written in either (REQ-EARS-002).
+const EMPTY_MARKER = /^(nenhum|nenhuma|none|n\/a)\b/i;
+const LIST_ITEM = /^[-*]\s+(.*)$/;
 
 export interface DeltaRequirement {
   section: "ADDED" | "MODIFIED";
@@ -96,6 +100,7 @@ export function parseDelta(source: string, file: string): ParsedDelta {
 
   for (const span of spans) {
     if (span.name === "REMOVED") {
+      diagnostics.push(...assertSectionReadable(span, 0, file));
       for (const id of readRemoved(span.lines, file, diagnostics)) {
         recordSection(seen, id, "REMOVED", file, span.line, diagnostics);
         delta.removed.push(id);
@@ -109,6 +114,7 @@ export function parseDelta(source: string, file: string): ParsedDelta {
       file,
       diagnostics,
     );
+    diagnostics.push(...assertSectionReadable(span, sections.length, file));
     for (const section of sections) {
       recordSection(
         seen,
@@ -179,6 +185,94 @@ export function assertFullReplacement(
       `Requirement ${requirement.id} appears under ${section} without "**Acceptance.**" criteria. ` +
       `A delta block carries the complete requirement, not a patch.`,
   });
+}
+
+// REQ-FMT-009 — Unreadable delta content is rejected, never ignored.
+//
+// The distinction between a legitimately empty section and one the parser
+// cannot read is the whole requirement. A change with no removals writes an
+// empty REMOVED and that is true; a change whose ADDED lists forty identifiers
+// as bullets has content the parser reads as nothing, and reading nothing as
+// conformance is how archiving Fatia 1 exited 0 having verified nothing.
+//
+// Same family as the vacuous pass: absence of data presented as approval.
+export function assertSectionReadable(
+  span: SectionSpan,
+  blocksFound: number,
+  file: string,
+): Diagnostic[] {
+  const content = span.lines.filter(
+    (line) => !line.fenced && line.text.trim().length > 0,
+  );
+  if (content.length === 0) return [];
+
+  const findings: Diagnostic[] = [];
+  const first = content[0] as SourceLine;
+
+  if (span.name === "REMOVED") {
+    for (const line of content) {
+      const text = line.text.trim();
+      if (EMPTY_MARKER.test(text)) continue;
+      const bullet = LIST_ITEM.exec(text);
+      if (
+        bullet &&
+        isValidRequirementId((bullet[1] as string).split(/\s+/)[0] as string)
+      ) {
+        continue;
+      }
+      findings.push(
+        error({
+          file,
+          line: line.line,
+          message:
+            `REMOVED accepts only requirement identifiers, one per list item, and this line is neither ` +
+            `an identifier nor an explicit empty marker. Prose here would be silently dropped.`,
+        }),
+      );
+    }
+    return findings;
+  }
+
+  // A section whose only content is an empty marker is deliberately empty.
+  if (content.every((line) => EMPTY_MARKER.test(line.text.trim()))) return [];
+
+  if (blocksFound === 0) {
+    findings.push(
+      error({
+        file,
+        line: first.line,
+        message:
+          `Section ${span.name} has content but no requirement block, so the parser reads it as empty. ` +
+          `Under Modelo B a delta carries the complete requirement under a "### REQ-…" heading; ` +
+          `a list of identifiers is the old manifest form and no longer says anything.`,
+      }),
+    );
+    return findings;
+  }
+
+  // Prose before the first block is a legitimate lead-in. A list item naming an
+  // identifier outside every block is not: it is a manifest entry that would
+  // contribute nothing while looking like a declaration.
+  const firstBlockLine = span.lines.find(
+    (line) => /^#{3}\s+REQ-/.test(line.text) && !line.fenced,
+  )?.line;
+  for (const line of content) {
+    if (firstBlockLine !== undefined && line.line > firstBlockLine) break;
+    const bullet = LIST_ITEM.exec(line.text.trim());
+    if (!bullet) continue;
+    const token = (bullet[1] as string).split(/\s+/)[0] as string;
+    if (!isValidRequirementId(token)) continue;
+    findings.push(
+      error({
+        file,
+        line: line.line,
+        message:
+          `${token} is listed as a bare item under ${span.name} rather than declared as a requirement block. ` +
+          `It would be parsed as nothing at all — write the complete requirement, or drop the line.`,
+      }),
+    );
+  }
+  return findings;
 }
 
 interface SectionSpan {

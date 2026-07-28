@@ -50,16 +50,17 @@ function deltaIds(section: "ADDED" | "MODIFIED"): string[] {
 describe("specd verifies this repository", () => {
   it("runs the layers this repository configures", async () => {
     const report = await run();
+    // All six. Nothing is switched off, so "green" cannot mean "green for the
+    // checks that happened to be running".
     expect(report.layers.map((l) => l.layer)).toEqual([
+      "provenance",
       "schema",
       "coverage",
       "anchors",
       "evidence",
       "project",
     ]);
-    // `provenance` waits on Fatia 3: REQ-VER-003 as written rejects any change
-    // without an explore bundle, which would reject the hand-written ones.
-    expect(report.disabled).toEqual(["provenance"]);
+    expect(report.disabled).toEqual([]);
   });
 
   // Deliberately no count: requirements get added, and a number in the name

@@ -152,12 +152,12 @@ Quando o `verify` existir, o primeiro repositório que ele valida é este.
 
 ## Roadmap
 
-| Fatia | Escopo                                                          | Status                    |
-| ----- | --------------------------------------------------------------- | ------------------------- |
-| 1     | `init` · `explore` · `verify` · `status` · `anchor suggest`       | Entregue                  |
-| 2     | `archive` · `anchor fix` · camadas coverage e evidence            | Entregue                  |
-| 3     | camada provenance · transporte MCP                                | Entregue                  |
-| 4     | `propose` · `apply` · `sync` · memória · hooks                    | Especificada parcialmente |
+| Fatia | Escopo                                                      | Status                    |
+| ----- | ----------------------------------------------------------- | ------------------------- |
+| 1     | `init` · `explore` · `verify` · `status` · `anchor suggest` | Entregue                  |
+| 2     | `archive` · `anchor fix` · camadas coverage e evidence      | Entregue                  |
+| 3     | camada provenance · transporte MCP                          | Entregue                  |
+| 4     | `propose` · `apply` · `sync` · memória · hooks              | Especificada parcialmente |
 
 A Fatia 2 fechou o ciclo `change → verify → archive`: uma change do specd passa a poder ser encerrada pela própria ferramenta, que aplica o delta às capabilities e arquiva o diretório.
 

@@ -10,6 +10,7 @@ import { anchorsLayer } from "./layers/anchors.js";
 import { coverageLayer } from "./layers/coverage.js";
 import { evidenceLayer } from "./layers/evidence.js";
 import { projectLayer } from "./layers/project.js";
+import { provenanceLayer } from "./layers/provenance.js";
 import { schemaLayer } from "./layers/schema.js";
 import type { VerifyLayer, VerifyLayerContext } from "./layers/types.js";
 import type { LayerReport, VerifyReport, Violation } from "./report.js";
@@ -25,10 +26,12 @@ export const LAYER_ORDER: readonly VerifyLevel[] = [
   "project",
 ] as const;
 
-// Layers implemented in this version. A configured layer that is not here is a
-// configuration error rather than a silent pass: a gate that quietly skips a
-// layer the project asked for is reporting a check it never ran.
+// Every layer of LAYER_ORDER is implemented as of Fatia 3. The map stays, and
+// so does the check below: a layer named in the configuration but absent here
+// must be a configuration error, never a silent pass — a gate that quietly
+// skips a layer the project asked for is reporting a check it never ran.
 const IMPLEMENTED: Readonly<Record<string, VerifyLayer>> = {
+  provenance: provenanceLayer,
   schema: schemaLayer,
   coverage: coverageLayer,
   anchors: anchorsLayer,

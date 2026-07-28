@@ -70,6 +70,7 @@ describe("resolveConfig precedence", () => {
     const f = fixture({});
     const config = resolveConfig({ cwd: repoRoot, globalPath: f.globalPath });
     expect(config.verify.levels).toEqual([
+      "provenance",
       "schema",
       "coverage",
       "anchors",

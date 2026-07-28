@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Anchor } from "../../src/anchors/model.js";
 import {
   LADDER_STEPS,
+  SEARCH_EXCLUDE_PREFIXES,
   resolveAnchor,
   type AnchorResolution,
 } from "../../src/anchors/resolve.js";
@@ -134,5 +135,18 @@ describe("determinism", () => {
       JSON.stringify(resolve(fixture, anchor)),
     );
     expect(new Set(runs).size).toBe(1);
+  });
+});
+
+// REQ-ANC-003: the fallback search ignores the trees that name symbols without
+// declaring them — specs, deltas and design documents all quote the symbol an
+// anchor points at.
+describe("fallback search exclusions", () => {
+  it("excludes the spec, change and documentation trees", () => {
+    expect([...SEARCH_EXCLUDE_PREFIXES]).toEqual([
+      ".specd/",
+      "openspec/",
+      "docs/",
+    ]);
   });
 });

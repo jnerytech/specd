@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { EXIT } from "../../src/cli/exit-codes.js";
 import { ConfigError } from "../../src/config/errors.js";
 import { LAYER_ORDER, verify } from "../../src/verify/index.js";
 import type { VerifyReport } from "../../src/verify/report.js";
@@ -102,19 +101,22 @@ describe("configured levels", () => {
     ).rejects.toThrow(ConfigError);
   });
 
-  it("a configured layer that is not implemented is a configuration error", async () => {
+  // Every layer of LAYER_ORDER is implemented as of Fatia 3, so the
+  // configuration can no longer name one that is missing. The guard that used
+  // to be exercised by configuring `provenance` is now this invariant: adding a
+  // layer to the order without writing it must fail here rather than silently
+  // skip a check the project asked for.
+  it("implements every layer LAYER_ORDER declares", async () => {
     const workspace = makeWorkspace({
-      // `provenance` is specified (REQ-VER-003) and waits on Fatia 3.
-      config: '[verify]\nlevels = ["provenance"]\n',
+      config: `[verify]\nlevels = [${LAYER_ORDER.map((l) => `"${l}"`).join(", ")}]\n`,
     });
-    const attempt = verify({
+    const report = await verify({
       cwd: workspace.root,
       globalPath: workspace.globalPath,
+      fast: true,
     });
-    await expect(attempt).rejects.toThrow(/not implemented in this version/);
-    await expect(attempt).rejects.toMatchObject({
-      exitCode: EXIT.OPERATIONAL_FAILURE,
-    });
+    expect(report.disabled).toEqual([]);
+    expect(report.layers.map((l) => l.layer)).toEqual([...LAYER_ORDER]);
   });
 });
 

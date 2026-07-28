@@ -35,7 +35,18 @@ export type LadderStep = (typeof LADDER_STEPS)[keyof typeof LADDER_STEPS];
 // real match would be "suggested" its own spec, and one with a real match would
 // look ambiguous and lose the suggestion. Anchors pointing into `.specd/` still
 // resolve normally at steps 1 to 3.
-export const SEARCH_EXCLUDE_PREFIXES: readonly string[] = [".specd/"];
+// REQ-ANC-003: trees that name symbols without declaring them.
+//
+// Every symbol anchor writes its symbol verbatim in the capability that
+// declares it, a delta restates it while the work is in flight, and a design
+// document discusses it in prose. Without these exclusions a dangling anchor is
+// "found" in the very file that declared it, and a genuine single match looks
+// ambiguous — the fallback search would report drift back to its own source.
+export const SEARCH_EXCLUDE_PREFIXES: readonly string[] = [
+  ".specd/",
+  "openspec/",
+  "docs/",
+];
 
 export interface ResolveContext {
   // Repository root; every anchor path is resolved from here (REQ-ANC-001).

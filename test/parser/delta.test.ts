@@ -39,8 +39,10 @@ describe("delta sections", () => {
   });
 
   it("rejects a body under REMOVED", () => {
-    const found = messages(`${HEAD}## REMOVED\n\n- not-an-identifier\n`);
-    expect(found[0]).toContain("is not a requirement identifier");
+    const found = messages(`${HEAD}## REMOVED\n\n- not-an-identifier\n`).join(
+      " ",
+    );
+    expect(found).toContain("accepts only requirement identifiers");
   });
 
   it("rejects the same identifier in two sections", () => {
@@ -103,6 +105,53 @@ describe("full text", () => {
   });
 
   it("accepts a block with no anchors, because anchors are optional", () => {
+    expect(messages(`${HEAD}## ADDED\n\n${BLOCK("REQ-DEMO-001")}`)).toEqual([]);
+  });
+});
+
+// REQ-FMT-009 — Unreadable delta content is rejected, never ignored
+describe("unreadable sections", () => {
+  it("rejects a section with content but no requirement block", () => {
+    // The exact shape of `2026-07-fatia-1`'s delta: a manifest of identifiers.
+    // The parser read it as zero requirements, and `archive` exited 0 having
+    // verified nothing.
+    const found = messages(
+      `${HEAD}## ADDED\n\n### cli\n- REQ-CLI-001 — Single gate\n- REQ-CLI-002 — No LLM\n`,
+    ).join(" ");
+    expect(found).toContain("has content but no requirement block");
+    expect(found).toContain("the old manifest form");
+  });
+
+  it("rejects a bare identifier listed beside real blocks", () => {
+    const found = messages(
+      `${HEAD}## ADDED\n\n- REQ-DEMO-009 — Forgotten\n\n${BLOCK("REQ-DEMO-001")}`,
+    ).join(" ");
+    expect(found).toContain("REQ-DEMO-009 is listed as a bare item");
+  });
+
+  it("accepts a section with no content at all", () => {
+    expect(
+      messages(`${HEAD}## ADDED\n\n${BLOCK("REQ-DEMO-001")}\n## REMOVED\n`),
+    ).toEqual([]);
+  });
+
+  it("accepts an explicit empty marker in any section", () => {
+    expect(
+      messages(`${HEAD}## ADDED\n\nNenhum.\n\n## MODIFIED\n\nNone.\n`),
+    ).toEqual([]);
+  });
+
+  it("accepts prose before the first block", () => {
+    expect(
+      messages(
+        `${HEAD}## ADDED\n\nToda a fatia é greenfield.\n\n${BLOCK("REQ-DEMO-001")}`,
+      ),
+    ).toEqual([]);
+  });
+
+  it("ignores content inside a fenced block", () => {
+    // An anchor block names files, not requirements; its lines must not be
+    // read as section content.
     expect(messages(`${HEAD}## ADDED\n\n${BLOCK("REQ-DEMO-001")}`)).toEqual([]);
   });
 });
