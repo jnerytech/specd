@@ -2,7 +2,7 @@
 id: 008-explore-collectors
 change: 2026-07-fatia-1
 req: [REQ-EXP-001, REQ-EXP-002, REQ-EXP-003, REQ-EXP-004, REQ-EXP-005, REQ-EXP-006]
-status: pending
+status: done
 evidence:
   commits: []
 ---

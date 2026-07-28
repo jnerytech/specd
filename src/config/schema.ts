@@ -17,11 +17,43 @@ export type AnchorPolicy = (typeof ANCHOR_POLICIES)[number];
 export const ANCHOR_STRATEGIES = ["grep", "treesitter"] as const;
 export type AnchorStrategy = (typeof ANCHOR_STRATEGIES)[number];
 
+// REQ-EXP-002: the four source types `explore` supports. A type outside this
+// list is a configuration error, not an ignored entry.
+export const SOURCE_TYPES = ["board", "git", "mcp", "http"] as const;
+export type SourceType = (typeof SOURCE_TYPES)[number];
+
+export interface ExploreSource {
+  // Identifies the source in the manifest and names its output file.
+  name: string;
+  type: SourceType;
+  // REQ-EXP-003: a required source that fails blocks the bundle.
+  required?: boolean;
+  // REQ-EXP-005: field paths removed before the payload is written.
+  redact?: string[];
+  // `http` and `mcp`: endpoint. `board`: overrides board.url_template.
+  url?: string;
+  // `git`: argv passed to git, without the executable.
+  args?: string[];
+  // `mcp`: tool to call and the arguments to call it with.
+  tool?: string;
+  arguments?: Record<string, unknown>;
+  // Environment variable holding the bearer token for this source
+  // (REQ-CFG-003). For `board`, defaults to board.token_env.
+  token_env?: string;
+}
+
 // Fully resolved configuration: fields with built-in defaults are always
 // present; the rest stay optional.
 export interface SpecdConfig {
   project: { client?: string; language: string };
-  board: { provider?: string; project?: string; token_env?: string };
+  board: {
+    provider?: string;
+    project?: string;
+    token_env?: string;
+    // Template for a card endpoint, with {project} and {card} placeholders.
+    url_template?: string;
+  };
+  explore: { sources: ExploreSource[] };
   verify: {
     levels: VerifyLevel[];
     validation_command?: string[];
@@ -40,6 +72,7 @@ export interface SpecdConfig {
 export interface PartialConfig {
   project?: Partial<SpecdConfig["project"]>;
   board?: Partial<SpecdConfig["board"]>;
+  explore?: { sources?: ExploreSource[] };
   verify?: {
     levels?: VerifyLevel[];
     validation_command?: string[];
@@ -52,6 +85,7 @@ export interface PartialConfig {
 export const DEFAULT_CONFIG: SpecdConfig = {
   project: { language: "en" },
   board: {},
+  explore: { sources: [] },
   verify: {
     levels: [...VERIFY_LEVELS],
     anchors: { policy: "graduated" },
@@ -66,6 +100,12 @@ export type FieldSpec =
   | { kind: "integer" }
   | { kind: "enum"; values: readonly string[] }
   | { kind: "string-array"; values?: readonly string[]; nonEmpty?: boolean }
+  | { kind: "table" }
+  | {
+      kind: "table-array";
+      fields: Record<string, FieldSpec>;
+      requiredFields?: readonly string[];
+    }
   | { kind: "section"; fields: Record<string, FieldSpec> };
 
 function section(fields: Record<string, FieldSpec>): FieldSpec {
@@ -93,6 +133,27 @@ export const ConfigSchema: Record<string, FieldSpec> = {
     provider: { kind: "string" },
     project: { kind: "string" },
     token_env: { kind: "string", envName: true },
+    url_template: { kind: "string" },
+  }),
+  explore: section({
+    // REQ-EXP-002: sources are declared as an array of tables; every entry is
+    // validated against the same field set, so an unknown type or a misspelled
+    // key fails at load time rather than mid-collection.
+    sources: {
+      kind: "table-array",
+      requiredFields: ["name", "type"],
+      fields: {
+        name: { kind: "string" },
+        type: { kind: "enum", values: SOURCE_TYPES },
+        required: { kind: "boolean" },
+        redact: { kind: "string-array" },
+        url: { kind: "string" },
+        args: { kind: "string-array" },
+        tool: { kind: "string" },
+        arguments: { kind: "table" },
+        token_env: { kind: "string", envName: true },
+      },
+    },
   }),
   verify: section({
     levels: VerifyLevelsSchema,
@@ -198,6 +259,39 @@ function validateField(
           value,
         );
       }
+      return;
+    }
+    case "table": {
+      // Free-form payload (MCP tool arguments): the remote tool owns its own
+      // schema, so specd only insists that it is a table.
+      if (value === null || typeof value !== "object" || Array.isArray(value)) {
+        throw typeMismatch(file, keyPath, "a table", value);
+      }
+      return;
+    }
+    case "table-array": {
+      if (!Array.isArray(value)) {
+        throw typeMismatch(file, keyPath, "an array of tables", value);
+      }
+      value.forEach((entry, index) => {
+        const at = `${keyPath}[${index}]`;
+        if (
+          entry === null ||
+          typeof entry !== "object" ||
+          Array.isArray(entry)
+        ) {
+          throw typeMismatch(file, at, "a table", entry);
+        }
+        const table = entry as Record<string, unknown>;
+        validateSection(table, spec.fields, file, at.split("."));
+        for (const required of spec.requiredFields ?? []) {
+          if (table[required] === undefined) {
+            throw new ConfigError(
+              `Invalid configuration in ${file}: "${at}" is missing the required key "${required}".`,
+            );
+          }
+        }
+      });
       return;
     }
     case "string-array": {

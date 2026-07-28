@@ -1,4 +1,5 @@
 import { formatSuggestReport, suggestAnchors } from "../anchors/suggest.js";
+import { explore } from "../explore/index.js";
 import { verify } from "../verify/index.js";
 import { formatReport } from "../verify/report.js";
 import { EXIT, type ExitCode } from "./exit-codes.js";
@@ -21,6 +22,7 @@ Usage: specd <command> [options]
 
 Commands:
   verify                            Run the gate over this repository
+  explore <card> --change <name>    Collect the configured sources into a bundle
   anchor suggest <capability>       Report anchor candidates for a capability
   help                              Show this message
 
@@ -38,7 +40,12 @@ Exit codes: 0 success, 1 gate failure, 2 operational failure.
 // gate, and it is `verify`. Everything else here may only fail operationally.
 export function registerCommands(): Map<string, Command> {
   const commands = new Map<string, Command>();
-  for (const command of [verifyCommand, anchorCommand, helpCommand]) {
+  for (const command of [
+    verifyCommand,
+    exploreCommand,
+    anchorCommand,
+    helpCommand,
+  ]) {
     commands.set(command.name, command);
   }
   return commands;
@@ -63,6 +70,56 @@ const verifyCommand: Command = {
     return report.ok ? EXIT.OK : EXIT.GATE_FAILURE;
   },
 };
+
+// REQ-CLI-001: `explore` reaches the network and may fail, but only ever
+// operationally — a failed required source is exit 2, not a gate verdict.
+const exploreCommand: Command = {
+  name: "explore",
+  summary: "Collect the configured sources into a bundle",
+  async run(argv, io): Promise<ExitCode> {
+    const { positional, options } = parseArguments(
+      argv,
+      ["--change"],
+      ["--json"],
+    );
+    const card = positional[0];
+    if (card === undefined || positional.length > 1) {
+      throw new UsageError(
+        "Usage: specd explore <card> --change <name> — exactly one card identifier or URL.",
+      );
+    }
+    const change = options.get("--change");
+    if (change === undefined) {
+      throw new UsageError(
+        "Usage: specd explore <card> --change <name> — --change names the change directory the bundle belongs to.",
+      );
+    }
+
+    const result = await explore({ card, change, cwd: io.cwd });
+    io.stdout(
+      options.has("--json")
+        ? `${JSON.stringify(result.manifest, null, 2)}\n`
+        : `${formatManifest(result)}\n`,
+    );
+    return EXIT.OK;
+  },
+};
+
+function formatManifest(result: Awaited<ReturnType<typeof explore>>): string {
+  const lines = [
+    `Bundle written to ${result.bundlePath}`,
+    `card ${result.manifest.card.id}${result.manifest.card.provider ? ` (${result.manifest.card.provider})` : ""}`,
+  ];
+  for (const source of result.manifest.sources) {
+    const flag = source.required ? "required" : "optional";
+    const detail = source.error ? ` — ${source.error}` : "";
+    lines.push(
+      `  ${source.status.padEnd(7)} ${source.name} [${flag}]${detail}`,
+    );
+  }
+  lines.push(result.manifest.usable ? "bundle: usable" : "bundle: not usable");
+  return lines.join("\n");
+}
 
 // REQ-CLI-001: `anchor` reads and reports. It returns non-zero only when it
 // cannot run — an ambiguous capability name, a missing spec tree — never as a
@@ -116,6 +173,48 @@ export class UsageError extends Error {
     super(message);
     this.name = "UsageError";
   }
+}
+
+export interface ParsedArguments {
+  positional: string[];
+  // Boolean flags are present with no value; `--name value` options carry one.
+  options: Map<string, string> & { has(name: string): boolean };
+}
+
+// Minimal argv parser: positionals, `--name value` options, boolean flags.
+// Anything not declared is a usage error rather than a silently ignored word.
+function parseArguments(
+  argv: string[],
+  valued: string[],
+  flags: string[],
+): ParsedArguments {
+  const options = new Map<string, string>();
+  const positional: string[] = [];
+
+  for (let i = 0; i < argv.length; i++) {
+    const argument = argv[i] as string;
+    if (!argument.startsWith("-")) {
+      positional.push(argument);
+      continue;
+    }
+    if (flags.includes(argument)) {
+      options.set(argument, "");
+      continue;
+    }
+    if (valued.includes(argument)) {
+      const value = argv[++i];
+      if (value === undefined || value.startsWith("-")) {
+        throw new UsageError(`Option "${argument}" needs a value.`);
+      }
+      options.set(argument, value);
+      continue;
+    }
+    throw new UsageError(
+      `Unknown option "${argument}". Valid options: ${[...valued, ...flags].join(", ")}.`,
+    );
+  }
+
+  return { positional, options: options as ParsedArguments["options"] };
 }
 
 function parseFlags(argv: string[], allowed: string[]): Set<string> {
