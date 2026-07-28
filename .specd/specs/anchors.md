@@ -14,7 +14,7 @@ O diferencial do specd. Uma âncora declara onde um requisito é realizado no c�
 **Acceptance.**
 - `{file}` sem `symbol` é válido
 - `{symbol}` sem `file` reprova
-- `file` é resolvido a partir da raiz do repositório
+- `file` é resolvido a partir da raiz do projeto, como REQ-CFG-010 a define
 
 ```yaml anchors
 - file: src/anchors/model.ts
@@ -131,4 +131,63 @@ por ambíguo. Código sem requisito é o começo de drift na direção contrári
 ```yaml anchors
 - file: src/anchors/fix.ts
   symbol: "export async function fixAnchor"
+```
+
+### REQ-ANC-009 — Listing falls back to the filesystem
+
+**Statement.** IF listing the repository with git yields no file, THEN the specd anchor resolver SHALL walk the filesystem from the project root instead.
+
+**Acceptance.**
+- Git que falha cai para a caminhada
+- Git que sucede e devolve zero arquivos também cai para a caminhada
+- Git que devolve ao menos um arquivo é usado, e `.gitignore` continua respeitado
+- A caminhada pula `.git`, `node_modules` e diretórios de build
+
+Git sucedendo com zero resultados não é repositório vazio: é o listador cego. Em
+diretório ignorado pelo repositório pai, `git ls-files` sai 0 e devolve nada, e a
+escada perdia o passo 5 inteiro sem que nada acusasse.
+
+```yaml anchors
+- file: src/anchors/search.ts
+  symbol: "export function listRepository"
+```
+
+### REQ-ANC-010 — A match is an identifier, not a substring
+
+**Statement.** The specd anchor resolver SHALL consider a symbol matched only where it is delimited by characters that cannot belong to an identifier.
+
+**Acceptance.**
+- `TenantAccessor` não casa `TenantAccessorRegisterMiddleware`
+- `Enrollment` não casa `EnrollmentRepository`
+- Símbolo seguido de `(`, `:`, espaço, aspas ou fim de linha casa
+- A regra vale igualmente no passo 3 e na busca do passo 5
+
+Substring era a escolha implícita, e ela colide com prefixo de identificador
+mais longo. O caso não é hipotético: num repositório real, `public class
+TenantAccessor` casava também `public class TenantAccessorRegisterMiddleware`, e
+a escada recusava sugestão por ambiguidade que não existia — acertando o
+resultado pelo motivo errado.
+
+```yaml anchors
+- file: src/anchors/strategies/grep.ts
+  symbol: "export const grepStrategy"
+```
+
+### REQ-ANC-011 — Suggestion discards terms that match too widely
+
+**Statement.** The specd anchor suggester SHALL discard any candidate term that matches more files than the configured ceiling.
+
+**Acceptance.**
+- Termo que casa acima do teto não aparece no relatório
+- O relatório diz quantos termos foram descartados e por quê
+- Termo descartado nunca vira sugestão, mesmo sem alternativa
+
+Um termo que casa cento e dezenove arquivos não é símbolo, é namespace. Num
+repositório onde o nome do produto é a raiz de todo namespace, o extrator
+produzia quinze candidatas e nenhuma utilizável — relatório que ninguém lê é
+pior que relatório vazio, porque custa a leitura antes de ser descartado.
+
+```yaml anchors
+- file: src/anchors/suggest.ts
+  symbol: "TERM_FILE_CEILING"
 ```

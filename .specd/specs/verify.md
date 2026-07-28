@@ -173,3 +173,24 @@ projeto que não declarou fonte obrigatória não pediu procedência nenhuma.
 - file: src/verify/layers/provenance.ts
   symbol: "export const provenanceLayer"
 ```
+
+### REQ-VER-012 — The anchors layer reports how the repository was listed
+
+**Statement.** The specd verifier SHALL record in the anchors layer report which listing mode was used and how many files it saw.
+
+**Acceptance.**
+- O relatório nomeia o modo, `git` ou `walk`
+- O relatório traz a contagem de arquivos enxergados
+- Zero arquivos enxergados produz warning, mesmo com toda âncora resolvendo
+- A mensagem diz que o passo 5 não pode sugerir nada nesse estado
+
+P8. Verde não pode significar duas coisas diferentes: "toda âncora resolve" e
+"toda âncora resolve, e se uma quebrasse eu saberia onde procurar" são estados
+distintos, e o relatório não os separava.
+
+```yaml anchors
+- file: src/verify/layers/anchors.ts
+  symbol: "export const anchorsLayer"
+- file: src/verify/report.ts
+  symbol: "export interface LayerReport"
+```

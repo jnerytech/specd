@@ -53,6 +53,13 @@ Resolução de configuração, bootstrap do projeto e relatório de situação.
 **Acceptance.**
 - Arquivo gerado não é esqueleto vazio
 - Rodar `verify` logo após `init` não produz erro de configuração
+- `verify.levels` lista todas as camadas de `LAYER_ORDER`, sem omitir nenhuma implementada
+- Os diretórios criados são exatamente `.specd/specs/`, `.specd/changes/` e `.specd/changes/archive/`
+
+O terceiro critério é gatilhável: um teste compara o template com `LAYER_ORDER`
+e reprova quando divergem. O quarto corrige diretório órfão — `init` criava
+`.specd/archive/`, que nenhum comando lê, enquanto `archive` escreve dentro de
+`changes/`.
 
 ```yaml anchors
 - file: src/init/config-template.ts
@@ -61,12 +68,22 @@ Resolução de configuração, bootstrap do projeto e relatório de situação.
 
 ### REQ-CFG-005 — Init detects the stack
 
-**Statement.** The specd init command SHALL propose a `validation_command` matching the build manifests found in the repository.
+**Statement.** The specd init command SHALL propose a `validation_command` matching the build manifests found in the repository, naming any manifest it recognised without knowing a command for it.
 
 **Acceptance.**
 - Presença de `package.json` propõe comando de teste do npm
 - Presença de `pyproject.toml` propõe pytest
-- Nenhuma detecção deixa o campo comentado com instrução
+- Presença de `.sln` ou `.csproj` propõe `dotnet test`
+- Presença de `Makefile` propõe o alvo de verificação encontrado nele
+- Manifesto reconhecido sem comando conhecido deixa o campo comentado e **nomeia o manifesto encontrado**
+- Nenhum manifesto encontrado deixa o campo comentado e diz isso
+
+A honestidade sobre a falha faz parte da mesma cláusula, e não de um segundo
+`SHALL`: propor e dizer o que se encontrou ao não conseguir propor são o mesmo
+comportamento. Separá-los deixaria o gate aceitar uma mensagem falsa desde que o
+campo ficasse comentado — que é exatamente o que acontecia, com `init` afirmando
+"no build manifest recognised" num repositório com um `.sln` na raiz e doze
+`.csproj`.
 
 ```yaml anchors
 - file: src/init/detect-stack.ts
@@ -133,4 +150,25 @@ dívida juntas tornam o encalhe visível sem que a ferramenta julgue.
 ```yaml anchors
 - file: src/status/changes.ts
   symbol: "warningDebt"
+```
+
+### REQ-CFG-010 — Project root is the directory holding `.specd/`
+
+**Statement.** The specd CLI SHALL treat as the project root the nearest directory at or above the working directory that contains `.specd/`.
+
+**Acceptance.**
+- Rodar de um subdiretório resolve a mesma raiz que rodar da raiz
+- Raiz não depende de existir repositório git
+- Raiz não depende de o diretório ser ignorado por um repositório pai
+- Ausência de `.specd/` em qualquer ancestral sai com código 2
+
+Havia duas definições concorrentes de raiz dentro do mesmo comando: o passo 3 da
+escada resolvia caminho a partir do `cwd` e o passo 5 listava arquivos a partir
+do toplevel do git. Elas divergem exatamente no caso que motivou esta fatia — um
+projeto specd dentro de uma árvore ignorada pelo repositório pai. Projeto specd é
+definido por ter `.specd/`, e nada mais.
+
+```yaml anchors
+- file: src/core/root.ts
+  symbol: "export function findProjectRoot"
 ```
