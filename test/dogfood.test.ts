@@ -86,13 +86,19 @@ describe("specd verifies this repository", () => {
     expect(report.ok).toBe(true);
   });
 
-  // The whole spec under the whole gate, with nothing in flight and nothing
-  // switched off. This is the state the three slices were building towards: a
-  // green result that cannot be explained by a check that did not run.
-  it("runs every layer over every requirement, with nothing outstanding", async () => {
+  // The whole spec under the whole gate, with nothing switched off: a green
+  // result that cannot be explained by a check that did not run.
+  //
+  // This used to also assert zero violations, which quietly encoded "no change
+  // is open" as a gate criterion. Under Modelo B an open change is expected to
+  // carry dangling anchors — that is what a delta is — so the assertion failed
+  // the moment the tool was used as designed. What each violation is allowed to
+  // be is asserted below, on shape rather than on count.
+  it("runs every layer over every requirement, with nothing switched off", async () => {
     const report = await run();
-    expect(report.violations).toEqual([]);
     expect(report.disabled).toEqual([]);
+    expect(report.stoppedAt).toBeUndefined();
+    expect(report.layers.every((l) => l.status !== "failed")).toBe(true);
   });
 
   // REQ-VER-012 / P8: green must not mean two things. The anchors layer says
