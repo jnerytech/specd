@@ -17,7 +17,7 @@ Behavior contract: REQ-IDs in `.specd/specs/`. Task details and acceptance: `.sp
 
 ## 3. Independent (parallel-capable)
 
-- [ ] 3.1 Task 001 — anchor bootstrap report [REQ-ANC-001, REQ-ANC-003, REQ-CLI-003] (`001-anchor-bootstrap-report.md`)
+- [x] 3.1 Task 001 — anchor bootstrap report [REQ-ANC-001, REQ-ANC-003, REQ-CLI-003] (`001-anchor-bootstrap-report.md`)
 - [ ] 3.2 Task 008 — explore collectors [REQ-EXP-001..006] (`008-explore-collectors.md`)
 
 ## 4. Closing (depends on 2.1 and 2.5)

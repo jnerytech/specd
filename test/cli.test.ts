@@ -111,6 +111,62 @@ describe("specd verify exit codes", () => {
   });
 });
 
+// REQ-ANC-001 / REQ-CLI-003 — anchor suggest reports, it never decides.
+describe("specd anchor suggest", () => {
+  const workspace = () =>
+    makeWorkspace({
+      config: "",
+      specs: {
+        demo:
+          "---\ncapability: demo\nretired: []\n---\n\n# demo\n\n" +
+          "### REQ-DEMO-001 — Example\n\n" +
+          "**Statement.** The specd demo SHALL do the thing.\n\n" +
+          "**Acceptance.**\n- `redactPayload` removes the listed fields\n",
+      },
+      files: { "src/redact.ts": "export function redactPayload(): void {}\n" },
+    });
+
+  it("prints candidates and exits 0", async () => {
+    const result = await cli(["anchor", "suggest", "demo"], workspace().root);
+    expect(result.status).toBe(EXIT.OK);
+    expect(result.stdout).toContain("REQ-DEMO-001");
+    expect(result.stdout).toContain('symbol: "export function redactPayload"');
+    expect(result.stdout).toContain("specd never writes these into the spec");
+  });
+
+  it("emits JSON with --json", async () => {
+    const result = await cli(
+      ["anchor", "suggest", "demo", "--json"],
+      workspace().root,
+    );
+    const report = JSON.parse(result.stdout) as {
+      capability: string;
+      requirements: Array<{ candidates: Array<{ confidence: string }> }>;
+    };
+    expect(report.capability).toBe("demo");
+    expect(report.requirements[0]?.candidates[0]?.confidence).toBe("unique");
+  });
+
+  // REQ-CLI-001: only verify may exit 1. A missing capability is operational.
+  it("exits 2 on an unknown capability, never 1", async () => {
+    const result = await cli(["anchor", "suggest", "nope"], workspace().root);
+    expect(result.status).toBe(EXIT.OPERATIONAL_FAILURE);
+    expect(result.stderr).toContain('No capability named "nope"');
+  });
+
+  it("exits 2 on a missing capability argument", async () => {
+    const result = await cli(["anchor", "suggest"], workspace().root);
+    expect(result.status).toBe(EXIT.OPERATIONAL_FAILURE);
+    expect(result.stderr).toContain("exactly one capability name");
+  });
+
+  it("exits 2 on an unknown subcommand", async () => {
+    const result = await cli(["anchor", "fix", "demo"], workspace().root);
+    expect(result.status).toBe(EXIT.OPERATIONAL_FAILURE);
+    expect(result.stderr).toContain('Unknown subcommand "fix"');
+  });
+});
+
 // REQ-VER-008 — Machine-readable report
 describe("specd verify --json", () => {
   it("emits the full report as JSON on stdout", async () => {

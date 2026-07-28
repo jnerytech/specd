@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { extname, join, relative, sep } from "node:path";
 import { grepStrategy } from "./strategies/grep.js";
 
 export interface SymbolMatch {
@@ -18,6 +18,8 @@ export interface SearchOptions {
   exclude?: readonly string[];
   // Path prefixes skipped entirely, relative to root.
   excludePrefixes?: readonly string[];
+  // File extensions skipped entirely, lowercase and dotted (".md").
+  excludeExtensions?: readonly string[];
 }
 
 // Files above this size are not spec anchors; reading them would only cost
@@ -42,11 +44,13 @@ export function findSymbolInRepo(
 ): SymbolMatch[] {
   const excluded = new Set(options.exclude ?? []);
   const prefixes = options.excludePrefixes ?? [];
+  const extensions = options.excludeExtensions ?? [];
   const matches: SymbolMatch[] = [];
 
   for (const file of listFiles(options.root)) {
     if (excluded.has(file)) continue;
     if (prefixes.some((prefix) => file.startsWith(prefix))) continue;
+    if (extensions.includes(extname(file).toLowerCase())) continue;
     const content = readTextFile(join(options.root, file));
     if (content === undefined) continue;
     const line = grepStrategy.find(content, symbol);

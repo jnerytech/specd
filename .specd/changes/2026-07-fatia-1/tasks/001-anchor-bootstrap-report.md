@@ -2,7 +2,7 @@
 id: 001-anchor-bootstrap-report
 change: 2026-07-fatia-1
 req: [REQ-ANC-001, REQ-ANC-003, REQ-CLI-003]
-status: pending
+status: done
 evidence:
   commits: []
 ---
