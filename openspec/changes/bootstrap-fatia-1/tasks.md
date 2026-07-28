@@ -13,7 +13,7 @@ Behavior contract: REQ-IDs in `.specd/specs/`. Task details and acceptance: `.sp
 - [x] 2.3 Task 004 — EARS parser [REQ-EARS-001..005] (`004-ears-parser.md`)
 - [x] 2.4 Task 005 — anchor ladder [REQ-ANC-002, REQ-ANC-003, REQ-ANC-004, REQ-ANC-005] (`005-anchor-ladder.md`)
 - [x] 2.5 Task 006 — verify pipeline [REQ-VER-001, REQ-VER-002, REQ-VER-006, REQ-VER-007, REQ-VER-008, REQ-CLI-001, REQ-CLI-004] (`006-verify-pipeline.md`)
-- [ ] 2.6 Task 007 — architecture tests [REQ-CLI-002, REQ-CLI-005] (`007-architecture-tests.md`)
+- [x] 2.6 Task 007 — architecture tests [REQ-CLI-002, REQ-CLI-005] (`007-architecture-tests.md`)
 
 ## 3. Independent (parallel-capable)
 

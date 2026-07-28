@@ -2,7 +2,7 @@
 id: 007-architecture-tests
 change: 2026-07-fatia-1
 req: [REQ-CLI-002, REQ-CLI-005]
-status: pending
+status: done
 evidence:
   commits: []
 ---
