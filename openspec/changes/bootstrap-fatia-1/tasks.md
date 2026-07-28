@@ -11,7 +11,7 @@ Behavior contract: REQ-IDs in `.specd/specs/`. Task details and acceptance: `.sp
 - [x] 2.1 Task 002 — config resolver [REQ-CFG-001, REQ-CFG-002, REQ-CFG-003] (`.specd/.../tasks/002-config-resolver.md`)
 - [x] 2.2 Task 003 — spec parser [REQ-FMT-001, REQ-FMT-002, REQ-FMT-003, REQ-FMT-008] (`003-spec-parser.md`)
 - [x] 2.3 Task 004 — EARS parser [REQ-EARS-001..005] (`004-ears-parser.md`)
-- [ ] 2.4 Task 005 — anchor ladder [REQ-ANC-002, REQ-ANC-003, REQ-ANC-004, REQ-ANC-005] (`005-anchor-ladder.md`)
+- [x] 2.4 Task 005 — anchor ladder [REQ-ANC-002, REQ-ANC-003, REQ-ANC-004, REQ-ANC-005] (`005-anchor-ladder.md`)
 - [ ] 2.5 Task 006 — verify pipeline [REQ-VER-001, REQ-VER-002, REQ-VER-006, REQ-VER-007, REQ-VER-008, REQ-CLI-001, REQ-CLI-004] (`006-verify-pipeline.md`)
 - [ ] 2.6 Task 007 — architecture tests [REQ-CLI-002, REQ-CLI-005] (`007-architecture-tests.md`)
 

@@ -36,7 +36,13 @@ colocar o resolver na situação exata que o teste quer observar.
 Código plausível o bastante para ser lido, curto o bastante para ser óbvio na
 revisão do diff.
 
-## Ainda não existem
+## Uma armadilha real
 
-Os diretórios acima são trabalho da tarefa 005. Este README documenta o
-contrato antes da implementação.
+O símbolo da âncora não pode aparecer literalmente em comentário nenhum do
+fixture. A estratégia grep é busca de substring: um comentário explicando
+"a âncora aponta para `export function validateToken`" faz o passo 3 casar
+e o fixture para no degrau errado. Descreva o estado em prosa, sem citar o
+símbolo.
+
+O consumidor destes fixtures é `test/anchors/ladder.test.ts`, que declara a
+âncora de cada caso junto do desfecho esperado.
