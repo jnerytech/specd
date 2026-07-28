@@ -191,3 +191,25 @@ pior que relatório vazio, porque custa a leitura antes de ser descartado.
 - file: src/anchors/suggest.ts
   symbol: "TERM_FILE_CEILING"
 ```
+
+### REQ-ANC-012 — Suggest lists the declarations of a named file
+
+**Statement.** WHERE `--file` names a path, the specd anchor suggest command SHALL list the declarations that path contains instead of searching for terms lifted from requirement prose.
+
+**Acceptance.**
+- Cada declaração sai com o número da linha e com o texto pronto para colar em `symbol`
+- A ordem é a do arquivo, e repetir o comando sobre árvore inalterada dá a mesma saída
+- Extensão sem padrão de declaração conhecido reporta isso, e não devolve lista vazia
+- Nenhum nome é composto: só é listado texto que aparece literalmente no arquivo
+- O modo sem `--file` continua com o comportamento atual
+
+O extrator de termos falha porque o requisito descreve comportamento em prosa e o
+símbolo tem outro nome — `Suspended` contra `SuspendedState`. Inverter a pergunta
+elimina o palpite: em vez de adivinhar o símbolo a partir do requisito, lista-se o
+que o arquivo declara e o autor escolhe. Compor `SuspendedState` a partir de
+palavras adjacentes seria inventar nome, e P4 proíbe.
+
+```yaml anchors
+- file: src/anchors/declarations.ts
+  symbol: "export function listDeclarations"
+```
