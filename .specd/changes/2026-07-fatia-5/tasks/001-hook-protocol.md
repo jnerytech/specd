@@ -2,9 +2,9 @@
 id: "001-hook-protocol"
 change: 2026-07-fatia-5
 req: [REQ-HOOK-005, REQ-HOOK-006]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["f317113142e82f2acdbc3e1ed213cc1e253d437a"]
 ---
 
 ## Objetivo

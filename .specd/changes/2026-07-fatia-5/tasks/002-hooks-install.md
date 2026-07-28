@@ -2,9 +2,9 @@
 id: "002-hooks-install"
 change: 2026-07-fatia-5
 req: [REQ-HOOK-001, REQ-HOOK-002, REQ-HOOK-003, REQ-HOOK-007]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["f317113142e82f2acdbc3e1ed213cc1e253d437a", "9e4ddfd6ded8db09bdf38f1a40c6a9edeb03d986"]
 ---
 
 ## Objetivo
