@@ -1,0 +1,42 @@
+{
+  "name": "specd",
+  "version": "0.0.0",
+  "description": "Spec-driven development with drift detection. Specs declare anchors into the code; the gate fails when they stop resolving.",
+  "license": "MIT",
+  "author": "jnerytech",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jnerytech/specd.git"
+  },
+  "homepage": "https://github.com/jnerytech/specd#readme",
+  "bugs": {
+    "url": "https://github.com/jnerytech/specd/issues"
+  },
+  "keywords": [
+    "spec-driven-development",
+    "sdd",
+    "drift-detection",
+    "specification",
+    "ears",
+    "traceability",
+    "ai-agents",
+    "claude-code"
+  ],
+  "type": "module",
+  "bin": {
+    "specd": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "lint": "eslint src test",
+    "format": "prettier --write .",
+    "verify": "npm run format && npm run lint && npm run test && npm run build"
+  }
+}

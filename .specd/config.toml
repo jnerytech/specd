@@ -1,0 +1,21 @@
+# specd — configuração do próprio repositório
+
+[project]
+client = "jnerytech"
+language = "pt-BR"
+
+[verify]
+# Fatia 1: coverage e evidence dependem de tasks, que chegam com `propose`
+levels = ["provenance", "schema", "anchors", "project"]
+validation_command = ["npm", "run", "verify"]
+
+[verify.anchors]
+policy = "graduated"
+
+[anchors]
+default = "grep"
+
+[memory]
+enabled = true
+change_limit_lines = 150
+task_limit_lines = 200

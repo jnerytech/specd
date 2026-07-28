@@ -1,0 +1,3 @@
+# Bundles de explore são conteúdo gerado — não devem competir com o diff real em PR
+.specd/changes/*/explore/** linguist-generated=true
+.specd/archive/*/explore/** linguist-generated=true

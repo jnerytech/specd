@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.log
+npm-debug.log*
+
+# Estado local de runtime — o versionado é .specd/, não isto
+.specd/**/tmp/
