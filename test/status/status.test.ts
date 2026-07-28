@@ -5,6 +5,8 @@ import { formatStatus, status } from "../../src/status/index.js";
 import {
   capability,
   cleanupWorkspaces,
+  delta,
+  deltaRequirement,
   makeWorkspace,
   type WorkspaceSpec,
 } from "../verify/helpers.js";
@@ -17,7 +19,18 @@ const DANGLING = capability({
   anchors: '- file: src/gone.ts\n  symbol: "export function gone"',
 });
 
-const DELTA = "## ADDED\n\n- REQ-DEMO-001 — Example\n- REQ-DEMO-002 — Other\n";
+// REQ-DEMO-001 is realized and being modified; REQ-DEMO-002 is new.
+const DELTA = delta({
+  change: "2026-07-demo",
+  modified: [
+    deltaRequirement({
+      id: "REQ-DEMO-001",
+      capability: "demo",
+      anchors: '- file: src/gone.ts\n  symbol: "export function gone"',
+    }),
+  ],
+  added: [deltaRequirement({ id: "REQ-DEMO-002", capability: "demo" })],
+});
 
 function task(options: {
   id: string;
@@ -26,7 +39,7 @@ function task(options: {
   commits?: string[];
 }): string {
   return (
-    `---\nid: ${options.id}\nchange: 2026-07-demo\n` +
+    `---\nid: "${options.id}"\nchange: 2026-07-demo\n` +
     `req: [${options.req.join(", ")}]\nstatus: ${options.status}\n` +
     `evidence:\n  commits: [${(options.commits ?? []).join(", ")}]\n---\n\n## Objetivo\n\nDo the thing.\n`
   );
@@ -58,6 +71,7 @@ describe("status", () => {
         capability: "demo",
         file: "src/gone.ts",
         symbol: "export function gone",
+        origin: "delta",
       },
     ]);
     expect(report.unclaimedDanglingAnchors).toEqual([]);
@@ -68,7 +82,12 @@ describe("status", () => {
       cwd: build({
         change: {
           name: "2026-07-demo",
-          delta: "## ADDED\n\n- REQ-OTHER-001\n",
+          delta: delta({
+            change: "2026-07-demo",
+            added: [
+              deltaRequirement({ id: "REQ-OTHER-001", capability: "demo" }),
+            ],
+          }),
         },
       }),
     });
@@ -148,7 +167,9 @@ describe("status", () => {
     const report = await status({ cwd: build() });
     expect(report.totals).toEqual({
       capabilities: 1,
-      requirements: 1,
+      // The effective spec: the realized REQ-DEMO-001, shadowed by the delta
+      // that modifies it, plus the REQ-DEMO-002 the same delta adds.
+      requirements: 2,
       danglingAnchors: 1,
     });
   });
@@ -156,7 +177,7 @@ describe("status", () => {
   it("renders a grouped human report", async () => {
     const rendered = formatStatus(await status({ cwd: build() }));
     expect(rendered).toContain("2026-07-demo — 0/0 tasks done");
-    expect(rendered).toContain("dangling anchors:");
+    expect(rendered).toContain("dangling anchors (in flight):");
     expect(rendered).toContain(
       "REQ-DEMO-001 -> src/gone.ts :: export function gone",
     );

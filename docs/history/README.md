@@ -40,4 +40,4 @@ fora do espaço `REQ-`, para que citação futura não passe por contrato:
 
 ## Conteúdo
 
-*(vazio — o documento de proposta original ainda não foi fornecido)*
+_(vazio — o documento de proposta original ainda não foi fornecido)_

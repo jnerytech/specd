@@ -3,9 +3,12 @@ import { join } from "node:path";
 import { ConfigError } from "../config/errors.js";
 import { resolveConfig } from "../config/resolve.js";
 import type { SpecdConfig, VerifyLevel } from "../config/schema.js";
-import { loadCapabilities } from "../parser/capability.js";
-import { readActiveChange } from "./active-change.js";
+import { OperationalError } from "../core/operational.js";
+import { readOpenChanges } from "./changes.js";
+import { effectiveSpecs } from "./effective.js";
 import { anchorsLayer } from "./layers/anchors.js";
+import { coverageLayer } from "./layers/coverage.js";
+import { evidenceLayer } from "./layers/evidence.js";
 import { projectLayer } from "./layers/project.js";
 import { schemaLayer } from "./layers/schema.js";
 import type { VerifyLayer, VerifyLayerContext } from "./layers/types.js";
@@ -27,7 +30,9 @@ export const LAYER_ORDER: readonly VerifyLevel[] = [
 // layer the project asked for is reporting a check it never ran.
 const IMPLEMENTED: Readonly<Record<string, VerifyLayer>> = {
   schema: schemaLayer,
+  coverage: coverageLayer,
   anchors: anchorsLayer,
+  evidence: evidenceLayer,
   project: projectLayer,
 };
 
@@ -57,17 +62,17 @@ export async function verify(
         : { globalPath: options.globalPath }),
     });
 
+  requireSpecdProject(root);
+
   const enabled = selectLayers(config.verify.levels);
-  const specsDir = join(root, ".specd", "specs");
-  const activeChange = readActiveChange(root);
   const ctx: VerifyLayerContext = {
     root,
     config,
     fast: options.fast ?? false,
-    specs: existsSync(specsDir)
-      ? loadCapabilities(specsDir, { pathsRelativeTo: root })
-      : { capabilities: [], diagnostics: [] },
-    ...(activeChange === undefined ? {} : { activeChange }),
+    effective: effectiveSpecs(root, {
+      pathsRelativeTo: root,
+      changes: readOpenChanges(root),
+    }),
   };
 
   const layers: LayerReport[] = [];
@@ -94,6 +99,18 @@ export async function verify(
       (level) => !config.verify.levels.includes(level),
     ),
   };
+}
+
+// A directory with nothing to check passes vacuously, and "green" then means
+// the same as "I found no spec" — which is how a wrong working directory turns
+// into a silent approval. Exit 2 and not 1: nothing was judged.
+export function requireSpecdProject(root: string): void {
+  if (existsSync(join(root, ".specd", "specs"))) return;
+  throw new OperationalError(
+    `No .specd/specs/ under ${root}, so there is nothing to verify. ` +
+      `An empty check is not a passing check — run \`specd init\` if this is meant to be a specd project, ` +
+      `or run verify from the repository root.`,
+  );
 }
 
 // REQ-VER-002: run only the configured layers, always in LAYER_ORDER.

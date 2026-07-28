@@ -104,7 +104,8 @@ describe("configured levels", () => {
 
   it("a configured layer that is not implemented is a configuration error", async () => {
     const workspace = makeWorkspace({
-      config: '[verify]\nlevels = ["coverage"]\n',
+      // `provenance` is specified (REQ-VER-003) and waits on Fatia 3.
+      config: '[verify]\nlevels = ["provenance"]\n',
     });
     const attempt = verify({
       cwd: workspace.root,

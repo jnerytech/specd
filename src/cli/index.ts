@@ -1,4 +1,6 @@
+import { fixAnchor } from "../anchors/fix.js";
 import { formatSuggestReport, suggestAnchors } from "../anchors/suggest.js";
+import { archive } from "../archive/index.js";
 import { explore } from "../explore/index.js";
 import { formatInitResult, init } from "../init/index.js";
 import { formatStatus, status } from "../status/index.js";
@@ -27,7 +29,9 @@ Commands:
   verify                            Run the gate over this repository
   status                            Report drift and pending work, grouped by change
   explore <card> --change <name>    Collect the configured sources into a bundle
+  archive <change>                  Apply a change's delta to the specs and file it away
   anchor suggest <capability>       Report anchor candidates for a capability
+  anchor fix <requirement>          Rewrite a dangling anchor to its suggested location
   help                              Show this message
 
 Options for verify:
@@ -52,6 +56,7 @@ export function registerCommands(): Map<string, Command> {
     verifyCommand,
     statusCommand,
     exploreCommand,
+    archiveCommand,
     anchorCommand,
     helpCommand,
   ]) {
@@ -161,14 +166,40 @@ function formatManifest(result: Awaited<ReturnType<typeof explore>>): string {
 // REQ-CLI-001: `anchor` reads and reports. It returns non-zero only when it
 // cannot run — an ambiguous capability name, a missing spec tree — never as a
 // quality verdict.
+// REQ-ARC-001 and REQ-CLI-001: `archive` rewrites the contract, so it names
+// the change explicitly, and it never returns 1 — refusing to act is exit 2.
+const archiveCommand: Command = {
+  name: "archive",
+  summary: "Apply a change's delta to the specs and file it away",
+  async run(argv, io): Promise<ExitCode> {
+    const positional = argv.filter((argument) => !argument.startsWith("-"));
+    if (positional.length > 1) {
+      throw new UsageError(
+        "Usage: specd archive <change> — exactly one change name.",
+      );
+    }
+
+    const result = await archive(positional[0], { cwd: io.cwd });
+    const lines = [
+      `Archived ${result.change} to ${result.destination}.`,
+      ...result.written.map((file) => `  wrote ${file}`),
+      ...result.alreadyApplied.map((id) => `  already applied ${id}`),
+      "Nothing was staged or committed — review the diff before it becomes history.",
+    ];
+    io.stdout(`${lines.join("\n")}\n`);
+    return EXIT.OK;
+  },
+};
+
 const anchorCommand: Command = {
   name: "anchor",
-  summary: "Report anchor candidates for a capability",
-  run(argv, io): Promise<ExitCode> {
+  summary: "Report anchor candidates, or rewrite one to its suggestion",
+  async run(argv, io): Promise<ExitCode> {
     const [subcommand, ...rest] = argv;
+    if (subcommand === "fix") return anchorFix(rest, io);
     if (subcommand !== "suggest") {
       throw new UsageError(
-        `Unknown subcommand "${subcommand ?? ""}" for "anchor". Usage: specd anchor suggest <capability> [--json].`,
+        `Unknown subcommand "${subcommand ?? ""}" for "anchor". Usage: specd anchor suggest <capability> [--json], or specd anchor fix <requirement>.`,
       );
     }
 
@@ -190,9 +221,30 @@ const anchorCommand: Command = {
         ? `${JSON.stringify(report, null, 2)}\n`
         : `${formatSuggestReport(report)}\n`,
     );
-    return Promise.resolve(EXIT.OK);
+    return EXIT.OK;
   },
 };
+
+// REQ-ANC-008: the file changes on disk and stays unstaged. Exit 2 when there
+// is nothing to apply — a refusal to act, not a verdict.
+async function anchorFix(argv: string[], io: CliIo): Promise<ExitCode> {
+  const positional = argv.filter((argument) => !argument.startsWith("-"));
+  if (positional.length !== 1) {
+    throw new UsageError(
+      "Usage: specd anchor fix <requirement> — exactly one requirement identifier.",
+    );
+  }
+
+  const result = await fixAnchor(positional[0], { cwd: io.cwd });
+  const lines = result.fixed.map(
+    (anchor) =>
+      `${anchor.requirementId}: ${anchor.from} -> ${anchor.to} (${anchor.file}:${anchor.line})`,
+  );
+  io.stdout(
+    `${lines.join("\n")}\nRewritten and left unstaged — read the diff before committing.\n`,
+  );
+  return EXIT.OK;
+}
 
 const helpCommand: Command = {
   name: "help",

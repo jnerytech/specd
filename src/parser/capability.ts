@@ -1,20 +1,16 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { parse as parseYaml, YAMLParseError } from "yaml";
-import { ANCHOR_FENCE_INFO } from "./anchors.js";
 import { error, warning, type Diagnostic } from "./diagnostics.js";
-import { headingText, isHeadingAtOrAbove, scanLines } from "./markdown.js";
+import { scanLines } from "./markdown.js";
 import {
   REQ_ID_PATTERN_DESCRIPTION,
   isPrefixAbbreviationOf,
   isValidRequirementId,
   prefixOf,
 } from "./requirement-id.js";
-import {
-  parseRequirement,
-  type Requirement,
-  type RequirementSection,
-} from "./requirement.js";
+import { parseRequirement, type Requirement } from "./requirement.js";
+import { splitRequirementSections } from "./sections.js";
 
 export interface Capability {
   name: string;
@@ -31,9 +27,6 @@ export interface ParsedCapability {
 }
 
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
-// A level-3 heading claiming to be a requirement: first token, then an
-// optional dash-separated title.
-const REQUIREMENT_HEADING = /^(\S+)(?:\s*[—–-]\s*(.*))?$/;
 
 // REQ-FMT-001: read a capability as frontmatter plus requirements expressed as
 // level-3 headings.
@@ -58,7 +51,7 @@ export function parseCapability(
     );
   }
 
-  const sections = splitRequirements(
+  const sections = splitRequirementSections(
     document.lines,
     front.bodyStartLine,
     file,
@@ -268,73 +261,6 @@ function readRetired(
     retired.push(entry);
   }
   return retired;
-}
-
-function splitRequirements(
-  lines: ReturnType<typeof scanLines>["lines"],
-  bodyStartLine: number,
-  file: string,
-  diagnostics: Diagnostic[],
-): RequirementSection[] {
-  const sections: RequirementSection[] = [];
-  let current: RequirementSection | undefined;
-
-  for (const line of lines) {
-    if (line.line < bodyStartLine) continue;
-
-    const heading = headingText(line, 3);
-    if (heading !== undefined) {
-      current = undefined;
-      const match = REQUIREMENT_HEADING.exec(heading);
-      const token = match?.[1];
-      // Only headings that claim to be requirements are validated; other
-      // level-3 headings are ordinary prose structure.
-      if (token === undefined || !/^req/i.test(token)) continue;
-      if (!isValidRequirementId(token)) {
-        diagnostics.push(
-          error({
-            file,
-            line: line.line,
-            message: `Invalid requirement identifier "${token}". Expected ${REQ_ID_PATTERN_DESCRIPTION}.`,
-          }),
-        );
-        continue;
-      }
-      current = {
-        id: token,
-        title: (match?.[2] ?? "").trim(),
-        line: line.line,
-        body: [],
-      };
-      sections.push(current);
-      continue;
-    }
-
-    if (isHeadingAtOrAbove(line, 3)) {
-      current = undefined;
-      continue;
-    }
-
-    if (current) {
-      current.body.push(line);
-      continue;
-    }
-
-    // REQ-FMT-008: anchors live on requirements. A block outside one is
-    // ignored with a warning rather than rejected.
-    if (line.fenceInfo === ANCHOR_FENCE_INFO) {
-      diagnostics.push(
-        warning({
-          file,
-          line: line.line,
-          message:
-            "Anchor block declared outside a requirement; anchors only apply inside a requirement block and this one is ignored.",
-        }),
-      );
-    }
-  }
-
-  return sections;
 }
 
 function countLines(text: string): number {

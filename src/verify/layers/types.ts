@@ -1,6 +1,5 @@
 import type { SpecdConfig, VerifyLevel } from "../../config/schema.js";
-import type { LoadedCapabilities } from "../../parser/capability.js";
-import type { ActiveChange } from "../active-change.js";
+import type { EffectiveSpecs } from "../effective.js";
 import type { LayerStatus, Violation } from "../report.js";
 
 export interface VerifyLayerContext {
@@ -9,9 +8,9 @@ export interface VerifyLayerContext {
   config: SpecdConfig;
   // REQ-VER-007: set by `--fast`.
   fast: boolean;
-  // Capabilities parsed once and shared by every layer.
-  specs: LoadedCapabilities;
-  activeChange?: ActiveChange;
+  // `.specd/specs/` with the deltas of open changes applied on top, parsed
+  // once and shared by every layer.
+  effective: EffectiveSpecs;
 }
 
 export interface LayerResult {

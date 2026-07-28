@@ -1,57 +1,125 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { verify } from "../../src/verify/index.js";
 import type { VerifyReport } from "../../src/verify/report.js";
-import { capability, cleanupWorkspaces, makeWorkspace } from "./helpers.js";
+import {
+  capability,
+  cleanupWorkspaces,
+  delta,
+  deltaRequirement,
+  makeWorkspace,
+} from "./helpers.js";
 
 afterEach(cleanupWorkspaces);
 
-const DANGLING = capability({
+const DANGLING_ANCHOR = '- file: src/gone.ts\n  symbol: "export function gone"';
+
+// Realized: the requirement lives in `.specd/specs/`, which asserts the code
+// exists. Its anchor no longer resolving is drift.
+const IN_SPECS = capability({
   name: "demo",
   id: "REQ-DEMO-001",
-  anchors: '- file: src/gone.ts\n  symbol: "export function gone"',
+  anchors: DANGLING_ANCHOR,
 });
 
-const DELTA_WITH = "## ADDED\n\n- REQ-DEMO-001 — Example\n";
-const DELTA_WITHOUT = "## ADDED\n\n- REQ-OTHER-001 — Something else\n";
+// In flight: the requirement lives only in an open change's delta, so the code
+// is not written yet and the same anchor is pending work.
+const IN_DELTA = delta({
+  change: "2026-07-demo",
+  added: [
+    deltaRequirement({
+      id: "REQ-DEMO-002",
+      capability: "demo",
+      anchors: DANGLING_ANCHOR,
+    }),
+  ],
+});
 
-function run(policy: string, delta?: string): Promise<VerifyReport> {
+function run(options: {
+  policy: string;
+  specs?: Record<string, string>;
+  delta?: string;
+}): Promise<VerifyReport> {
   const workspace = makeWorkspace({
-    config: `[verify]\nlevels = ["anchors"]\n\n[verify.anchors]\npolicy = "${policy}"\n`,
-    specs: { demo: DANGLING },
-    ...(delta === undefined ? {} : { change: { name: "2026-07-demo", delta } }),
+    config: `[verify]\nlevels = ["anchors"]\n\n[verify.anchors]\npolicy = "${options.policy}"\n`,
+    specs: options.specs ?? { demo: IN_SPECS },
+    ...(options.delta === undefined
+      ? {}
+      : { change: { name: "2026-07-demo", delta: options.delta } }),
   });
   return verify({ cwd: workspace.root, globalPath: workspace.globalPath });
 }
 
-// REQ-ANC-006 — Graduated policy
+// REQ-ANC-006 — Graduated policy.
+//
+// Severity comes from where the requirement is written, not from whether some
+// change happens to name its identifier. That difference is the whole point:
+// listing an identifier in a delta used to be enough to silence a real
+// regression, and a delta nobody closed silenced every identifier it named.
 describe("graduated policy", () => {
-  it("warns when the requirement is in the active change delta", async () => {
-    const report = await run("graduated", DELTA_WITH);
+  it("warns for a requirement written in an open change delta", async () => {
+    const report = await run({
+      policy: "graduated",
+      specs: { demo: capability({ name: "demo", id: "REQ-DEMO-001" }) },
+      delta: IN_DELTA,
+    });
     expect(report.violations.map((v) => v.severity)).toEqual(["warning"]);
     expect(report.ok).toBe(true);
   });
 
-  it("errors when the requirement is absent from the delta", async () => {
-    const report = await run("graduated", DELTA_WITHOUT);
+  it("errors for a requirement written in .specd/specs/", async () => {
+    const report = await run({ policy: "graduated" });
     expect(report.violations.map((v) => v.severity)).toEqual(["error"]);
     expect(report.ok).toBe(false);
   });
 
-  it("errors for every dangling anchor when there is no active change", async () => {
-    const report = await run("graduated");
+  it("still errors for a realized requirement an open change names", async () => {
+    // The Modelo A escape hatch, closed: a change may not silence drift in
+    // `.specd/specs/` by mentioning the identifier. To change a realized
+    // requirement it must carry the text, under MODIFIED.
+    const report = await run({
+      policy: "graduated",
+      delta: delta({
+        change: "2026-07-demo",
+        added: [deltaRequirement({ id: "REQ-DEMO-002", capability: "demo" })],
+      }),
+    });
     expect(report.violations.map((v) => v.severity)).toEqual(["error"]);
-    expect(report.ok).toBe(false);
+  });
+
+  it("shadows the realized copy when a change modifies it", async () => {
+    // The requirement exists in both places while the change is open. Only the
+    // delta text is checked, so moving the symbol does not hold the gate red
+    // for the change's whole duration.
+    const report = await run({
+      policy: "graduated",
+      delta: delta({
+        change: "2026-07-demo",
+        modified: [
+          deltaRequirement({
+            id: "REQ-DEMO-001",
+            capability: "demo",
+            anchors: DANGLING_ANCHOR,
+          }),
+        ],
+      }),
+    });
+    expect(report.violations.map((v) => v.severity)).toEqual(["warning"]);
+    expect(report.ok).toBe(true);
   });
 });
 
 describe("strict and lenient policies", () => {
-  it("strict errors even for a requirement under way", async () => {
-    const report = await run("strict", DELTA_WITH);
+  it("strict errors even for work in flight", async () => {
+    const report = await run({
+      policy: "strict",
+      specs: { demo: capability({ name: "demo", id: "REQ-DEMO-001" }) },
+      delta: IN_DELTA,
+    });
     expect(report.violations.map((v) => v.severity)).toEqual(["error"]);
   });
 
-  it("lenient warns even without an active change", async () => {
-    const report = await run("lenient");
+  it("lenient warns even for a realized requirement", async () => {
+    const report = await run({ policy: "lenient" });
     expect(report.violations.map((v) => v.severity)).toEqual(["warning"]);
     expect(report.ok).toBe(true);
   });
@@ -81,6 +149,6 @@ describe("suggestions", () => {
     });
     const message = report.violations[0]?.message ?? "";
     expect(message).toContain("src/new.ts:1");
-    expect(message).toContain("specd does not rewrite it for you");
+    expect(message).toContain("specd does not decide for you");
   });
 });

@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { listChanges, readActiveChange } from "../src/verify/active-change.js";
+import { readOpenChanges } from "../src/verify/changes.js";
 import { verify } from "../src/verify/index.js";
 import type { VerifyReport } from "../src/verify/report.js";
 
@@ -76,9 +76,21 @@ describe("specd verifies this repository", () => {
   // worth believing.
   it("holds no dangling anchor in .specd/specs/", async () => {
     const report = await run();
-    expect(report.violations).toEqual([]);
+    expect(report.violations.filter((v) => v.severity === "error")).toEqual([]);
     expect(report.stoppedAt).toBeUndefined();
     expect(report.ok).toBe(true);
+  });
+
+  // The distinction the gate exists to draw. A warning here means an open
+  // change is building the code that will resolve the anchor; an error means
+  // nobody is, and the spec claims something the repository does not have.
+  it("reports pending work as warnings and drift as errors", async () => {
+    const report = await run();
+    for (const violation of report.violations) {
+      expect(violation.severity).toBe("warning");
+      expect(violation.file).toMatch(/^\.specd\/changes\/.+\/delta\.md$/);
+      expect(violation.message).toContain("pending work rather than drift");
+    }
   });
 
   it("never lets a requirement live in two places at once", () => {
@@ -100,17 +112,12 @@ describe("specd verifies this repository", () => {
     }
   });
 
-  it("keeps every open change readable", () => {
-    const changes = listChanges(REPO_ROOT);
+  it("reads every open change and never the archive", () => {
+    const changes = readOpenChanges(REPO_ROOT);
     expect(changes.length).toBeGreaterThan(0);
     for (const change of changes) {
       expect(change.name).not.toBe("archive");
+      expect(change.delta).toBeDefined();
     }
-
-    // Documents a known defect rather than asserting correct behaviour:
-    // `readActiveChange` returns the alphabetically first directory, so with
-    // several open changes it names the oldest. Fatia 2 replaces it with
-    // `readOpenChanges`; when it does, this expectation is what says so.
-    expect(readActiveChange(REPO_ROOT)?.name).toBe(changes[0]?.name);
   });
 });

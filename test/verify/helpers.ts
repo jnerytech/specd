@@ -15,8 +15,10 @@ export interface WorkspaceSpec {
   specs?: Record<string, string>;
   // Any other file, keyed by path relative to the root.
   files?: Record<string, string>;
-  // `delta.md` of an active change, keyed by change name.
+  // `delta.md` of an open change, keyed by change name.
   change?: { name: string; delta: string };
+  // Skip the default capability, leaving the project without `.specd/specs/`.
+  emptyProject?: boolean;
 }
 
 const workspaces: Workspace[] = [];
@@ -26,8 +28,20 @@ export function makeWorkspace(spec: WorkspaceSpec): Workspace {
   const globalPath = join(root, "absent-global", "config.toml");
 
   write(root, ".specd/config.toml", spec.config ?? "");
-  for (const [name, content] of Object.entries(spec.specs ?? {})) {
+  // A specd project always has a specs directory; verify exits 2 without one
+  // rather than passing vacuously, so a workspace that declares no capability
+  // still gets an inert one. `emptyProject` opts out, for the tests that
+  // exercise exactly that refusal.
+  const specs =
+    spec.specs ??
+    (spec.emptyProject === true
+      ? {}
+      : { inert: capability({ name: "inert", id: "REQ-INERT-001" }) });
+  for (const [name, content] of Object.entries(specs)) {
     write(root, `.specd/specs/${name}.md`, content);
+  }
+  if (spec.emptyProject !== true && Object.keys(specs).length === 0) {
+    mkdirSync(join(root, ".specd", "specs"), { recursive: true });
   }
   for (const [path, content] of Object.entries(spec.files ?? {})) {
     write(root, path, content);
@@ -77,4 +91,41 @@ function write(root: string, path: string, content: string): void {
   const absolute = join(root, path);
   mkdirSync(dirname(absolute), { recursive: true });
   writeFileSync(absolute, content);
+}
+
+// A requirement block as a delta carries it under Modelo B: complete text,
+// with the destination capability declared inline.
+export function deltaRequirement(options: {
+  id: string;
+  capability: string;
+  anchors?: string;
+}): string {
+  const anchors =
+    options.anchors === undefined
+      ? ""
+      : `\n\`\`\`yaml anchors\n${options.anchors}\n\`\`\`\n`;
+  return (
+    `### ${options.id} — Example\n\n` +
+    `**Capability.** ${options.capability}\n\n` +
+    `**Statement.** The specd verifier SHALL do the thing.\n\n` +
+    `**Acceptance.**\n- it works\n${anchors}`
+  );
+}
+
+export function delta(options: {
+  change: string;
+  added?: string[];
+  modified?: string[];
+  removed?: string[];
+}): string {
+  const parts = [`---\nchange: ${options.change}\n---\n`];
+  if (options.added?.length)
+    parts.push(`## ADDED\n\n${options.added.join("\n")}`);
+  if (options.modified?.length)
+    parts.push(`## MODIFIED\n\n${options.modified.join("\n")}`);
+  if (options.removed?.length)
+    parts.push(
+      `## REMOVED\n\n${options.removed.map((id) => `- ${id}`).join("\n")}`,
+    );
+  return `${parts.join("\n")}\n`;
 }

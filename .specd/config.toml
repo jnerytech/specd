@@ -5,11 +5,11 @@ client = "jnerytech"
 language = "pt-BR"
 
 [verify]
-# Fatia 1 implementa schema, anchors e project. coverage e evidence dependem de
-# tasks, que chegam com `propose`; provenance depende do manifest do `explore`,
-# que esta change ainda não produziu. Listar uma camada não implementada é erro
-# de configuração, não um pulo silencioso.
-levels = ["schema", "anchors", "project"]
+# Fatia 2 liga coverage e evidence. `provenance` continua fora: como REQ-VER-003
+# está escrito, ele reprova qualquer change sem bundle de `explore`, o que inclui
+# as changes escritas à mão. Espera a Fatia 3. Listar uma camada não implementada
+# é erro de configuração, não um pulo silencioso.
+levels = ["schema", "coverage", "anchors", "evidence", "project"]
 validation_command = ["npm", "run", "verify"]
 
 [verify.anchors]

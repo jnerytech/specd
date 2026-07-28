@@ -3,9 +3,11 @@ import { join, relative, sep } from "node:path";
 import { resolveAnchor } from "../anchors/resolve.js";
 import { resolveConfig } from "../config/resolve.js";
 import type { SpecdConfig } from "../config/schema.js";
-import { loadCapabilities } from "../parser/capability.js";
-import { listChanges, type ActiveChange } from "../verify/active-change.js";
-import { readTasks, type TaskRecord } from "./tasks.js";
+import type { Task } from "../parser/task.js";
+import type { OpenChange } from "../verify/changes.js";
+import { effectiveSpecs } from "../verify/effective.js";
+import { summarizeOpenChanges, type OpenChangeSummary } from "./changes.js";
+import { locateAll, type RequirementLocation } from "./locate.js";
 
 export interface DanglingAnchor {
   requirementId: string;
@@ -13,6 +15,8 @@ export interface DanglingAnchor {
   file: string;
   symbol?: string;
   suggestion?: string;
+  // Where the requirement is written. Only a `specs` one is drift.
+  origin: "specs" | "delta";
 }
 
 export interface OversizedMemory {
@@ -31,12 +35,15 @@ export interface ChangeStatus {
   danglingAnchors: DanglingAnchor[];
   oversizedMemory: OversizedMemory[];
   tasks: { total: number; done: number };
+  summary: OpenChangeSummary;
 }
 
 export interface StatusReport {
   changes: ChangeStatus[];
-  // Dangling anchors of requirements no active change claims.
+  // Dangling anchors of requirements no open change claims. These are drift:
+  // nothing is being built that would resolve them.
   unclaimedDanglingAnchors: DanglingAnchor[];
+  locations: RequirementLocation[];
   totals: {
     capabilities: number;
     requirements: number;
@@ -68,46 +75,47 @@ export async function status(
         : { globalPath: options.globalPath }),
     });
 
-  const specsDir = join(root, ".specd", "specs");
-  const { capabilities } = existsSync(specsDir)
-    ? loadCapabilities(specsDir, { pathsRelativeTo: root })
-    : { capabilities: [] };
+  const effective = effectiveSpecs(root, { pathsRelativeTo: root });
 
   const dangling: DanglingAnchor[] = [];
-  let requirements = 0;
-  for (const capability of capabilities) {
-    for (const requirement of capability.requirements) {
-      requirements++;
-      for (const declaration of requirement.anchors) {
-        const resolution = resolveAnchor(declaration.anchor, {
-          root,
-          defaultStrategy: config.anchors.default,
-        });
-        if (resolution.outcome === "resolved") continue;
-        dangling.push({
-          requirementId: requirement.id,
-          capability: capability.name,
-          file: declaration.anchor.file,
-          ...(declaration.anchor.symbol === undefined
-            ? {}
-            : { symbol: declaration.anchor.symbol }),
-          ...(resolution.suggestion === undefined
-            ? {}
-            : {
-                suggestion: `${resolution.suggestion.file}:${resolution.suggestion.line}`,
-              }),
-        });
-      }
+  for (const entry of effective.requirements) {
+    for (const declaration of entry.requirement.anchors) {
+      const resolution = resolveAnchor(declaration.anchor, {
+        root,
+        defaultStrategy: config.anchors.default,
+      });
+      if (resolution.outcome === "resolved") continue;
+      dangling.push({
+        requirementId: entry.requirement.id,
+        capability: entry.capability,
+        file: declaration.anchor.file,
+        origin: entry.origin,
+        ...(declaration.anchor.symbol === undefined
+          ? {}
+          : { symbol: declaration.anchor.symbol }),
+        ...(resolution.suggestion === undefined
+          ? {}
+          : {
+              suggestion: `${resolution.suggestion.file}:${resolution.suggestion.line}`,
+            }),
+      });
     }
   }
 
-  const changes = listChanges(root).map((change) =>
-    statusOf(change, dangling, config, root),
-  );
-  const claimed = new Set(
-    changes.flatMap((change) =>
-      change.danglingAnchors.map((anchor) => anchor.requirementId),
+  const danglingIds = new Set(dangling.map((anchor) => anchor.requirementId));
+  const summaries = summarizeOpenChanges(effective, danglingIds, root);
+  const changes = effective.changes.map((change, index) =>
+    statusOf(
+      change,
+      dangling,
+      summaries[index] as OpenChangeSummary,
+      config,
+      root,
     ),
+  );
+
+  const claimed = new Set(
+    effective.changes.flatMap((change) => [...change.inFlight]),
   );
 
   return {
@@ -115,47 +123,51 @@ export async function status(
     unclaimedDanglingAnchors: dangling.filter(
       (anchor) => !claimed.has(anchor.requirementId),
     ),
+    locations: locateAll(effective),
     totals: {
-      capabilities: capabilities.length,
-      requirements,
+      capabilities: effective.capabilities.length,
+      requirements: effective.requirements.length,
       danglingAnchors: dangling.length,
     },
   };
 }
 
 function statusOf(
-  change: ActiveChange,
+  change: OpenChange,
   dangling: readonly DanglingAnchor[],
+  summary: OpenChangeSummary,
   config: SpecdConfig,
   root: string,
 ): ChangeStatus {
-  const tasks = readTasks(change.directory);
-  const covered = new Set(tasks.flatMap((task) => task.req));
+  const covered = new Set(change.tasks.flatMap((task) => task.req));
 
   return {
     change: change.name,
     requirementsWithoutTasks: [...change.inFlight]
       .filter((id) => !covered.has(id))
       .sort(),
-    doneTasksWithoutEvidence: tasks
-      .filter((task) => task.status === "done" && task.commits.length === 0)
+    doneTasksWithoutEvidence: change.tasks
+      .filter(
+        (task) => task.status === "done" && task.evidence.commits.length === 0,
+      )
       .map((task) => task.id),
     danglingAnchors: dangling.filter((anchor) =>
       change.inFlight.has(anchor.requirementId),
     ),
     oversizedMemory: oversizedMemory(change, config, root),
-    tasks: { total: tasks.length, done: doneCount(tasks) },
+    tasks: { total: change.tasks.length, done: doneCount(change.tasks) },
+    summary,
   };
 }
 
-function doneCount(tasks: readonly TaskRecord[]): number {
+function doneCount(tasks: readonly Task[]): number {
   return tasks.filter((task) => task.status === "done").length;
 }
 
 // `change.md` carries the change-level notes; every other memory file belongs
 // to a task. The limits are advisory: specd reports, it never truncates.
 function oversizedMemory(
-  change: ActiveChange,
+  change: OpenChange,
   config: SpecdConfig,
   root: string,
 ): OversizedMemory[] {
@@ -191,14 +203,23 @@ export function formatStatus(report: StatusReport): string {
   ];
 
   if (report.changes.length === 0) {
-    lines.push("No change directories under .specd/changes/.");
+    lines.push("No open changes under .specd/changes/.");
   }
 
   for (const change of report.changes) {
+    const age =
+      change.summary.ageInDays === undefined
+        ? "age unknown"
+        : `open ${change.summary.ageInDays} day${change.summary.ageInDays === 1 ? "" : "s"}`;
     lines.push(
-      `${change.change} — ${change.tasks.done}/${change.tasks.total} tasks done`,
+      `${change.change} — ${change.tasks.done}/${change.tasks.total} tasks done, ${age}, ` +
+        `${change.summary.warningDebt} of ${change.summary.requirements} requirements still dangling`,
     );
-    section(lines, "dangling anchors", change.danglingAnchors.map(describe));
+    section(
+      lines,
+      "dangling anchors (in flight)",
+      change.danglingAnchors.map(describe),
+    );
     section(
       lines,
       "requirements without a task",
@@ -219,8 +240,10 @@ export function formatStatus(report: StatusReport): string {
     lines.push("");
   }
 
+  // The distinction this report exists to make: an anchor dangling under an
+  // open change is pending work; one dangling with nobody building it is drift.
   if (report.unclaimedDanglingAnchors.length > 0) {
-    lines.push("outside any change");
+    lines.push("drift — dangling with no open change claiming it");
     section(
       lines,
       "dangling anchors",

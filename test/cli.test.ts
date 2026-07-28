@@ -161,9 +161,9 @@ describe("specd anchor suggest", () => {
   });
 
   it("exits 2 on an unknown subcommand", async () => {
-    const result = await cli(["anchor", "fix", "demo"], workspace().root);
+    const result = await cli(["anchor", "rewrite", "demo"], workspace().root);
     expect(result.status).toBe(EXIT.OPERATIONAL_FAILURE);
-    expect(result.stderr).toContain('Unknown subcommand "fix"');
+    expect(result.stderr).toContain('Unknown subcommand "rewrite"');
   });
 });
 
