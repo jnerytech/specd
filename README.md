@@ -152,12 +152,20 @@ Quando o `verify` existir, o primeiro repositório que ele valida é este.
 
 ## Roadmap
 
-| Fatia | Escopo                                   | Status                    |
-| ----- | ---------------------------------------- | ------------------------- |
-| 1     | `init` · `explore` · `verify` · `status` | Especificada              |
-| 2     | `propose` · `sync`                       | Especificada parcialmente |
-| 3     | `apply` · memória                        | Especificada parcialmente |
-| 4     | hooks · `archive`                        | Especificada parcialmente |
+| Fatia | Escopo                                                          | Status                    |
+| ----- | --------------------------------------------------------------- | ------------------------- |
+| 1     | `init` · `explore` · `verify` · `status` · `anchor suggest`       | Entregue                  |
+| 2     | `archive` · `anchor fix` · camadas coverage e evidence            | Entregue                  |
+| 3     | camada provenance · transporte MCP                                | Entregue                  |
+| 4     | `propose` · `apply` · `sync` · memória · hooks                    | Especificada parcialmente |
+
+A Fatia 2 fechou o ciclo `change → verify → archive`: uma change do specd passa a poder ser encerrada pela própria ferramenta, que aplica o delta às capabilities e arquiva o diretório.
+
+## Documento de proposta original
+
+O documento que originou o produto **foi superado e não será reconciliado**. Ele usa identificadores com prefixo `REQ-` que não correspondem aos de `.specd/specs/` — `REQ-SPEC-*`, `REQ-BOARD-*`, `REQ-MEM-*`, `REQ-SEC-*` — e citá-lo já produziu quatro referências a requisitos que não existem aqui.
+
+**O contrato é `.specd/specs/` mais o `delta.md` das changes abertas, e nada além disso.** Identificador que não aparece nesses dois lugares não obriga este repositório. O que aquele documento cobre e ainda não virou capability está enumerado em `docs/history/README.md` com prefixo `BL-`, deliberadamente fora do espaço `REQ-`.
 
 ## Nota de desambiguação
 
