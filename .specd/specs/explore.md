@@ -41,12 +41,25 @@ A CLI busca as fontes configuradas e grava um bundle auditável. A síntese em d
 
 **Acceptance.**
 - Fonte required com erro de rede aborta o comando
-- Manifest é gravado mesmo em falha, com o status real por fonte
 - Fonte opcional falhada não aborta
 
 ```yaml anchors
 - file: src/explore/index.ts
   symbol: "assertRequiredSources"
+```
+
+### REQ-EXP-008 — Manifest survives a blocked run
+
+**Statement.** The specd explore command SHALL write the manifest before reporting a required-source failure.
+
+**Acceptance.**
+- Manifest existe no disco depois de rodada bloqueada por fonte obrigatória
+- Status real por fonte é preservado, inclusive o da fonte que falhou
+- Ordem é gravar e então falhar, nunca falhar e então gravar
+
+```yaml anchors
+- file: src/explore/index.ts
+  symbol: "export async function explore"
 ```
 
 ### REQ-EXP-004 — Manifest records per-source status

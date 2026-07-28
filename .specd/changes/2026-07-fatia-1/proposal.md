@@ -17,6 +17,10 @@ Entram: `init`, `explore`, `verify`, `status`, o parser EARS, a escada de âncor
 
 Ficam fora: `propose`, `apply`, `sync`, `archive`, `anchor fix`, memória e hooks.
 
+Quatro requisitos ficam especificados e sem implementação nesta fatia. Continuam nas capabilities para referência, e o delta não os menciona — em specd, adiar é não constar do delta, e é por isso que a política graduated trata cada um deles como erro e não como aviso. REQ-ANC-007 (archive não tolera âncora pendurada) espera o comando `archive`; REQ-ANC-008 (fix reescreve com revisão) espera `anchor fix`; REQ-VER-004 (camada coverage) e REQ-VER-005 (camada evidence) esperam as tasks, que chegam com `propose`.
+
+O delta declara só ADDED, MODIFIED e REMOVED, as três seções que REQ-FMT-005 admite. Cada uma corresponde a algo que o `archive` faz com as capabilities; adiamento não corresponde a nada, e por isso é prosa aqui e não seção lá.
+
 ## Camadas do verify realmente ativas nesta fatia
 
 | Camada | Ativa? | Motivo |
@@ -37,6 +41,8 @@ Specs existentes não têm âncoras. Sem uma forma de anotá-las, a camada que m
 Antes de qualquer implementação, reservar o nome `specd` no npm sem escopo, e opcionalmente `@jnerytech/specd` como reserva. `npx specd` é preferível a `npx @jnerytech/specd`, e o nome sem escopo está livre hoje — mas não permanece livre por decreto.
 
 Isso não é tarefa desta fatia. Não produz código, não referencia requisito e é executado por pessoa, não por agente. Está registrado aqui e no README porque precede tudo o mais.
+
+`package.json` já declara `name = "specd"`, o que é pré-condição para reservar, não substituto. Enquanto o nome não estiver publicado, `npx specd` resolve para qualquer pacote que ocupe esse nome no registry — possivelmente de outro autor. Nenhum critério de aceite de REQ-CLI-006 afirma o contrário: o que os testes cobrem é o tarball instalar e expor o binário, offline. A reserva é fato de registry e continua sendo trabalho humano.
 
 ## Não-objetivos declarados
 

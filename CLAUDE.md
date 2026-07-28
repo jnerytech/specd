@@ -28,6 +28,13 @@ Só `specd verify` retorna 1 por reprovação de qualidade. Outros comandos reto
 
 **P6 — Memória é efêmera; verdade durável vai para spec ou ADR.**
 
+**P7 — Âncora é necessária, nunca suficiente.**
+Âncora que resolve prova que existe código no caminho declarado. Não prova que o código satisfaz o requisito. Âncora responde onde, não se nem quando.
+
+Daí a disciplina: âncora nunca aponta para implementação parcial. Deixar âncora honestamente pendurada é preferível a resolvê-la para um stub — o stub troca um sinal verdadeiro de trabalho pendente por um falso de trabalho pronto, e o gate perde o direito de ser acreditado.
+
+Isto é princípio e não requisito porque não é checável por máquina. Decidir se o código satisfaz o requisito é julgamento semântico, e P1 mantém julgamento semântico fora do caminho de decisão — não só na v1, sempre.
+
 ## Contrato de exit code
 
 | Código | Significado                                          |

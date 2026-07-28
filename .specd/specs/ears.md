@@ -38,13 +38,19 @@ Validação sintática dos requisitos segundo os cinco padrões EARS.
   symbol: "export function parseStatement"
 ```
 
-### REQ-EARS-003 — Single behaviour per requirement
+### REQ-EARS-003 — One SHALL clause per statement
 
 **Statement.** IF a statement contains more than one `SHALL` clause, THEN the specd EARS parser SHALL reject it and report that the requirement must be split.
 
 **Acceptance.**
 - Dois `SHALL` no mesmo statement reprovam
 - Mensagem sugere a divisão em requisitos separados
+- `SHALL` entre crases é menção da keyword, não cláusula, e não conta
+- A checagem conta cláusulas `SHALL` e nada mais
+
+**O que esta checagem não prova.** Ela é sintática. Statement de cláusula única pode descrever mais de um comportamento e passar — basta coordenar o segundo comportamento numa oração subordinada. O parser não detecta isso, e nenhuma checagem determinística detectaria sem julgamento semântico, que P1 mantém fora do caminho de decisão.
+
+O sinal humano é a razão entre critérios de aceite e cláusulas do statement: critério que não se apoia em nenhuma cláusula é comportamento que o requisito não reivindica. Vale revisão, não reprovação automática.
 
 ```yaml anchors
 - file: src/ears/parse.ts

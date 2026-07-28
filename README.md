@@ -17,17 +17,18 @@ REQ-AUTH-003: âncora pendurada
 
 ### 1. Reservar o nome no npm
 
-O repositório é público em `github.com/jnerytech`, então o escopo natural seria `@jnerytech/specd`. Mas o nome `specd` está livre sem escopo, e `npx specd` é melhor que `npx @jnerytech/specd`.
+O repositório é público em `github.com/jnerytech`, então o escopo natural seria `@jnerytech/specd`. Mas o nome `specd` está livre sem escopo, e `npx specd` é melhor que `npx @jnerytech/specd`. **Decisão tomada: sem escopo.** `package.json` já declara `name = "specd"`.
 
-**Publique sem escopo e registre o escopo como reserva.** Um `npm publish` de um pacote `0.0.0` vazio já garante o nome, e leva dois minutos:
+Declarar o nome não é o mesmo que reservá-lo. Enquanto não houver publicação, `npx specd` resolve para qualquer pacote que ocupe esse nome no registry — possivelmente de outro autor. Um `npm publish` de um `0.0.0` já garante o nome, e leva dois minutos:
 
 ```bash
 npm publish --dry-run          # confirme o que vai subir
 npm publish                    # reserva 'specd'
-npm publish --access public    # depois, se quiser reservar @jnerytech/specd
 ```
 
-Fazer isso antes de anunciar evita a situação em que o nome é tomado entre a publicação do repositório e a primeira release utilizável.
+Fazer isso antes de anunciar evita a situação em que o nome é tomado entre a publicação do repositório e a primeira release utilizável. Reservar `@jnerytech/specd` como escopo defensivo é opcional e independente.
+
+Por que isso não é critério de aceite de REQ-CLI-006: que `npx specd` alcance este pacote é fato de registry, não propriedade do código. Verificável só publicando. O que os testes cobrem, offline, é o tarball instalar e expor um binário `specd` funcional.
 
 ### 2. Implementar a Fatia 1
 

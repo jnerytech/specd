@@ -21,7 +21,9 @@ describe("specd verifies this repository", () => {
     expect(report.disabled).toEqual(["provenance", "coverage", "evidence"]);
   });
 
-  it("passes the schema layer: all 48 statements parse", async () => {
+  // Deliberately no count: requirements get added, and a number in the name
+  // goes stale without failing anything.
+  it("passes the schema layer: every statement parses", async () => {
     const report = await run();
     const schema = report.layers.find((l) => l.layer === "schema");
     expect(schema?.violations).toEqual([]);

@@ -1,7 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { createRequire } from "node:module";
 import { ConfigError } from "../../src/config/errors.js";
 import { resolveConfig } from "../../src/config/resolve.js";
 import { detectStack } from "../../src/init/detect-stack.js";
@@ -170,15 +169,5 @@ describe("init", () => {
   });
 });
 
-// REQ-CLI-006 — Zero-install distribution
-describe("package manifest", () => {
-  it("declares the specd binary", () => {
-    const require = createRequire(import.meta.url);
-    const manifest = require("../../package.json") as {
-      bin?: Record<string, string>;
-      files?: string[];
-    };
-    expect(manifest.bin?.["specd"]).toBe("dist/cli.js");
-    expect(manifest.files).toContain("dist");
-  });
-});
+// REQ-CLI-006 is covered by test/distribution/package.test.ts, which exercises
+// the packaged tarball rather than the manifest alone.

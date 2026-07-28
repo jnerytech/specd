@@ -13,7 +13,7 @@ Toda a Fatia 1 é greenfield. Os requisitos abaixo entram como novos nas capabil
 - REQ-CLI-003 — Never guess on conflict
 - REQ-CLI-004 — Exit code contract
 - REQ-CLI-005 — Offline gate
-- REQ-CLI-006 — Scoped distribution
+- REQ-CLI-006 — Zero-install distribution
 
 ### spec-format
 - REQ-FMT-001 — Capability file layout
@@ -64,15 +64,6 @@ Toda a Fatia 1 é greenfield. Os requisitos abaixo entram como novos nas capabil
 - REQ-CFG-004 — Init writes complete defaults
 - REQ-CFG-005 — Init detects the stack
 - REQ-CFG-006 — Status reports drift and pending work
-
-## DEFERRED
-
-Requisitos especificados mas fora desta fatia, mantidos nas capabilities para referência e desativados via `verify.levels`:
-
-- REQ-ANC-007 — Archive tolerates nothing (depende de `archive`)
-- REQ-ANC-008 — Fix rewrites with review (depende de `anchor fix`)
-- REQ-VER-004 — Coverage layer (depende de tasks)
-- REQ-VER-005 — Evidence layer (depende de tasks)
 
 ## MODIFIED
 

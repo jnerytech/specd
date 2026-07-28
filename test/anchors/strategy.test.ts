@@ -37,20 +37,10 @@ describe("treesitter is refused", () => {
     expect(message).toContain('anchors.default = "grep"');
   });
 
-  it("ships no WASM grammar dependency", async () => {
-    const { readFileSync } = await import("node:fs");
-    const { join } = await import("node:path");
-    const manifest = JSON.parse(
-      readFileSync(
-        join(import.meta.dirname, "..", "..", "package.json"),
-        "utf8",
-      ),
-    ) as { dependencies?: Record<string, string> };
-    const runtime = Object.keys(manifest.dependencies ?? {});
-    expect(runtime.filter((name) => /tree-?sitter|wasm/i.test(name))).toEqual(
-      [],
-    );
-  });
+  // The "no WASM grammar in the bundle" criterion moved to REQ-CLI-006, where
+  // the native-dependency constraint already lives; its test moved with it to
+  // test/distribution/package.test.ts. REQ-ANC-005 now states only strategy
+  // selection.
 });
 
 // REQ-ANC-002 step 3 — grep is a literal string search, nothing more.

@@ -84,9 +84,12 @@ Comandos, códigos de saída e regras invioláveis de comportamento da CLI `spec
 **Statement.** The specd package SHALL expose a `specd` binary executable via `npx` without prior installation.
 
 **Acceptance.**
-- `package.json` declara `bin.specd`
-- `npx specd verify` funciona em diretório limpo
+- `package.json` declara `bin.specd` e inclui `dist` em `files`
+- O tarball empacotado instala e expõe um binário `specd` funcional
 - Nenhuma dependência nativa ou passo de build no cliente
+- Nenhuma gramática WASM entra no bundle
+
+Que `npx specd` resolva para este pacote depende de reservar o nome sem escopo no registry. É fato de registry, não propriedade do código: verificável só publicando, e por isso está no pré-requisito operacional da change, não aqui.
 
 ```yaml anchors
 - file: package.json

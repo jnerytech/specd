@@ -80,11 +80,26 @@ Seis camadas ordenadas. As cinco primeiras são offline e agnósticas de stack; 
 **Acceptance.**
 - Comando é executado sem interpretação de shell
 - Exit code diferente de zero reprova a camada
-- Stdout e stderr do comando aparecem no relatório
 
 ```yaml anchors
 - file: src/verify/layers/project.ts
   symbol: "export const projectLayer"
+```
+
+### REQ-VER-009 — Project layer output reaches the report
+
+**Statement.** The specd verifier SHALL record the stdout and stderr of the validation command in the layer report.
+
+**Acceptance.**
+- Saída do comando aparece no relatório mesmo quando a camada aprova
+- Camada reprovada carrega a saída que explica a reprovação
+- Nada é truncado em silêncio
+
+```yaml anchors
+- file: src/verify/layers/project.ts
+  symbol: "export const projectLayer"
+- file: src/verify/report.ts
+  symbol: "export interface LayerReport"
 ```
 
 ### REQ-VER-007 — Fast mode
