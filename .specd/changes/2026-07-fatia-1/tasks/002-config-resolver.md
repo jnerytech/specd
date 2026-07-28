@@ -2,9 +2,9 @@
 id: 002-config-resolver
 change: 2026-07-fatia-1
 req: [REQ-CFG-001, REQ-CFG-002, REQ-CFG-003]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: [ffeac0c5fe6587c99cbd629a6678dac318717d4c]
 ---
 
 ## Objetivo
