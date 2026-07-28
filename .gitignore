@@ -13,3 +13,16 @@ npm-debug.log*
 
 # Estado local de runtime — o versionado é .specd/, não isto
 .specd/**/tmp/
+
+# Código de terceiros, apenas para leitura. O conteúdo nunca é
+# versionado; só as regras de uso.
+.reference/*
+!.reference/README.md
+
+# Experimentação manual. Descartável.
+sandbox/*
+!sandbox/README.md
+
+# ATENÇÃO: test/fixtures/ NÃO entra aqui.
+# São repositórios sintéticos com drift conhecido, usados pelos testes.
+# Ignorá-los deixa o CI sem o que verificar.
