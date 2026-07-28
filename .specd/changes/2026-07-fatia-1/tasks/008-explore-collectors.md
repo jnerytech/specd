@@ -4,7 +4,7 @@ change: 2026-07-fatia-1
 req: [REQ-EXP-001, REQ-EXP-002, REQ-EXP-003, REQ-EXP-004, REQ-EXP-005, REQ-EXP-006]
 status: done
 evidence:
-  commits: []
+  commits: [c0a841c3fcbf1718df5cfc541df63fb43ee3fc62]
 ---
 
 ## Objetivo
