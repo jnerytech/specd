@@ -1,7 +1,13 @@
 import { requireProjectRoot } from "../core/root.js";
-import { existsSync, readdirSync } from "node:fs";
-import { basename, join } from "node:path";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { basename, isAbsolute, join, relative, sep } from "node:path";
 import { ConflictError } from "../core/conflict.js";
+import { OperationalError } from "../core/operational.js";
+import {
+  knownDeclarationExtensions,
+  listDeclarations,
+  type Declaration,
+} from "./declarations.js";
 import { loadCapabilities, type Capability } from "../parser/capability.js";
 import type { Requirement } from "../parser/requirement.js";
 import { SEARCH_EXCLUDE_PREFIXES } from "./resolve.js";
@@ -125,6 +131,84 @@ export function suggestAnchors(options: SuggestOptions): SuggestReport {
       suggestForRequirement(requirement, root),
     ),
   };
+}
+
+export interface FileSuggestReport {
+  file: string;
+  // Absent when no declaration pattern is known for the extension.
+  language?: string;
+  extension: string;
+  declarations: Declaration[];
+}
+
+export interface FileSuggestOptions {
+  root: string;
+  file: string;
+}
+
+// REQ-ANC-012 — the `--file` mode.
+//
+// Deterministic and free of invention: it reports what the file declares, in
+// file order, and the author picks. This is the flow that actually happens —
+// whoever writes a requirement about existing code has already read the file.
+export function suggestForFile(options: FileSuggestOptions): FileSuggestReport {
+  const root = requireProjectRoot(options.root);
+  const path = isAbsolute(options.file)
+    ? options.file
+    : join(root, options.file);
+
+  if (!existsSync(path) || !statSync(path).isFile()) {
+    throw new OperationalError(
+      `"${options.file}" is not a readable file. --file takes a path, absolute or relative to the project root "${root}".`,
+    );
+  }
+
+  const listing = listDeclarations(readFileSync(path, "utf8"), path);
+  const file = isAbsolute(options.file)
+    ? relative(root, path).split(sep).join("/")
+    : options.file.split(sep).join("/");
+
+  return listing.known
+    ? {
+        file,
+        language: listing.language,
+        extension: extensionOf(path),
+        declarations: listing.declarations,
+      }
+    : { file, extension: listing.extension, declarations: [] };
+}
+
+function extensionOf(path: string): string {
+  const dot = basename(path).lastIndexOf(".");
+  return dot <= 0 ? "(none)" : basename(path).slice(dot).toLowerCase();
+}
+
+export function formatFileSuggestReport(report: FileSuggestReport): string {
+  // P8: "I know this language and it declares nothing" and "I do not know this
+  // language" are different answers, and only the first is safe to act on.
+  if (report.language === undefined) {
+    return [
+      `No declaration pattern is known for "${report.extension}" (${report.file}).`,
+      "This is not an empty file — specd cannot read declarations of this kind,",
+      "so it reports nothing rather than reporting nothing found.",
+      `Known extensions: ${knownDeclarationExtensions().join(" ")}`,
+    ].join("\n");
+  }
+
+  const lines = [
+    `Declarations in ${report.file} (${report.language})`,
+    "specd never writes these into the spec — copy the one the requirement is about.",
+    "",
+  ];
+  if (report.declarations.length === 0) {
+    lines.push("    no declaration found");
+    return lines.join("\n");
+  }
+  for (const declaration of report.declarations) {
+    lines.push(`    ${report.file}:${declaration.line}`);
+    lines.push(`      symbol: ${JSON.stringify(declaration.symbol)}`);
+  }
+  return lines.join("\n").trimEnd();
 }
 
 // REQ-CLI-003: a name that matches more than one capability is a conflict, not

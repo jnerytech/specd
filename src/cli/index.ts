@@ -1,7 +1,16 @@
 import { fixAnchor } from "../anchors/fix.js";
-import { formatSuggestReport, suggestAnchors } from "../anchors/suggest.js";
+import {
+  formatFileSuggestReport,
+  formatSuggestReport,
+  suggestAnchors,
+  suggestForFile,
+} from "../anchors/suggest.js";
 import { archive } from "../archive/index.js";
 import { explore } from "../explore/index.js";
+import { formatInstallResult, installHooks } from "../hooks/install.js";
+import { isHookEvent, HOOK_EVENTS } from "../hooks/protocol.js";
+import { runHook } from "../hooks/run.js";
+import { formatUninstallResult, uninstallHooks } from "../hooks/uninstall.js";
 import { formatInitResult, init } from "../init/index.js";
 import { formatStatus, status } from "../status/index.js";
 import { verify } from "../verify/index.js";
@@ -31,7 +40,11 @@ Commands:
   explore <card> --change <name>    Collect the configured sources into a bundle
   archive <change>                  Apply a change's delta to the specs and file it away
   anchor suggest <capability>       Report anchor candidates for a capability
+  anchor suggest --file <path>      List the declarations a file contains
   anchor fix <requirement>          Rewrite a dangling anchor to its suggested location
+  hooks install                     Add the specd hooks to .claude/settings.json
+  hooks uninstall                   Remove them again
+  hooks run <event>                 Adapter invoked by the host; not meant to be run by hand
   help                              Show this message
 
 Options for verify:
@@ -44,7 +57,14 @@ Options for init:
 Options for status and anchor suggest:
   --json        Emit the report as JSON on stdout
 
+Options for hooks install:
+  --full-on-stop        Write the Stop command without --fast
+  --force               Replace an existing specd entry whose command differs
+  --command <exec>      How the hook invokes specd (default "specd")
+
 Exit codes: 0 success, 1 gate failure, 2 operational failure.
+\`hooks run\` is the one exception, and deliberately so: it answers in the host's
+hook convention, not in this one. See src/hooks/protocol.ts.
 `;
 
 // REQ-CLI-001: exactly one command returns a non-zero exit code as a quality
@@ -58,6 +78,7 @@ export function registerCommands(): Map<string, Command> {
     exploreCommand,
     archiveCommand,
     anchorCommand,
+    hooksCommand,
     helpCommand,
   ]) {
     commands.set(command.name, command);
@@ -203,27 +224,119 @@ const anchorCommand: Command = {
       );
     }
 
-    const positional = rest.filter((argument) => !argument.startsWith("-"));
-    const flags = parseFlags(
-      rest.filter((argument) => argument.startsWith("-")),
+    const { positional, options } = parseArguments(
+      rest,
+      ["--file"],
       ["--json"],
     );
+
+    // REQ-ANC-012: `--file` inverts the question — list what the file declares
+    // rather than search for terms lifted from requirement prose.
+    const file = options.get("--file");
+    if (file !== undefined) {
+      if (positional.length > 0) {
+        throw new UsageError(
+          "Usage: specd anchor suggest --file <path> [--json] — --file takes no capability name.",
+        );
+      }
+      const report = suggestForFile({ root: io.cwd, file });
+      io.stdout(
+        options.has("--json")
+          ? `${JSON.stringify(report, null, 2)}\n`
+          : `${formatFileSuggestReport(report)}\n`,
+      );
+      return EXIT.OK;
+    }
+
     const capability = positional[0];
     if (capability === undefined || positional.length > 1) {
       throw new UsageError(
-        "Usage: specd anchor suggest <capability> [--json] — exactly one capability name.",
+        "Usage: specd anchor suggest <capability> [--json], or specd anchor suggest --file <path>.",
       );
     }
 
     const report = suggestAnchors({ root: io.cwd, capability });
     io.stdout(
-      flags.has("--json")
+      options.has("--json")
         ? `${JSON.stringify(report, null, 2)}\n`
         : `${formatSuggestReport(report)}\n`,
     );
     return EXIT.OK;
   },
 };
+
+const hooksCommand: Command = {
+  name: "hooks",
+  summary: "Install, remove, or act as the host's hook adapter",
+  async run(argv, io): Promise<ExitCode> {
+    const [subcommand, ...rest] = argv;
+    if (subcommand === "install") return hooksInstall(rest, io);
+    if (subcommand === "uninstall") return hooksUninstall(rest, io);
+    if (subcommand === "run") return hooksRun(rest, io);
+    throw new UsageError(
+      `Unknown subcommand "${subcommand ?? ""}" for "hooks". Usage: specd hooks install [--full-on-stop] [--force] [--command <exec>], specd hooks uninstall, or specd hooks run <${HOOK_EVENTS.join("|")}> [--fast].`,
+    );
+  },
+};
+
+// REQ-HOOK-001/002/003/007: writing the settings file is an ordinary specd
+// command and answers in specd's exit-code contract — 2 when it refuses to act.
+function hooksInstall(argv: string[], io: CliIo): Promise<ExitCode> {
+  const { positional, options } = parseArguments(
+    argv,
+    ["--command"],
+    ["--full-on-stop", "--force"],
+  );
+  if (positional.length > 0) {
+    throw new UsageError(
+      "Usage: specd hooks install [--full-on-stop] [--force] [--command <exec>] — no positional arguments.",
+    );
+  }
+
+  const executable = options.get("--command");
+  const result = installHooks({
+    cwd: io.cwd,
+    fullOnStop: options.has("--full-on-stop"),
+    force: options.has("--force"),
+    ...(executable === undefined ? {} : { executable }),
+  });
+  io.stdout(`${formatInstallResult(result)}\n`);
+  return Promise.resolve(EXIT.OK);
+}
+
+function hooksUninstall(argv: string[], io: CliIo): Promise<ExitCode> {
+  if (argv.length > 0) {
+    throw new UsageError("Usage: specd hooks uninstall — takes no arguments.");
+  }
+  io.stdout(`${formatUninstallResult(uninstallHooks({ cwd: io.cwd }))}\n`);
+  return Promise.resolve(EXIT.OK);
+}
+
+// REQ-HOOK-005 — the one place the two exit-code contracts meet.
+//
+// Everything above answers in specd's contract; this returns the host's. The
+// numbers overlap and the meanings do not, so the translation happens here,
+// once, in the open — rather than by letting a specd code travel out through a
+// channel that reads it as something else.
+async function hooksRun(argv: string[], io: CliIo): Promise<ExitCode> {
+  const { positional, options } = parseArguments(argv, [], ["--fast"]);
+  const event = positional[0];
+  if (event === undefined || positional.length > 1 || !isHookEvent(event)) {
+    throw new UsageError(
+      `Usage: specd hooks run <${HOOK_EVENTS.join("|")}> [--fast] — exactly one event name.`,
+    );
+  }
+
+  const outcome = await runHook(event, {
+    cwd: io.cwd,
+    fast: options.has("--fast"),
+  });
+  // The payload enriches; it never decides. A host that ignores stdout still
+  // sees the exit code, which is what makes this fail closed.
+  io.stdout(`${JSON.stringify(outcome.payload)}\n`);
+  io.stderr(`${outcome.message}\n`);
+  return outcome.exitCode;
+}
 
 // REQ-ANC-008: the file changes on disk and stays unstaged. Exit 2 when there
 // is nothing to apply — a refusal to act, not a verdict.

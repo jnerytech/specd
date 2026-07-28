@@ -157,7 +157,10 @@ describe("specd anchor suggest", () => {
   it("exits 2 on a missing capability argument", async () => {
     const result = await cli(["anchor", "suggest"], workspace().root);
     expect(result.status).toBe(EXIT.OPERATIONAL_FAILURE);
-    expect(result.stderr).toContain("exactly one capability name");
+    // Both modes are named, because with `--file` there is now more than one
+    // way to call this and the usage line has to say so.
+    expect(result.stderr).toContain("specd anchor suggest <capability>");
+    expect(result.stderr).toContain("--file <path>");
   });
 
   it("exits 2 on an unknown subcommand", async () => {
