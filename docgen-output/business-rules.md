@@ -29,13 +29,13 @@ change precisa casar com exatamente um dos cinco padrões EARS aceitos,
 definidos em `src/ears/patterns.ts` (`EARS_PATTERNS`) e exigidos por
 **REQ-EARS-001**:
 
-| Padrão               | Forma                                        |
-| --------------------- | --------------------------------------------- |
-| Ubíquo                | `The <system> SHALL <response>`               |
-| Orientado a evento     | `WHEN <trigger>, the <system> SHALL <response>` |
-| Orientado a estado     | `WHILE <state>, the <system> SHALL <response>` |
+| Padrão                   | Forma                                                |
+| ------------------------ | ---------------------------------------------------- |
+| Ubíquo                   | `The <system> SHALL <response>`                      |
+| Orientado a evento       | `WHEN <trigger>, the <system> SHALL <response>`      |
+| Orientado a estado       | `WHILE <state>, the <system> SHALL <response>`       |
 | Comportamento indesejado | `IF <condition>, THEN the <system> SHALL <response>` |
-| Feature opcional       | `WHERE <feature>, the <system> SHALL <response>` |
+| Feature opcional         | `WHERE <feature>, the <system> SHALL <response>`     |
 
 Regras derivadas, todas verificadas na camada `schema` do `verify`:
 
@@ -200,10 +200,10 @@ depois de escrever para confirmar que a situação de fato mudou (ver seção
 ### 3.1 Contrato de exit code — a regra central do produto
 
 | Código | Significado                                          |
-| ------ | ----------------------------------------------------- |
-| 0      | Sucesso                                                |
-| 1      | Gate reprovou — a spec ou o código estão errados       |
-| 2      | Falha operacional — rede, I/O, configuração inválida   |
+| ------ | ---------------------------------------------------- |
+| 0      | Sucesso                                              |
+| 1      | Gate reprovou — a spec ou o código estão errados     |
+| 2      | Falha operacional — rede, I/O, configuração inválida |
 
 Este é o contrato mais estrito do produto, formalizado em dois princípios:
 

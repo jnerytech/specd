@@ -122,7 +122,7 @@ recusando a agir sem instrução clara.
 Vale registrar uma camada adicional que a sequência acima simplifica: antes
 de qualquer merge, `sync()` também localiza links órfãos — itens vinculados a
 requisitos que saíram da spec — e os classifica via `classifyOrphans()` em
-`declared`, `proposed` ou `none`. Só uma morte *declarada* e sem candidato de
+`declared`, `proposed` ou `none`. Só uma morte _declarada_ e sem candidato de
 corpo reaparecido fecha o card do board; isso é o próprio Princípio P9 sendo
 corrigido dentro do produto, porque uma versão anterior fechava qualquer link
 órfão sem perguntar.

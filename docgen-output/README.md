@@ -54,15 +54,15 @@ camada `project` do próprio gate — valida este repositório a cada commit.
 Nove princípios (P1–P9), detalhados em `CLAUDE.md`, orientam toda decisão de
 design. Os mais visíveis para quem usa a ferramenta:
 
-| # | Princípio |
-|---|---|
-| P1 | A CLI nunca chama LLM no caminho de decisão — nenhum módulo alcançável a partir de `verify()` importa cliente de LLM, e há teste de arquitetura para isso |
-| P2 | Um único gate: só `specd verify` retorna 1 por reprovação de qualidade |
-| P3 | O gate nunca acessa a rede — `explore` e `sync` acessam, `verify` não |
-| P4 | Nunca adivinhar em conflito: âncora ambígua ou merge inconsistente sai com erro e diagnóstico, nunca auto-resolução |
-| P7 | Âncora é necessária, nunca suficiente — prova que existe código no caminho declarado, não que ele satisfaz o requisito |
-| P8 | Ausência de dado não é conformidade — todo capacidade que lê estado externo distingue "certo", "errado" e "não consegui verificar", e o terceiro nunca é verde |
-| P9 | Operação que custa alguma coisa não acontece em silêncio — `archive` e `anchor fix` reescrevem arquivos e deixam tudo fora do índice, para revisão antes de virar commit |
+| #   | Princípio                                                                                                                                                                |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P1  | A CLI nunca chama LLM no caminho de decisão — nenhum módulo alcançável a partir de `verify()` importa cliente de LLM, e há teste de arquitetura para isso                |
+| P2  | Um único gate: só `specd verify` retorna 1 por reprovação de qualidade                                                                                                   |
+| P3  | O gate nunca acessa a rede — `explore` e `sync` acessam, `verify` não                                                                                                    |
+| P4  | Nunca adivinhar em conflito: âncora ambígua ou merge inconsistente sai com erro e diagnóstico, nunca auto-resolução                                                      |
+| P7  | Âncora é necessária, nunca suficiente — prova que existe código no caminho declarado, não que ele satisfaz o requisito                                                   |
+| P8  | Ausência de dado não é conformidade — todo capacidade que lê estado externo distingue "certo", "errado" e "não consegui verificar", e o terceiro nunca é verde           |
+| P9  | Operação que custa alguma coisa não acontece em silêncio — `archive` e `anchor fix` reescrevem arquivos e deixam tudo fora do índice, para revisão antes de virar commit |
 
 ## Funcionalidades
 
@@ -400,7 +400,7 @@ spec é o contrato.** Antes de implementar qualquer tarefa:
    contém só verdade já realizada (Modelo B). Comportamento que ainda não
    existe em código mora no `delta.md` de uma change aberta em
    `.specd/changes/<id>/`, e só migra para `.specd/specs/` quando `specd
-   archive` aplica o delta.
+archive` aplica o delta.
 3. **Trate os critérios de aceite como especificação de teste.** Toda tarefa
    marcada `done` precisa de um SHA em `evidence.commits` — é o que a
    camada `evidence` do gate verifica.
@@ -436,16 +436,16 @@ implementado e testado. Na árvore de `.specd/changes/archive/` há, ao
 momento desta geração, oito fatias encerradas
 (`2026-07-fatia-1` a `2026-07-fatia-8`), cobrindo:
 
-| Fatia | Escopo entregue (resumo) |
-|---|---|
-| 1 | `init`, `explore`, `verify`, `status`, `anchor suggest` |
-| 2 | `archive`, `anchor fix`, camadas `coverage` e `evidence` |
-| 3 | camada `provenance`, transporte MCP |
-| 4 | raiz do projeto, listagem com fallback, detecção de stack .NET |
-| 5 | hooks, `anchor suggest --file` |
-| 6 | `sync`, adaptador Redmine |
-| 7 | `archive --sync`, exigência de morte declarada para fechar item de board |
-| 8 | recusa de fechamento quando o corpo do item reaparece sem ligação; morte proposta (não arquivada) deixa o card em paz |
+| Fatia | Escopo entregue (resumo)                                                                                              |
+| ----- | --------------------------------------------------------------------------------------------------------------------- |
+| 1     | `init`, `explore`, `verify`, `status`, `anchor suggest`                                                               |
+| 2     | `archive`, `anchor fix`, camadas `coverage` e `evidence`                                                              |
+| 3     | camada `provenance`, transporte MCP                                                                                   |
+| 4     | raiz do projeto, listagem com fallback, detecção de stack .NET                                                        |
+| 5     | hooks, `anchor suggest --file`                                                                                        |
+| 6     | `sync`, adaptador Redmine                                                                                             |
+| 7     | `archive --sync`, exigência de morte declarada para fechar item de board                                              |
+| 8     | recusa de fechamento quando o corpo do item reaparece sem ligação; morte proposta (não arquivada) deixa o card em paz |
 
 **`propose` e `apply` não estão implementados neste repositório.** Não
 existe código em `src/` para nenhum dos dois comandos, e eles não aparecem

@@ -2,7 +2,7 @@
 
 ## Resumo do Projeto / Visão Geral
 
-`specd` é uma CLI TypeScript de *spec-driven development* (SDD) cujo diferencial é a **detecção de drift por âncoras**: cada requisito de especificação declara onde, no código, ele é realizado — um par arquivo + símbolo — e o comando `specd verify` resolve cada âncora contra o working tree a cada execução. Quando uma âncora deixa de resolver (o arquivo sumiu, o símbolo mudou de nome, a assinatura desapareceu), o gate reprova com exit code 1. Essa mecânica transforma a spec de documentação opcional — que qualquer time deixa apodrecer — em artefato *load-bearing*: quebrar a âncora quebra o build.
+`specd` é uma CLI TypeScript de _spec-driven development_ (SDD) cujo diferencial é a **detecção de drift por âncoras**: cada requisito de especificação declara onde, no código, ele é realizado — um par arquivo + símbolo — e o comando `specd verify` resolve cada âncora contra o working tree a cada execução. Quando uma âncora deixa de resolver (o arquivo sumiu, o símbolo mudou de nome, a assinatura desapareceu), o gate reprova com exit code 1. Essa mecânica transforma a spec de documentação opcional — que qualquer time deixa apodrecer — em artefato _load-bearing_: quebrar a âncora quebra o build.
 
 O pacote é publicado no npm como `@jnerytech/specd` (`package.json` declara `"name": "@jnerytech/specd"`, atualmente na versão `0.0.2`), expõe o binário `specd` apontando para `dist/cli.js`, exige Node `>=20`, é inteiramente ESM (`"type": "module"`) e roda em TypeScript compilado por `tsc`. O repositório é público em `github.com/jnerytech/specd`, licenciado sob MIT, autor `jnerytech`. Existe um projeto homônimo não relacionado, `@specd/cli` (organização `specd-sdd/SpecD`) — sem afiliação; o único ponto de contato técnico é o nome do binário, que se sombreia se ambos estiverem instalados globalmente.
 
@@ -20,11 +20,11 @@ O produto é regido por nove princípios invioláveis (P1–P9, documentados em 
 
 O contrato de exit code é o eixo que permite CI distinguir "a spec/código está errado" de "a ferramenta quebrou":
 
-| Código | Significado |
-| --- | --- |
-| 0 | Sucesso |
-| 1 | Gate reprovou (só `verify`) — a spec ou o código estão errados |
-| 2 | Falha operacional — rede, I/O, configuração inválida |
+| Código | Significado                                                    |
+| ------ | -------------------------------------------------------------- |
+| 0      | Sucesso                                                        |
+| 1      | Gate reprovou (só `verify`) — a spec ou o código estão errados |
+| 2      | Falha operacional — rede, I/O, configuração inválida           |
 
 `specd` ainda **não está publicado no registry npm** sob o nome público de instalação padrão; até a primeira publicação efetiva, o caminho de uso é clonar o repositório, `npm install && npm run build`, e rodar `node dist/cli.js <comando>`, ou `npm link` uma vez para que `specd` funcione como binário do PATH.
 
@@ -57,7 +57,7 @@ Hoje o produto entrega o subconjunto `init → explore → verify → status →
 3. Executa cada camada habilitada em `config.verify.levels`, parando na primeira que falhar (`status: "failed"`) ou que não conseguir rodar (`status: "blocked"`, tratado como falha operacional e reportado separadamente em `report.blocked`).
 4. Devolve um `VerifyReport` com `ok`, `layers`, `violations`, `stoppedAt` opcional e `disabled` (camadas fora de `config.verify.levels`).
 
-As cinco primeiras camadas rodam offline em milissegundos e não conhecem a stack do projeto; a camada `project` faz shell-out ao `validation_command` declarado em `.specd/config.toml` — para este próprio repositório, `npm run verify`. Isso é *dogfooding* literal: o `specd verify` deste repositório delega a si mesmo via a camada `project`.
+As cinco primeiras camadas rodam offline em milissegundos e não conhecem a stack do projeto; a camada `project` faz shell-out ao `validation_command` declarado em `.specd/config.toml` — para este próprio repositório, `npm run verify`. Isso é _dogfooding_ literal: o `specd verify` deste repositório delega a si mesmo via a camada `project`.
 
 O comando de CLI (`src/cli/index.ts`, comando `verifyCommand`) traduz o relatório em exit code: se `report.blocked !== undefined`, exit 2 (falha operacional); senão, `report.ok ? 0 : 1`.
 
@@ -89,19 +89,19 @@ Este resolvedor é reaproveitado tanto pela camada `anchors` do gate quanto por 
 
 ## Stack Tecnológico
 
-| Camada | Tecnologia |
-| --- | --- |
-| Linguagem | TypeScript (compilado por `tsc`, `typescript-eslint` no lint) |
-| Runtime | Node.js `>=20`, módulo ESM (`"type": "module"`) |
-| Parsing de config | `smol-toml` (TOML) |
-| Parsing de frontmatter/spec | `yaml` (YAML embutido em Markdown) |
-| Testes | `vitest` (`vitest run`) |
-| Execução de scripts dev sem build | `tsx` |
-| Lint | `eslint` + `@eslint/js` + `typescript-eslint` |
-| Formatação | `prettier` |
-| Build | `tsc -p tsconfig.json` → `dist/` |
-| CI/gate local | `npm run verify` (format + lint + test + build, offline, sem Docker) |
-| Teste de integração | `test/integration/redmine/run.sh` (sobe Redmine em container) |
+| Camada                            | Tecnologia                                                           |
+| --------------------------------- | -------------------------------------------------------------------- |
+| Linguagem                         | TypeScript (compilado por `tsc`, `typescript-eslint` no lint)        |
+| Runtime                           | Node.js `>=20`, módulo ESM (`"type": "module"`)                      |
+| Parsing de config                 | `smol-toml` (TOML)                                                   |
+| Parsing de frontmatter/spec       | `yaml` (YAML embutido em Markdown)                                   |
+| Testes                            | `vitest` (`vitest run`)                                              |
+| Execução de scripts dev sem build | `tsx`                                                                |
+| Lint                              | `eslint` + `@eslint/js` + `typescript-eslint`                        |
+| Formatação                        | `prettier`                                                           |
+| Build                             | `tsc -p tsconfig.json` → `dist/`                                     |
+| CI/gate local                     | `npm run verify` (format + lint + test + build, offline, sem Docker) |
+| Teste de integração               | `test/integration/redmine/run.sh` (sobe Redmine em container)        |
 
 Não há framework web, banco de dados ou runtime de UI: `specd` é uma CLI de arquivo único de entrada (`src/cli.ts`) que lê e escreve arquivos Markdown/TOML/JSON locais e, em dois comandos específicos (`explore`, `sync`), fala HTTP com sistemas externos (board, MCP).
 
@@ -109,18 +109,18 @@ Não há framework web, banco de dados ou runtime de UI: `specd` é uma CLI de a
 
 Comandos expostos por `src/cli/index.ts` (`registerCommands()`), todos descritos no `USAGE` embutido no binário:
 
-| Comando | Função | Particularidade de exit code |
-| --- | --- | --- |
-| `specd init [--force]` | Cria `.specd/` com um `config.toml` completo (`src/init/index.ts`, com detecção de stack em `src/init/detect-stack.ts`, ex.: `.NET`) | Sempre 0 |
-| `specd verify [--fast] [--json]` | Roda o gate de seis camadas | **Único comando que retorna 1** (reprovação); 2 se uma camada travar |
-| `specd status [--json]` | Relata drift e trabalho pendente, agrupado por change (`src/status/index.ts`) | Sempre 0 — informa, não julga |
-| `specd explore <card> --change <name> [--json]` | Coleta as fontes configuradas (board, git, HTTP, MCP) num bundle auditável | 2 se fonte obrigatória falhar |
-| `specd sync [--dry-run] [--json]` | Reconcilia spec ↔ board configurado | 2 em conflito ou órfã não declarada; nunca 1 |
-| `specd archive <change> [--sync]` | Aplica o `delta.md` de uma change às capabilities e arquiva o diretório | 2 se a change não estiver pronta |
-| `specd anchor suggest <capability>` \| `--file <path>` | Sugere onde ancorar requisitos de uma capability, ou lista o que um arquivo declara | Sempre 0 |
-| `specd anchor fix <requirement>` | Reescreve uma âncora pendurada para a localização sugerida (sem commitar) | 2 se não houver o que aplicar |
-| `specd hooks install / uninstall / run <event>` | Integra/gerencia hooks com o host de agente | `run` responde no contrato de exit code do host, não no de `specd` |
-| `specd help` / `--help` / `--version` | Ajuda e versão | 0 |
+| Comando                                                | Função                                                                                                                               | Particularidade de exit code                                         |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| `specd init [--force]`                                 | Cria `.specd/` com um `config.toml` completo (`src/init/index.ts`, com detecção de stack em `src/init/detect-stack.ts`, ex.: `.NET`) | Sempre 0                                                             |
+| `specd verify [--fast] [--json]`                       | Roda o gate de seis camadas                                                                                                          | **Único comando que retorna 1** (reprovação); 2 se uma camada travar |
+| `specd status [--json]`                                | Relata drift e trabalho pendente, agrupado por change (`src/status/index.ts`)                                                        | Sempre 0 — informa, não julga                                        |
+| `specd explore <card> --change <name> [--json]`        | Coleta as fontes configuradas (board, git, HTTP, MCP) num bundle auditável                                                           | 2 se fonte obrigatória falhar                                        |
+| `specd sync [--dry-run] [--json]`                      | Reconcilia spec ↔ board configurado                                                                                                  | 2 em conflito ou órfã não declarada; nunca 1                         |
+| `specd archive <change> [--sync]`                      | Aplica o `delta.md` de uma change às capabilities e arquiva o diretório                                                              | 2 se a change não estiver pronta                                     |
+| `specd anchor suggest <capability>` \| `--file <path>` | Sugere onde ancorar requisitos de uma capability, ou lista o que um arquivo declara                                                  | Sempre 0                                                             |
+| `specd anchor fix <requirement>`                       | Reescreve uma âncora pendurada para a localização sugerida (sem commitar)                                                            | 2 se não houver o que aplicar                                        |
+| `specd hooks install / uninstall / run <event>`        | Integra/gerencia hooks com o host de agente                                                                                          | `run` responde no contrato de exit code do host, não no de `specd`   |
+| `specd help` / `--help` / `--version`                  | Ajuda e versão                                                                                                                       | 0                                                                    |
 
 Capacidades transversais dignas de nota:
 
@@ -212,27 +212,27 @@ test/
                          #   proposal.md e tasks/
 ```
 
-Cada arquivo de capability em `.specd/specs/*.md` abre com frontmatter YAML (`capability`, `retired: []`) e declara requisitos como headings de nível 3 (`### REQ-<PREFIXO>-<NNN> — Título`), cada um com `Statement` em EARS, `Acceptance` (lista de critérios testáveis) e um bloco ```` ```yaml anchors ```` apontando `file` + `symbol`. `parseCapability()` (`src/parser/capability.ts`) é o parser canônico dessa estrutura; ele rejeita frontmatter ausente, requisito duplicado, prefixo de ID incompatível com o nome da capability, e ID reutilizado depois de listado em `retired`.
+Cada arquivo de capability em `.specd/specs/*.md` abre com frontmatter YAML (`capability`, `retired: []`) e declara requisitos como headings de nível 3 (`### REQ-<PREFIXO>-<NNN> — Título`), cada um com `Statement` em EARS, `Acceptance` (lista de critérios testáveis) e um bloco ` ```yaml anchors ` apontando `file` + `symbol`. `parseCapability()` (`src/parser/capability.ts`) é o parser canônico dessa estrutura; ele rejeita frontmatter ausente, requisito duplicado, prefixo de ID incompatível com o nome da capability, e ID reutilizado depois de listado em `retired`.
 
 ## Dependências
 
 Dependências de produção, deliberadamente mínimas — refletindo P5 (nenhum botão de configuração ou biblioteca sem necessidade medida):
 
-| Pacote | Uso |
-| --- | --- |
-| `smol-toml` | Parsing/serialização de `.specd/config.toml` |
-| `yaml` | Parsing do frontmatter YAML e dos blocos `yaml anchors` embutidos em Markdown |
+| Pacote      | Uso                                                                           |
+| ----------- | ----------------------------------------------------------------------------- |
+| `smol-toml` | Parsing/serialização de `.specd/config.toml`                                  |
+| `yaml`      | Parsing do frontmatter YAML e dos blocos `yaml anchors` embutidos em Markdown |
 
 Dependências de desenvolvimento:
 
-| Pacote | Uso |
-| --- | --- |
-| `typescript` | Compilador, também usado por `tsc -p tsconfig.json` no build |
-| `typescript-eslint` + `@eslint/js` + `eslint` | Lint |
-| `prettier` | Formatação (`npm run format`) |
-| `vitest` | Test runner (`npm run test`) |
-| `tsx` | Execução de TypeScript sem build prévio, útil em scripts de desenvolvimento |
-| `@types/node` | Tipagem de Node para APIs de `fs`, `path`, `os` etc. usadas amplamente |
+| Pacote                                        | Uso                                                                         |
+| --------------------------------------------- | --------------------------------------------------------------------------- |
+| `typescript`                                  | Compilador, também usado por `tsc -p tsconfig.json` no build                |
+| `typescript-eslint` + `@eslint/js` + `eslint` | Lint                                                                        |
+| `prettier`                                    | Formatação (`npm run format`)                                               |
+| `vitest`                                      | Test runner (`npm run test`)                                                |
+| `tsx`                                         | Execução de TypeScript sem build prévio, útil em scripts de desenvolvimento |
+| `@types/node`                                 | Tipagem de Node para APIs de `fs`, `path`, `os` etc. usadas amplamente      |
 
 Não há dependências de framework web, ORM ou cliente de LLM em produção — coerente com P1, que proíbe qualquer módulo alcançável a partir de `verify()` de importar um cliente de LLM, e com a filosofia geral de superfície mínima do projeto.
 

@@ -33,19 +33,19 @@ Cada camada implementa a interface `VerifyLayer` (`src/verify/layers/types.ts`) 
 
 Extraído de `package.json` (nome do pacote `@jnerytech/specd`, versão `0.0.2`) e dos arquivos de configuração de build/lint/teste:
 
-| Categoria | Ferramenta | Versão declarada |
-|---|---|---|
-| Linguagem | TypeScript | `^6.0.3` |
-| Runtime alvo | Node.js | `>=20` (campo `engines`) |
-| Sistema de módulos | ESM (`"type": "module"`) | — |
-| Compilador | `tsc` (via `tsconfig.json`) | target `ES2022`, module/moduleResolution `NodeNext` |
-| Testes | Vitest | `^4.1.10` |
-| Lint | ESLint + typescript-eslint | `^10.8.0` / `^8.65.0` |
-| Formatação | Prettier | `^3.9.6` |
-| Execução de scripts TS em dev | tsx | `^4.23.1` |
-| Tipos Node | `@types/node` | `^26.1.2` |
-| Parse de TOML (dependência de runtime) | `smol-toml` | `^1.7.1` |
-| Parse de YAML (dependência de runtime) | `yaml` | `^2.9.0` |
+| Categoria                              | Ferramenta                  | Versão declarada                                    |
+| -------------------------------------- | --------------------------- | --------------------------------------------------- |
+| Linguagem                              | TypeScript                  | `^6.0.3`                                            |
+| Runtime alvo                           | Node.js                     | `>=20` (campo `engines`)                            |
+| Sistema de módulos                     | ESM (`"type": "module"`)    | —                                                   |
+| Compilador                             | `tsc` (via `tsconfig.json`) | target `ES2022`, module/moduleResolution `NodeNext` |
+| Testes                                 | Vitest                      | `^4.1.10`                                           |
+| Lint                                   | ESLint + typescript-eslint  | `^10.8.0` / `^8.65.0`                               |
+| Formatação                             | Prettier                    | `^3.9.6`                                            |
+| Execução de scripts TS em dev          | tsx                         | `^4.23.1`                                           |
+| Tipos Node                             | `@types/node`               | `^26.1.2`                                           |
+| Parse de TOML (dependência de runtime) | `smol-toml`                 | `^1.7.1`                                            |
+| Parse de YAML (dependência de runtime) | `yaml`                      | `^2.9.0`                                            |
 
 O projeto não usa nenhum framework de aplicação — é Node puro. As únicas duas dependências de runtime (não-dev) são `smol-toml`, usada para ler `.specd/config.toml` (`src/config/resolve.ts` importa `parse` de `"smol-toml"`), e `yaml`, usada para ler os blocos de front-matter e âncoras (`yaml anchors`) embutidos nos arquivos markdown de spec.
 
@@ -91,11 +91,11 @@ Pontos de integração externa, todos fora do caminho do gate:
 
 O contrato de exit code é o ponto de integração mais importante com sistemas externos (CI):
 
-| Código | Significado |
-|---|---|
-| 0 | Sucesso |
-| 1 | Gate reprovou (só `specd verify`) — a spec ou o código estão errados |
-| 2 | Falha operacional — rede, I/O, configuração inválida |
+| Código | Significado                                                          |
+| ------ | -------------------------------------------------------------------- |
+| 0      | Sucesso                                                              |
+| 1      | Gate reprovou (só `specd verify`) — a spec ou o código estão errados |
+| 2      | Falha operacional — rede, I/O, configuração inválida                 |
 
 Essa distinção é reforçada em `src/cli.ts`: qualquer exceção não tratada que chega ao `catch` de `main()` vira exit 2, nunca 1 — porque só um veredito do gate pode retornar 1 (`REQ-CLI-004`, citado no comentário do código).
 

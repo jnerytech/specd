@@ -1,6 +1,6 @@
 # specd — Wiki Técnica
 
-`specd` é uma CLI de *spec-driven development* escrita em TypeScript (Node
+`specd` é uma CLI de _spec-driven development_ escrita em TypeScript (Node
 `>=20`, ESM), publicada como `@jnerytech/specd` com o binário `specd`. O seu
 diferencial não é gerar specs a partir de código nem código a partir de specs
 — é **detectar drift entre os dois por âncoras**: cada requisito declara em
@@ -21,13 +21,13 @@ loop.
 O sistema inteiro gira em torno de três artefatos textuais versionados em
 `.specd/`:
 
-- **`.specd/specs/*.md`** — as *capabilities* realizadas: cada arquivo é uma
+- **`.specd/specs/*.md`** — as _capabilities_ realizadas: cada arquivo é uma
   capability com frontmatter YAML (`capability`, `retired`) e requisitos como
   headings de nível 3 (`### REQ-XXX-000`). Cada requisito carrega um
-  *statement* em gramática EARS, critérios de aceite em prosa e,
+  _statement_ em gramática EARS, critérios de aceite em prosa e,
   opcionalmente, um bloco `yaml anchors` apontando para `file`/`symbol` no
   código.
-- **`.specd/changes/<nome>/`** — uma *change* aberta: contém `delta.md` (as
+- **`.specd/changes/<nome>/`** — uma _change_ aberta: contém `delta.md` (as
   seções `ADDED`, `MODIFIED`, `REMOVED` sobre as capabilities), `tasks/*.md`
   (cada task referencia requisitos via `req` no frontmatter) e, opcionalmente,
   `explore/manifest.json` e `memory/`.
@@ -43,7 +43,7 @@ pendurada num lugar que promete código existente.
 ### 1.2 As seis camadas do gate
 
 `specd verify` (`src/verify/index.ts`, função `verify`) executa seis camadas
-em ordem fixa e não configurável — só *quais* rodam é configurável via
+em ordem fixa e não configurável — só _quais_ rodam é configurável via
 `verify.levels`:
 
 1. **provenance** (`src/verify/layers/provenance.ts`) — se a change tem fonte
@@ -102,7 +102,7 @@ sem consultar relógio, rede ou modelo:
    `src/anchors/strategy.ts`) encontra o símbolo como identificador delimitado
    (não substring) → `resolved`.
 4. `TREESITTER` — reservado; na v1 `strategyFor` já recusa `strategy =
-   "treesitter"` como erro de configuração antes de chegar aqui (REQ-ANC-005).
+"treesitter"` como erro de configuração antes de chegar aqui (REQ-ANC-005).
 5. `REPO_SEARCH` — busca o símbolo no repositório inteiro
    (`findSymbolInRepo`, `src/anchors/search.ts`), excluindo `.specd/`,
    `openspec/` e `docs/` (para não "encontrar" o símbolo na própria capability
@@ -135,7 +135,7 @@ Pontos de desenho relevantes:
   resolvido automaticamente: os dois lados divergindo entre si e do hash
   gravado interrompe com exit code 2 listando os itens, sem escrever nada em
   nenhum lado.
-- Fechar um item de board (`close`) é a única escrita de *status* que o
+- Fechar um item de board (`close`) é a única escrita de _status_ que o
   specd faz, e por isso é a única que **relê e confirma** que o estado
   realmente mudou — um tracker do Redmine sem linha de workflow aceita um
   `PUT` de `status_id`, responde 204 e descarta o campo em silêncio; medido
@@ -194,14 +194,14 @@ os dois nunca podem divergir silenciosamente.
 
 Definidos em `package.json`:
 
-| Script | Comando | Papel |
-|---|---|---|
-| `npm run build` | `tsc -p tsconfig.json` | compila `src/` para `dist/` |
-| `npm test` | `vitest run` | roda toda a suíte unitária/arquitetura |
-| `npm run lint` | `eslint src test` | lint com `typescript-eslint` |
-| `npm run format` | `prettier --write .` | formatação |
-| `npm run verify` | format + lint + test + build | **gate offline do próprio repositório**, chamado pela camada `project` de `specd verify` sobre si mesmo |
-| `npm run test:integration` | `test/integration/redmine/run.sh` | sobe Redmine via Docker Compose, semeia, roda a suíte de integração e derruba o container |
+| Script                     | Comando                           | Papel                                                                                                   |
+| -------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `npm run build`            | `tsc -p tsconfig.json`            | compila `src/` para `dist/`                                                                             |
+| `npm test`                 | `vitest run`                      | roda toda a suíte unitária/arquitetura                                                                  |
+| `npm run lint`             | `eslint src test`                 | lint com `typescript-eslint`                                                                            |
+| `npm run format`           | `prettier --write .`              | formatação                                                                                              |
+| `npm run verify`           | format + lint + test + build      | **gate offline do próprio repositório**, chamado pela camada `project` de `specd verify` sobre si mesmo |
+| `npm run test:integration` | `test/integration/redmine/run.sh` | sobe Redmine via Docker Compose, semeia, roda a suíte de integração e derruba o container               |
 
 `npm run test:integration` é deliberadamente separado de `npm run verify`: se
 o gate exigisse Docker, as cinco camadas offline deixariam de ser offline.
@@ -439,7 +439,7 @@ utilitário próprio `import-graph.ts` (`collectImportGraph`,
 
 Cada teste de arquitetura inclui um caso "catches an import ... introduced
 anywhere in the graph" que cria um grafo temporário artificial com a
-violação, provando que o *walker* de fato falharia caso a regra fosse
+violação, provando que o _walker_ de fato falharia caso a regra fosse
 quebrada de verdade — não só que ele passa hoje porque não encontrou nada.
 
 ### 5.2 Fixtures (`test/fixtures/`)
