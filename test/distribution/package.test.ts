@@ -67,8 +67,8 @@ describe("packaged distribution", () => {
     if (workspace) rmSync(workspace, { recursive: true, force: true });
   });
 
-  it("publishes under the unscoped name", () => {
-    expect(manifest.name).toBe("specd");
+  it("publishes under the reserved scope", () => {
+    expect(manifest.name).toBe("@jnerytech/specd");
   });
 
   it("declares bin.specd and ships dist", () => {

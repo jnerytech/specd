@@ -1,5 +1,5 @@
 {
-  "name": "specd",
+  "name": "@jnerytech/specd",
   "version": "0.0.1",
   "description": "Spec-driven development with drift detection. Specs declare anchors into the code; the gate fails when they stop resolving.",
   "license": "MIT",
