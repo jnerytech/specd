@@ -97,3 +97,26 @@ Que `npx specd` resolva para este pacote depende de reservar o nome sem escopo n
 - file: package.json
   symbol: "\"bin\""
 ```
+
+### REQ-CLI-007 — The README names an invocation that works before publication
+
+**Statement.** The README SHALL document how to build and run specd from a clone, for as long as the package is absent from the registry.
+
+**Acceptance.**
+
+- README mostra a sequência que leva de clone a comando funcionando
+- O caminho do executável citado é o mesmo que `package.json` declara em `bin`
+- Teste falha se `bin` mudar e o README não acompanhar
+- `npx specd` continua documentado como o caminho de quem instala, com a ressalva de que ainda não está publicado
+
+É a única parede absoluta do onboarding e está no primeiro passo: `npx specd`
+devolve 404 e nenhum documento diz o que fazer em vez disso. Quem para no
+primeiro comando não vira usuário, e o produto morre onde ninguém olha.
+
+O acoplamento com `bin` é o pedaço que dá para verificar. O resto continua sendo
+prosa, e está declarado como tal no proposal.
+
+```yaml anchors
+- file: test/distribution/readme.test.ts
+  symbol: "README names the bin path"
+```

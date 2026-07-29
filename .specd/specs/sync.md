@@ -296,3 +296,60 @@ rotina, não exceção.
 - file: src/sync/adapters/redmine.ts
   symbol: "export function scanFilter"
 ```
+
+### REQ-SYNC-014 — Closing a board item requires a declared death
+
+**Statement.** The specd sync command SHALL close a board item only when the identifier that links it is listed as retired in the capability frontmatter.
+
+**Acceptance.**
+
+- Identificador em `retired` fecha o item e remove a ligação
+- Identificador ausente da spec e ausente de `retired` não fecha nada
+- `retired` é lido do arquivo de capability que declara a ligação, não de configuração
+- Nenhuma escrita no board ocorre para órfã não declarada, nem para os itens sadios da mesma execução
+
+O sinal já existia e o `sync` não o lia: `archive` acrescenta a `retired` todo
+identificador sob REMOVED, então morte declarada é um fato registrado no
+arquivo. Comparar chave ligada contra chave planejada e chamar toda diferença
+de morte foi a ferramenta ignorando o próprio modelo.
+
+O que se perde ao fechar por engano não é o card: é o comentário, o anexo e o
+apontamento de hora que alguém pendurou nele, e que a spec não sabe que
+existem.
+
+```yaml anchors
+- file: src/sync/index.ts
+  symbol: "export function findOrphanedLinks"
+```
+
+### REQ-SYNC-015 — An undeclared orphan stops the command and names the candidate
+
+**Statement.** IF a board link has no requirement in the spec and its identifier is not listed as retired, THEN the specd sync command SHALL exit with code 2 naming the link, the board item and any unlinked planned item whose body matches the board item's body.
+
+**Acceptance.**
+
+- Órfã sem declaração sai 2 nomeando identificador, `ref` e URL do item
+- Item planejado ainda sem ligação e com corpo idêntico ao do card órfão é nomeado como rename provável, sem ser aplicado
+- Mais de um candidato com o mesmo corpo lista todos e não escolhe
+- Nenhum candidato é reportado como tal, e a recusa continua valendo
+- A mensagem diz as duas saídas: trocar a chave da ligação, ou declarar o identificador em `retired`
+- Nada é escrito no board nem na spec, nem para os itens sem problema
+
+P4 na forma que interessa: há dois estados possíveis — o requisito morreu ou
+mudou de nome — e a diferença entre eles é destrutiva numa direção. O corpo
+idêntico é indício forte e não é prova, então ele informa e não decide.
+
+A comparação é pelo **corpo**, não pela projeção inteira, e isso é decisão de
+desenho e não detalhe. O título de um item deriva do identificador — renomear
+muda o título por construção —, então projeção idêntica nunca casaria justamente
+no caso que este requisito existe para pegar. O corpo é o que sobrevive à
+renomeação, e é por isso que ele é o sinal.
+
+Renomear deixa de ser grátis e passa a ser barato e recusado até ser declarado,
+que é P9 aplicado: o custo aparece no momento em que é pago, e não três semanas
+depois num card fechado que ninguém procurou.
+
+```yaml anchors
+- file: src/sync/errors.ts
+  symbol: "export class UndeclaredOrphanError"
+```

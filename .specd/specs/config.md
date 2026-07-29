@@ -172,3 +172,28 @@ definido por ter `.specd/`, e nada mais.
 - file: src/core/root.ts
   symbol: "export function findProjectRoot"
 ```
+
+### REQ-CFG-011 — The init template covers every supported configuration key
+
+**Statement.** The specd init template SHALL mention every key that `ConfigSchema` accepts.
+
+**Acceptance.**
+
+- Teste falha quando uma chave nova entra em `ConfigSchema` e não entra no template
+- Chave pode aparecer comentada; o que se exige é que exista no arquivo
+- A falha nomeia as chaves ausentes, não só o total
+- O teste lê `ConfigSchema` em vez de uma segunda lista escrita à mão
+
+O template abre afirmando que toda seção suportada está ali, e no run 006 seis
+chaves faltavam — quatro do `sync` e duas do transporte MCP, estas desde antes
+da Fatia 6. Ninguém percebeu por três fatias, porque afirmação em prosa não
+falha.
+
+Mesma família da lista de camadas que a Fatia 4 tornou derivada de
+`VERIFY_LEVELS`. Aquela correção resolveu um caso e o padrão voltou em cinco
+lugares novos; este é o segundo a ganhar contrato.
+
+```yaml anchors
+- file: test/init/config-template.test.ts
+  symbol: "covers every ConfigSchema key"
+```

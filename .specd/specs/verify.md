@@ -194,3 +194,28 @@ distintos, e o relatório não os separava.
 - file: src/verify/report.ts
   symbol: "export interface LayerReport"
 ```
+
+### REQ-VER-013 — A validation command that cannot be executed is operational
+
+**Statement.** IF the configured validation command cannot be executed at all, THEN the specd verify command SHALL exit with code 2 instead of failing the gate.
+
+**Acceptance.**
+
+- Executável ausente sai 2 e a mensagem diz que a camada não pôde rodar
+- Comando que existe e retorna não-zero continua saindo 1, porque é veredito
+- A mensagem lista as saídas: instalar o executável, trocar `validation_command`, ou tirar `project` de `levels`
+- O relatório distingue camada que reprovou de camada que não pôde rodar
+
+`dotnet` não instalado reprovava o gate como se a spec estivesse errada, e o
+README vende exatamente a distinção que isso quebra: CI precisa separar "spec
+reprovou" de "ferramenta quebrou".
+
+É a forma do P8 uma casa acima. Não é verde onde deveria ser vermelho — é
+vermelho do tipo errado, e quem confia na distinção age errado com a mesma
+confiança de sempre. O `init` propõe o comando sozinho, então a pessoa nem
+escolheu rodar `dotnet test`.
+
+```yaml anchors
+- file: src/verify/layers/project.ts
+  symbol: "export function classifyCommandFailure"
+```

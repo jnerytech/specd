@@ -161,3 +161,79 @@ ID duplicado na segunda tentativa.
 - file: src/archive/apply.ts
   symbol: "alreadyApplied"
 ```
+
+### REQ-ARC-011 — Archive syncs only when asked
+
+**Statement.** WHERE the `--sync` flag is given, the specd archive command SHALL run the board reconciliation after the capabilities have been written.
+
+**Acceptance.**
+
+- Sem `--sync`, nenhuma requisição ao board é feita
+- Com `--sync`, a reconciliação roda depois de as capabilities estarem escritas
+- Com `--sync` e sem board configurado, sai 2 antes de aplicar o delta
+- Não existe `--no-sync`: a ausência da flag já é o não
+
+REQ-SYNC-001 diz que o `sync` escreve no board só quando invocado diretamente
+por uma pessoa. `archive` sincronizando por conta própria quebra o requisito;
+`archive --sync` não, porque continua sendo alguém digitando — e a escrita
+externa continua declarada, que é P9.
+
+A flag existe em vez de só um aviso porque o modo de falha do aviso é esquecer,
+e esquecer é o caso comum. Ela transforma dois comandos num ato deliberado sem
+transformar nenhum ato em automático.
+
+Não existe `--no-sync` porque duas flags para um booleano é botão sem dois
+clientes divergindo, que é P5.
+
+```yaml anchors
+- file: src/archive/index.ts
+  symbol: "export interface ArchiveOptions"
+```
+
+### REQ-ARC-012 — A failed sync never undoes the archive
+
+**Statement.** IF the board reconciliation fails after the capabilities have been written, THEN the specd archive command SHALL exit with code 2 leaving the written capabilities and the archived directory in place.
+
+**Acceptance.**
+
+- Capabilities escritas permanecem escritas, e fora do índice do git
+- O diretório da change permanece movido para `archive/`
+- A mensagem diz que a spec avançou e o board não, e manda rodar `specd sync`
+- Rodar `specd sync` em seguida alcança o board sem repetir o archive
+
+A ordem é `archive` primeiro e `sync` depois, e ela é escolhida: a spec adiante
+do board é recuperável por um comando idempotente, enquanto o board adiante da
+spec deixa card para requisito que o repositório não reconhece.
+
+Desfazer o `archive` seria pior que as duas. O que ele escreveu está correto e
+está fora do índice, ao alcance da revisão — desfazer destrói trabalho bom por
+causa de uma falha de rede, e é exatamente a decisão silenciosa que P9 proíbe.
+
+```yaml anchors
+- file: src/archive/index.ts
+  symbol: "export class ArchiveSyncError"
+```
+
+### REQ-ARC-013 — Archive without the flag reports what stayed out of sync
+
+**Statement.** WHERE a board is configured and `--sync` is absent, the specd archive command SHALL report how many archived items have no board link or a stale one.
+
+**Acceptance.**
+
+- Contagem aparece na saída do `archive`, nomeando o comando que a resolve
+- Sem board configurado, nada é reportado e nada é contado
+- A contagem é obtida sem requisição ao board, a partir das ligações gravadas
+- Contagem zero é dita explicitamente, e não omitida
+
+Sem isto, "rode `specd sync` depois" é prosa, e prosa não tem contrato — que é o
+defeito que esta fatia inteira ataca. Requisito com critério de aceite é a
+diferença entre um lembrete que se apaga e um comportamento que se testa.
+
+A contagem não consulta o board de propósito. `archive` sem `--sync` não toca a
+rede, e um relatório que precisasse dela falharia offline — informação sobre
+sincronia virando motivo para não conseguir arquivar.
+
+```yaml anchors
+- file: src/archive/index.ts
+  symbol: "export function countUnsyncedItems"
+```

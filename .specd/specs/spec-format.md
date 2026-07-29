@@ -157,3 +157,28 @@ Mesma família da passagem vazia: ausência de dados apresentada como aprovaçã
 - file: src/parser/delta.ts
   symbol: "assertSectionReadable"
 ```
+
+### REQ-FMT-010 — The documented delta and task examples parse
+
+**Statement.** The delta and task examples published in the format documentation SHALL parse without errors under the parsers that read those files.
+
+**Acceptance.**
+
+- Exemplo de `delta.md` da documentação passa por `parseDelta` sem diagnóstico de erro
+- Exemplo de task passa por `parseTask` sem diagnóstico de erro
+- O teste extrai os exemplos do documento, sem cópia paralela no teste
+- Mudança de parser que invalide o exemplo publicado reprova o gate
+
+O run 006 gastou seis voltas de tentativa e erro para escrever uma change,
+todas ensinadas por mensagem de erro e nenhuma por documentação. Sem `propose`,
+escrever à mão é o único caminho, e era o não descrito.
+
+Documentar sem contrato trocaria "não documentado" por "documentado e errado",
+que é pior: o primeiro manda a pessoa procurar, o segundo manda ela confiar.
+Extrair o exemplo do próprio documento é o que impede a documentação de
+envelhecer em silêncio.
+
+```yaml anchors
+- file: test/parser/documented-examples.test.ts
+  symbol: "documented examples parse"
+```
