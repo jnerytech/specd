@@ -38,13 +38,16 @@ Isto é princípio e não requisito porque não é checável por máquina. Decid
 **P8 — Ausência de dado não é conformidade.**
 Toda capacidade que lê estado externo distingue três resultados: verificou e está certo, verificou e está errado, não conseguiu verificar. O terceiro nunca é verde.
 
-O modo de falha é sempre o mesmo — silêncio apresentado como aprovação — e sempre na direção que ninguém investiga. Três instâncias reais, para que a regra não pareça abstrata:
+A regra vale nas duas direções, e a segunda demorou a aparecer porque exige escrever em sistema de terceiro para ser vista. **Resposta de sucesso de sistema externo não é prova de que a escrita aconteceu:** quem confirma que o estado mudou é uma releitura, não o código de status devolvido por quem recebeu o pedido. Toda escrita cujo efeito importa relê e confere, e falha quando o efeito não está lá.
+
+O modo de falha é sempre o mesmo — silêncio apresentado como aprovação — e sempre na direção que ninguém investiga. Quatro instâncias reais, para que a regra não pareça abstrata:
 
 - **Diretório sem `.specd/specs/` passava no gate.** `verify` saía 0 num diretório onde não havia nada para checar, então "verde" e "não achei spec" eram indistinguíveis, e rodar do diretório errado virava aprovação. Corrigido na Fatia 2 com exit 2.
 - **Delta ilegível era lido como delta vazio.** O `delta.md` da Fatia 1 está no formato antigo; o parser novo lia zero blocos de requisito nele e `archive` saía 0 tendo verificado coisa nenhuma. Corrigido na Fatia 3 por REQ-FMT-009.
 - **A busca de âncora enxergava zero arquivos.** Em diretório ignorado pelo repositório pai, `git ls-files` sucede e devolve vazio; o passo 5 da escada morria, `anchor suggest` emudecia, e o gate ficava verde sem dizer que a rede de segurança não existia. Corrigido na Fatia 4.
+- **O Redmine respondeu 204 e não aplicou nada.** `PUT` com `status_id` num item cujo tracker não tem linha de workflow é aceito, devolve 204 e descarta o campo em silêncio; o mesmo `PUT` num tracker com workflow aplica. Esta é a instância que originou a regra de escrita. Corrigido na Fatia 6: `close` relê e falha quando a situação não mudou.
 
-Nenhuma das três foi descoberta por teste. As três foram descobertas rodando a ferramenta contra algo que ela não tinha visto antes.
+Nenhuma das quatro foi descoberta por teste unitário. As quatro foram descobertas rodando a ferramenta contra algo que ela não tinha visto antes — a quarta contra um servidor de verdade, num teste de integração que falhou pelo motivo errado, e cuja hipótese óbvia estava errada também.
 
 ## Contrato de exit code
 
@@ -60,7 +63,7 @@ CI precisa distinguir "spec reprovou" de "ferramenta quebrou".
 
 `.specd/specs/` contém as capabilities realizadas. Todo requisito tem ID estável, statement em EARS e âncoras.
 
-`.specd/changes/` contém as changes abertas; `archive/` dentro dela guarda as encerradas. As Fatias 1, 2 e 3 estão arquivadas.
+`.specd/changes/` contém as changes abertas; `archive/` dentro dela guarda as encerradas. As Fatias 1 a 6 estão arquivadas.
 
 **A spec é o contrato.** Ao implementar uma tarefa, leia os requisitos listados em `req` no frontmatter e trate os critérios de aceite como especificação de teste.
 
@@ -78,22 +81,19 @@ Daí a política de âncora graduar por origem — pendurada em `specs/` é erro
 
 **Testes.** Todo critério de aceite vira teste. Tarefa marcada `done` precisa de SHA em `evidence.commits`.
 
-**Escopo.** Não implemente `propose`, `apply`, `sync`, memória nem hooks. Ficam fora da Fatia 4.
+**Escopo.** Não implemente `propose`, `apply` nem memória. Ficam fora do que está especificado hoje. `sync` e os hooks já existem — mexer neles é mudança de comportamento realizado, e passa por delta como qualquer outra.
 
-## Ordem sugerida — Fatia 4
+## Onde a próxima fatia começa
 
-**Passo 0 — humano, não agente.** Reservar `specd` no npm sem escopo antes de qualquer anúncio público; opcionalmente reservar `@jnerytech/specd`. Não é tarefa de implementação e não está em `tasks/` — ver "Primeiros passos" no README.
+Seis fatias entregaram o ciclo `explore → verify → archive` mais `sync` e hooks. O que falta do ciclo original é o meio: `propose`, que converte um bundle de exploração em delta e tarefas, e `apply`, que executa uma tarefa por vez com o verify fechando o loop.
 
-```
-raiz do projeto  ──▶ listagem com fallback ──▶ relatório de modo degradado
-                          │
-                     fronteira de palavra
-                          │
- detect-stack .NET ── init ── anchor suggest (cauda opcional)
-```
+Duas restrições que a Fatia 6 deixou herdadas e que valem para os dois:
 
-A raiz vem primeiro porque tudo depende dela: hoje o passo 3 da escada usa o `cwd` e o passo 5 usa o toplevel do git, e as duas definições divergem exatamente no caso que motivou a fatia.
+- `archive` ainda não chama `sync`. Fechar item de board de requisito que saiu da spec funciona, mas quem decide que ele saiu é o autor editando o arquivo.
+- A interface de adaptador foi desenhada para dois fornecedores e tem um. Qualquer argumento sobre o Azure DevOps neste repositório é dedução, não medição.
 
 ## Validação
 
-`make verify` ou `npm run verify` deve rodar format, lint, testes e build. Quando `specd verify` existir, ele valida este próprio repositório — é o primeiro caso de teste real.
+`npm run verify` roda format, lint, testes e build, offline e sem Docker — e a camada `project` do `specd verify` delega a ele, então o gate valida este próprio repositório.
+
+`npm run test:integration` sobe um Redmine em container, semeia, roda a suíte de integração e derruba. Ele é deliberadamente separado: o gate não pode exigir Docker, senão as cinco camadas offline deixam de ser offline.
