@@ -51,6 +51,7 @@ const REFUSALS: Record<Scope, string[]> = {
   init: ["init", "--nope"],
   verify: ["verify", "--nope"],
   status: ["status", "--nope"],
+  spec: ["spec", "--nope"],
   read: ["read", "--nope"],
   explore: ["explore"],
   sync: ["sync", "--nope"],

@@ -13,6 +13,7 @@ import { runHook } from "../hooks/run.js";
 import { formatUninstallResult, uninstallHooks } from "../hooks/uninstall.js";
 import { formatInitResult, init } from "../init/index.js";
 import { EPHEMERAL_PORT, openInBrowser, read } from "../read/index.js";
+import { formatSpec, specReport } from "../spec/index.js";
 import { formatStatus, status } from "../status/index.js";
 import { formatSyncReport, sync } from "../sync/index.js";
 import { verify } from "../verify/index.js";
@@ -45,6 +46,7 @@ export function registerCommands(): Map<string, Command> {
     initCommand,
     verifyCommand,
     statusCommand,
+    specCommand,
     readCommand,
     exploreCommand,
     syncCommand,
@@ -109,6 +111,26 @@ const statusCommand: Command = {
         : `${formatStatus(report)}\n`,
     );
     return EXIT.OK;
+  },
+};
+
+// REQ-EFF-003: `spec` exits 0 whenever it can read the specification. A
+// dangling anchor is something it reports, not something it judges — the same
+// discipline as `status`, and for the same reason (REQ-CLI-001).
+const specCommand: Command = {
+  name: "spec",
+  summary:
+    "Emit the effective spec: the capabilities with the open deltas applied",
+  run(argv, io): Promise<ExitCode> {
+    if (helpRequested(argv)) return help("spec", io);
+    const flags = parseFlags(argv, ["--json"], "spec");
+    const report = specReport({ cwd: io.cwd });
+    io.stdout(
+      flags.has("--json")
+        ? `${JSON.stringify(report, null, 2)}\n`
+        : `${formatSpec(report)}\n`,
+    );
+    return Promise.resolve(EXIT.OK);
   },
 };
 

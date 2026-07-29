@@ -81,6 +81,17 @@ export const SCOPE_USAGE = {
     note: "Informs; never judges. Always exits 0.",
   },
 
+  spec: {
+    signature: ["specd spec [--json]"],
+    summary:
+      "Emit the effective spec: the capabilities with the open deltas applied.",
+    options: [JSON_OPTION],
+    note:
+      "specs ⊕ ADDED ⊕ MODIFIED ⊖ REMOVED, the same overlay the gate runs over.\n" +
+      "Every requirement carries where it is written, so a consumer never has to\n" +
+      "rebuild it. Informs; never judges. Always exits 0.",
+  },
+
   read: {
     signature: [
       "specd read [path...] [--all] [--full] [--port <number>] [--open]",
