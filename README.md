@@ -15,8 +15,18 @@ REQ-AUTH-003: âncora pendurada
 
 ## Rodar
 
-`specd` ainda **não está publicado no npm**, então `npx specd` responde 404. Até
-a primeira publicação, o caminho é o clone:
+O pacote é **`@jnerytech/specd`**, e o binário que ele instala chama-se `specd`:
+
+```bash
+npx @jnerytech/specd --help
+```
+
+> O nome sem escopo — `specd`, sem o `@jnerytech/` — **não é deste pacote.**
+> Ele não foi reservado, então digitá-lo leva a 404 ou a um pacote de outro
+> autor. O escopo faz parte do nome.
+
+Para trabalhar no próprio specd, ou rodar uma versão ainda não publicada, o
+caminho é o clone:
 
 ```bash
 git clone https://github.com/jnerytech/specd.git
@@ -40,25 +50,24 @@ deste README:
 cd /caminho/do/specd && npm link
 ```
 
-Depois de publicado, `npx specd <comando>` passa a ser o caminho de quem instala
-e nada mais nesta página muda.
-
 ## Primeiros passos
 
-### 1. Reservar o nome no npm
+### 1. O nome, e o que ainda está em aberto
 
-O repositório é público em `github.com/jnerytech`, então o escopo natural seria `@jnerytech/specd`. Mas o nome `specd` está livre sem escopo, e `npx specd` é melhor que `npx @jnerytech/specd`. **Decisão tomada: sem escopo.** `package.json` já declara `name = "specd"`.
+O pacote é publicado sob escopo: `package.json` declara
+`name = "@jnerytech/specd"`, e `bin.specd` aponta para `dist/cli.js`. Quem
+instala digita o escopo; o binário que aparece no PATH continua sendo `specd`.
 
-Declarar o nome não é o mesmo que reservá-lo. Enquanto não houver publicação, `npx specd` resolve para qualquer pacote que ocupe esse nome no registry — possivelmente de outro autor. Um `npm publish` de um `0.0.0` já garante o nome, e leva dois minutos:
+O nome sem escopo segue livre no registry e **não é deste projeto**. Reservá-lo,
+por defesa ou para migrar depois, é decisão em aberto e tem custo próprio —
+renomear pacote já publicado quebra quem instalou. Enquanto não for tomada, todo
+documento aqui nomeia o pacote escopado, e há teste amarrando o nome citado ao
+`name` do manifesto.
 
-```bash
-npm publish --dry-run          # confirme o que vai subir
-npm publish                    # reserva 'specd'
-```
-
-Fazer isso antes de anunciar evita a situação em que o nome é tomado entre a publicação do repositório e a primeira release utilizável. Reservar `@jnerytech/specd` como escopo defensivo é opcional e independente.
-
-Por que isso não é critério de aceite de REQ-CLI-006: que `npx specd` alcance este pacote é fato de registry, não propriedade do código. Verificável só publicando. O que os testes cobrem, offline, é o tarball instalar e expor um binário `specd` funcional.
+Qual nome alcança este pacote no registry não é critério de aceite de
+REQ-CLI-006, e nem poderia ser: é fato de registry, não propriedade do código, e
+o gate é offline por P3. O que os testes cobrem, offline, é o tarball instalar e
+expor um binário `specd` funcional.
 
 ### 2. Implementar a Fatia 1
 

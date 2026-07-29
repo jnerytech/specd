@@ -4,9 +4,11 @@
 
 CLI de spec-driven development cujo diferencial é **detecção de drift por âncoras**: cada requisito declara onde é realizado no código, e o gate reprova quando a âncora deixa de resolver.
 
-Pacote npm `specd`, binário `specd`, TypeScript. Repositório público em `github.com/jnerytech/specd`.
+Pacote npm `@jnerytech/specd`, binário `specd`, TypeScript. Repositório público em `github.com/jnerytech/specd`.
 
-**Ainda não publicado no registry**, então `npx specd` responde 404. Até a primeira publicação, roda-se do clone: `npm install && npm run build`, depois `node dist/cli.js <comando>` — ou `npm link` uma vez, e aí `specd` funciona como nos exemplos. Está no README, e há teste amarrando o caminho citado ao `bin` do `package.json`.
+**O escopo faz parte do nome.** Quem instala digita `npx @jnerytech/specd <comando>`; o nome sem escopo não foi reservado e não é deste pacote. Para rodar do clone: `npm install && npm run build`, depois `node dist/cli.js <comando>` — ou `npm link` uma vez, e aí `specd` funciona como nos exemplos. Está no README, e há teste amarrando o nome e o caminho citados ao `name` e ao `bin` do `package.json`.
+
+Nenhum teste afirma estado do registry. `verify` é offline por P3, então essa pergunta não é do gate — e a versão anterior deste parágrafo mostrou o preço: o teste que exigia a frase "ainda não publicado" a manteve no lugar exatamente enquanto ela deixava de ser verdade.
 
 > Existe um projeto não relacionado chamado SpecD em `@specd/cli` (`specd-sdd/SpecD`). Não há afiliação. O único ponto de contato técnico é o nome do binário — se ambos estiverem instalados globalmente, um sombreia o outro.
 

@@ -21,9 +21,22 @@ interface Manifest {
   bin?: Record<string, string>;
   files?: string[];
   dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
 }
 
 const manifest = require("../../package.json") as Manifest;
+
+function sourceFiles(): string[] {
+  return ["src", "test"].flatMap((directory) =>
+    readdirSync(join(REPO_ROOT, directory), {
+      recursive: true,
+      encoding: "utf8",
+    })
+      .filter((entry) => entry.endsWith(".ts"))
+      .map((entry) => join(REPO_ROOT, directory, entry)),
+  );
+}
 
 // REQ-CLI-006 — Zero-install distribution.
 //
@@ -124,6 +137,37 @@ describe("packaged distribution", () => {
     ) as { scripts?: Record<string, string> };
     for (const lifecycle of ["prepare", "install", "postinstall"]) {
       expect(packaged.scripts?.[lifecycle]).toBeUndefined();
+    }
+  });
+
+  // REQ-CLI-012 — the package does not depend on itself.
+  //
+  // `dependencies` carried "@jnerytech/specd": "^0.0.2", resolved from the
+  // registry, and nothing imported it: a second copy of the product on disk
+  // that nothing called. It was the residue of a correct instinct — a publish
+  // is only proved by reading it back (P8), and installing the package and
+  // running its binary is a real read-back. The mistake was leaving the proof
+  // installed inside the thing it proved.
+  //
+  // The import assertion is the one that matters. It forbids the pattern and
+  // not only the line: a gate in development that called the published product
+  // would pin itself to the version before the fix being written, so green
+  // would mean "the earlier specd approved" and read as "this specd approved" —
+  // and in a circle, because publishing the fix needs the gate to pass.
+  it("does not depend on itself", () => {
+    for (const section of [
+      manifest.dependencies,
+      manifest.devDependencies,
+      manifest.peerDependencies,
+    ]) {
+      expect(Object.keys(section ?? {})).not.toContain(manifest.name);
+    }
+
+    const selfImport = new RegExp(
+      `(?:from|import|require\\()\\s*["']${manifest.name}["']`,
+    );
+    for (const file of sourceFiles()) {
+      expect(readFileSync(file, "utf8")).not.toMatch(selfImport);
     }
   });
 
