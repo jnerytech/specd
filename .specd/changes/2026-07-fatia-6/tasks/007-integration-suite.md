@@ -2,9 +2,9 @@
 id: "007-integration-suite"
 change: 2026-07-fatia-6
 req: [REQ-SYNC-005, REQ-SYNC-010, REQ-SYNC-011, REQ-SYNC-012, REQ-SYNC-013]
-status: in_progress
+status: done
 evidence:
-  commits: []
+  commits: ["0ceef9745d9615396898742426aa72444993e146"]
 ---
 
 ## Objetivo

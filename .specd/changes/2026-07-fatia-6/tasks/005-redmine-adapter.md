@@ -2,9 +2,9 @@
 id: "005-redmine-adapter"
 change: 2026-07-fatia-6
 req: [REQ-SYNC-008, REQ-SYNC-013]
-status: in_progress
+status: done
 evidence:
-  commits: []
+  commits: ["0ceef9745d9615396898742426aa72444993e146"]
 ---
 
 ## Objetivo
