@@ -13,6 +13,7 @@ import { runHook } from "../hooks/run.js";
 import { formatUninstallResult, uninstallHooks } from "../hooks/uninstall.js";
 import { formatInitResult, init } from "../init/index.js";
 import { formatStatus, status } from "../status/index.js";
+import { formatSyncReport, sync } from "../sync/index.js";
 import { verify } from "../verify/index.js";
 import { formatReport } from "../verify/report.js";
 import { EXIT, type ExitCode } from "./exit-codes.js";
@@ -38,6 +39,7 @@ Commands:
   verify                            Run the gate over this repository
   status                            Report drift and pending work, grouped by change
   explore <card> --change <name>    Collect the configured sources into a bundle
+  sync                              Reconcile the spec with the configured board
   archive <change>                  Apply a change's delta to the specs and file it away
   anchor suggest <capability>       Report anchor candidates for a capability
   anchor suggest --file <path>      List the declarations a file contains
@@ -54,8 +56,11 @@ Options for verify:
 Options for init:
   --force       Overwrite an existing .specd/config.toml
 
-Options for status and anchor suggest:
+Options for status, sync and anchor suggest:
   --json        Emit the report as JSON on stdout
+
+Options for sync:
+  --dry-run     Plan and report without writing to the board or the spec
 
 Options for hooks install:
   --full-on-stop        Write the Stop command without --fast
@@ -76,6 +81,7 @@ export function registerCommands(): Map<string, Command> {
     verifyCommand,
     statusCommand,
     exploreCommand,
+    syncCommand,
     archiveCommand,
     anchorCommand,
     hooksCommand,
@@ -183,6 +189,29 @@ function formatManifest(result: Awaited<ReturnType<typeof explore>>): string {
   lines.push(result.manifest.usable ? "bundle: usable" : "bundle: not usable");
   return lines.join("\n");
 }
+
+// REQ-SYNC-001 and REQ-CLI-001: `sync` writes to a third-party system, so it is
+// invoked by hand and never by a hook, and it answers in specd's exit-code
+// contract — a conflict is exit 2, never 1. Only `verify` reproves.
+const syncCommand: Command = {
+  name: "sync",
+  summary: "Reconcile the spec with the configured board",
+  async run(argv, io): Promise<ExitCode> {
+    const flags = parseFlags(argv, ["--dry-run", "--json"]);
+    const report = await sync({
+      cwd: io.cwd,
+      dryRun: flags.has("--dry-run"),
+    });
+
+    if (flags.has("--json")) {
+      io.stdout(`${JSON.stringify(report, null, 2)}\n`);
+      io.stderr(`${formatSyncReport(report)}\n`);
+    } else {
+      io.stdout(`${formatSyncReport(report)}\n`);
+    }
+    return EXIT.OK;
+  },
+};
 
 // REQ-CLI-001: `anchor` reads and reports. It returns non-zero only when it
 // cannot run — an ambiguous capability name, a missing spec tree — never as a

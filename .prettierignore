@@ -7,3 +7,8 @@ package-lock.json
 .specd/
 openspec/
 .claude/
+
+# Runs are declared immutable: a run records what was observed at one moment,
+# and rewriting an old one destroys the evidence that behaviour changed. A rule
+# the toolchain itself violates does not survive, so the formatter stays out.
+sandbox/

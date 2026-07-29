@@ -11,7 +11,7 @@ REQ-AUTH-003: âncora pendurada
   → specd anchor fix REQ-AUTH-003
 ```
 
-> **Status:** especificação completa, implementação não iniciada. As specs em `.specd/specs/` são o contrato; o código vem depois.
+> **Status:** Fatias 1 a 6 entregues. As specs em `.specd/specs/` são o contrato, e o `specd verify` que valida este repositório é o mesmo que você roda no seu.
 
 ## Primeiros passos
 
@@ -114,6 +114,50 @@ As cinco primeiras rodam offline em milissegundos e não conhecem sua stack. A �
 validation_command = ["make", "lint"]
 ````
 
+## Sincronizar com o board
+
+`specd sync` reconcilia a spec com o board. Manual, nunca por hook: o gate é
+obrigatório porque lê, e o `sync` é manual porque escreve em sistema de
+terceiro.
+
+```toml
+[board]
+provider = "redmine"
+url = "https://redmine.exemplo/"
+project = "meu-projeto"
+token_env = "SPECD_BOARD_TOKEN"
+
+[board.mapping]
+capability = "Epic"
+requirement = "Story"
+collapse = ["task"]
+
+[[board.fields]]
+name = "Cliente"
+constant = "ACME"
+```
+
+| Lado  | Possui                          |
+| ----- | ------------------------------- |
+| spec  | título, conteúdo, hierarquia    |
+| board | situação, responsável, iteração |
+
+A decisão de "o que mudou" vem de um merge de três vias sobre o `synced_hash`
+gravado no frontmatter da capability — nunca do carimbo de tempo do board, que
+se move por evento estrutural. Os dois lados alterados de formas diferentes
+saem 2, listam o conflito e não resolvem nada.
+
+## Validar
+
+```bash
+npm run verify            # format, lint, testes, build — offline, sem Docker
+npm run test:integration  # sobe um Redmine, roda a suíte de integração, derruba
+```
+
+Os dois são separados de propósito. O gate do specd não pode exigir Docker,
+senão as camadas offline deixam de ser offline. Receita do container em
+`test/integration/redmine/`.
+
 ## Requisitos são EARS
 
 Cinco padrões, validados por parser. Keywords em inglês são sintaxe; a prosa fica no idioma que você configurar.
@@ -148,16 +192,19 @@ Tudo versionado no repositório. Nada em `~/`.
 
 O `specd` é especificado no próprio formato. `.specd/specs/` tem 7 capabilities e 48 requisitos descrevendo a ferramenta, com âncoras apontando para os módulos que a implementarão.
 
-Quando o `verify` existir, o primeiro repositório que ele valida é este.
+O primeiro repositório que o `verify` valida é este, a cada commit e a cada `Stop` do agente.
 
 ## Roadmap
 
-| Fatia | Escopo                                                      | Status                    |
-| ----- | ----------------------------------------------------------- | ------------------------- |
-| 1     | `init` · `explore` · `verify` · `status` · `anchor suggest` | Entregue                  |
-| 2     | `archive` · `anchor fix` · camadas coverage e evidence      | Entregue                  |
-| 3     | camada provenance · transporte MCP                          | Entregue                  |
-| 4     | `propose` · `apply` · `sync` · memória · hooks              | Especificada parcialmente |
+| Fatia | Escopo                                                        | Status           |
+| ----- | ------------------------------------------------------------- | ---------------- |
+| 1     | `init` · `explore` · `verify` · `status` · `anchor suggest`   | Entregue         |
+| 2     | `archive` · `anchor fix` · camadas coverage e evidence        | Entregue         |
+| 3     | camada provenance · transporte MCP                            | Entregue         |
+| 4     | raiz do projeto · listagem com fallback · `detect-stack` .NET | Entregue         |
+| 5     | hooks · `anchor suggest --file`                               | Entregue         |
+| 6     | `sync` · adaptador Redmine                                    | Entregue         |
+| 7     | `propose` · `apply` · memória                                 | Não especificada |
 
 A Fatia 2 fechou o ciclo `change → verify → archive`: uma change do specd passa a poder ser encerrada pela própria ferramenta, que aplica o delta às capabilities e arquiva o diretório.
 

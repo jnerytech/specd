@@ -22,6 +22,37 @@ export type AnchorStrategy = (typeof ANCHOR_STRATEGIES)[number];
 export const SOURCE_TYPES = ["board", "git", "mcp", "http"] as const;
 export type SourceType = (typeof SOURCE_TYPES)[number];
 
+// REQ-SYNC-006: the spec levels a board mapping can name. A level outside this
+// list is a configuration error, not an ignored entry.
+export const SPEC_LEVELS = ["capability", "requirement", "task"] as const;
+export type SpecLevel = (typeof SPEC_LEVELS)[number];
+
+// REQ-SYNC-009: where the value written into a board field comes from. `constant`
+// covers the case the run 004 exposed — a client's required field the spec has
+// no source for at all, which would otherwise make `create` impossible.
+export const FIELD_SOURCES = [
+  "capability",
+  "requirement_id",
+  "title",
+  "level",
+] as const;
+export type FieldSource = (typeof FIELD_SOURCES)[number];
+
+// REQ-SYNC-009 — a field is named by id, by name, or by both.
+//
+// `id` is stable and unreadable; `name` is readable and survives the board
+// being recreated. Both are accepted so the configuration can be reviewed
+// without consulting the board's database, and a disagreement between them is
+// a conflict rather than a guess.
+export interface BoardFieldConfig {
+  id?: number;
+  name?: string;
+  // Literal value specd always writes into this field.
+  constant?: string;
+  // Spec attribute the value is taken from.
+  from?: FieldSource;
+}
+
 export interface ExploreSource {
   // Identifies the source in the manifest and names its output file.
   name: string;
@@ -47,11 +78,27 @@ export interface ExploreSource {
 export interface SpecdConfig {
   project: { client?: string; language: string };
   board: {
+    // Names the adapter `sync` uses, and labels the card provider for
+    // `explore`. One board, one name.
     provider?: string;
     project?: string;
     token_env?: string;
     // Template for a card endpoint, with {project} and {card} placeholders.
     url_template?: string;
+    // Base URL of the board's API — what `sync` talks to.
+    url?: string;
+    // REQ-SYNC-006: spec level -> board item type, plus the collapse rule.
+    mapping: {
+      capability?: string;
+      requirement?: string;
+      task?: string;
+      // Levels that do not become their own item; their content folds into the
+      // nearest mapped ancestor.
+      collapse?: SpecLevel[];
+      // Status name `close` moves an item to. REQ-SYNC-003's single exception.
+      closed_status?: string;
+    };
+    fields: BoardFieldConfig[];
   };
   explore: { sources: ExploreSource[] };
   verify: {
@@ -71,7 +118,9 @@ export interface SpecdConfig {
 // field optional, merged field by field by the resolver.
 export interface PartialConfig {
   project?: Partial<SpecdConfig["project"]>;
-  board?: Partial<SpecdConfig["board"]>;
+  board?: Omit<Partial<SpecdConfig["board"]>, "mapping"> & {
+    mapping?: Partial<SpecdConfig["board"]["mapping"]>;
+  };
   explore?: { sources?: ExploreSource[] };
   verify?: {
     levels?: VerifyLevel[];
@@ -84,7 +133,7 @@ export interface PartialConfig {
 
 export const DEFAULT_CONFIG: SpecdConfig = {
   project: { language: "en" },
-  board: {},
+  board: { mapping: {}, fields: [] },
   explore: { sources: [] },
   verify: {
     levels: [...VERIFY_LEVELS],
@@ -134,6 +183,26 @@ export const ConfigSchema: Record<string, FieldSpec> = {
     project: { kind: "string" },
     token_env: { kind: "string", envName: true },
     url_template: { kind: "string" },
+    url: { kind: "string" },
+    mapping: section({
+      capability: { kind: "string" },
+      requirement: { kind: "string" },
+      task: { kind: "string" },
+      collapse: { kind: "string-array", values: SPEC_LEVELS },
+      closed_status: { kind: "string" },
+    }),
+    // REQ-SYNC-009: neither `id` nor `name` is required on its own, because
+    // either identifies a field. `bindFields` rejects an entry that declares
+    // neither — that check needs the board's answer, so it does not live here.
+    fields: {
+      kind: "table-array",
+      fields: {
+        id: { kind: "integer" },
+        name: { kind: "string" },
+        constant: { kind: "string" },
+        from: { kind: "enum", values: FIELD_SOURCES },
+      },
+    },
   }),
   explore: section({
     // REQ-EXP-002: sources are declared as an array of tables; every entry is

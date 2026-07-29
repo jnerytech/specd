@@ -1,0 +1,70 @@
+# Local Redmine instance for exercising the `sync` adapter.
+#
+# The recipe is versioned; the data is not. Credentials and the emitted API
+# key live in `sandbox/redmine/.env`, which is gitignored. State lives in
+# named Docker volumes so that a reset is `docker compose down -v`.
+#
+# Versions are pinned on purpose. `latest` in a test environment is a
+# third-party contract that changes without notice: the test breaks with no
+# apparent cause, and the cause is invisible in the diff.
+
+name: specd-redmine
+
+services:
+  db:
+    image: postgres:16.14-alpine
+    environment:
+      POSTGRES_DB: redmine
+      POSTGRES_USER: redmine
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-redmine}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U redmine -d redmine"]
+      interval: 2s
+      timeout: 3s
+      retries: 40
+      start_period: 5s
+
+  redmine:
+    image: redmine:6.1.3-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    # High port, so it does not collide with anything a developer already runs.
+    ports:
+      - "${REDMINE_PORT:-18080}:3000"
+    environment:
+      REDMINE_DB_POSTGRES: db
+      REDMINE_DB_DATABASE: redmine
+      REDMINE_DB_USERNAME: redmine
+      REDMINE_DB_PASSWORD: ${POSTGRES_PASSWORD:-redmine}
+      # SECRET_KEY_BASE, not REDMINE_SECRET_KEY_BASE. The entrypoint reads the
+      # REDMINE_-prefixed one and `export`s SECRET_KEY_BASE into the server
+      # process, but an exported variable belongs to that process, not to the
+      # container: `docker compose exec` starts from the image environment and
+      # never sees it, so `rails runner` aborts with
+      # "Missing `secret_key_base` for 'production' environment".
+      # Setting the unprefixed name in compose puts it in the container
+      # environment, where both the server and every exec see it.
+      # Local test instance only. Not a secret, and never reachable off-host.
+      SECRET_KEY_BASE: ${REDMINE_SECRET_KEY_BASE:-specd-local-integration-key-base}
+      REDMINE_PLUGINS_MIGRATE: "false"
+    volumes:
+      - redmine-files:/usr/src/redmine/files
+    healthcheck:
+      # /login is the cheapest page that proves migrations finished and Rails
+      # is serving. `/` redirects before the app is fully booted.
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O /dev/null http://localhost:3000/login || exit 1",
+        ]
+      interval: 3s
+      timeout: 5s
+      retries: 60
+      start_period: 20s
+
+volumes:
+  db-data:
+  redmine-files:
