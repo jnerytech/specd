@@ -2,9 +2,9 @@
 id: "007-sandbox-runs"
 change: 2026-07-29-cycle-skills
 req: [REQ-SKL-004, REQ-SKL-005, REQ-SKL-006]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["38df4ef084759fe9608f36f73e560a2d95960852"]
 ---
 
 ## Objetivo
@@ -39,3 +39,22 @@ mutável como índice contendo só pendências abertas.
 
 Os de REQ-SKL-004, REQ-SKL-005 e REQ-SKL-006 observados em execução, não em
 leitura do texto da skill.
+
+## Resultado
+
+As três rodadas correram contra `sandbox/runs/011/target`, `012/target` e
+`013/target`, alvo Node sintético que as skills não conheciam. Registros em
+`sandbox/runs/011-cycle-skills-sem-board.md`,
+`012-cycle-skills-com-board.md` e `013-cycle-skills-hostil.md`; índice e
+pendências em `sandbox/RELATORIO.md`.
+
+O ciclo fecha nos dois modos, e nada degradou na rodada hostil: `explore` com
+source obrigatória, `sync` e `archive --sync` saem 2 contra board inalcançável, e
+o archive fica de pé com o board atrás. A transição para status não fechado foi
+medida contra o Redmine do container, com releitura, e virou teste de integração.
+
+Quatro achados foram registrados sem conserto, porque três deles são decisão de
+desenho e um é custo de adoção declarado: `sync` quebrando na etapa de propose
+quando a change cria capability nova, `archive` não rodando `provenance` nem
+`schema`, `explore` dizendo `usable` sem source declarada contra board fora do ar,
+e `card = "required"` ligando junto com o board.

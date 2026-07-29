@@ -2,9 +2,9 @@
 id: "001-spec-command"
 change: 2026-07-29-cycle-skills
 req: [REQ-EFF-001, REQ-EFF-002, REQ-EFF-003]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["78285aa2560bb30bd075dbbc22e7eedd01d185a2"]
 ---
 
 ## Objetivo

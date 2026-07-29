@@ -2,9 +2,9 @@
 id: "005-skills-packaging"
 change: 2026-07-29-cycle-skills
 req: [REQ-SKL-001, REQ-SKL-002, REQ-SKL-003]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["985f12bfbdaffada8a78393ff403b8b6fcff509c"]
 ---
 
 ## Objetivo

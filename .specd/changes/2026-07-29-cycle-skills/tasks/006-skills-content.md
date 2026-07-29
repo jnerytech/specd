@@ -2,9 +2,9 @@
 id: "006-skills-content"
 change: 2026-07-29-cycle-skills
 req: [REQ-SKL-004, REQ-SKL-005, REQ-SKL-006]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["985f12bfbdaffada8a78393ff403b8b6fcff509c"]
 ---
 
 ## Objetivo

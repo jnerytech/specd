@@ -2,9 +2,11 @@
 id: "003-board-transition"
 change: 2026-07-29-cycle-skills
 req: [REQ-SYNC-017, REQ-ARC-014]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits:
+    - "71cb3b235c47bd6389f998a0bb3d68fb85f6f459"
+    - "38df4ef084759fe9608f36f73e560a2d95960852"
 ---
 
 ## Objetivo

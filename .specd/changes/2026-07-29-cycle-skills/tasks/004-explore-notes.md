@@ -2,9 +2,9 @@
 id: "004-explore-notes"
 change: 2026-07-29-cycle-skills
 req: [REQ-EXP-010, REQ-EXP-011]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["518bdfb670121a7b971577e51f0e094cee453648"]
 ---
 
 ## Objetivo

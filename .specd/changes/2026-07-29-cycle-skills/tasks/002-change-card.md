@@ -2,9 +2,9 @@
 id: "002-change-card"
 change: 2026-07-29-cycle-skills
 req: [REQ-CFG-012, REQ-FMT-011]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["353fd0121076afd47ea279da5d3c6704b58dff03"]
 ---
 
 ## Objetivo
