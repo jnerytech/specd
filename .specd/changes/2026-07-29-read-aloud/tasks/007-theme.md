@@ -2,9 +2,9 @@
 id: "007-theme"
 change: 2026-07-29-read-aloud
 req: [REQ-READ-008]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["775513ef11d72cd694ebc329e70b7e21cf3918f9"]
 ---
 
 ## Objetivo
