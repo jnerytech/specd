@@ -10,9 +10,9 @@ operação mais irreversível que este repositório executa: **nome mais versão
 publicados nunca voltam a ficar livres.** `npm unpublish` só vale nas
 primeiras 72 horas, e mesmo assim queima o par para sempre.
 
-Por isso a skill segue costly-ops-are-not-silent e absence-is-not-compliance do `CLAUDE.md` ao pé da letra: para e nomeia a
-escolha antes de pagar o custo, e trata a resposta de sucesso do npm como
-promessa, não como prova.
+Por isso a skill segue costly-ops-are-not-silent e absence-is-not-compliance do
+`CLAUDE.md` ao pé da letra: para e nomeia a escolha antes de pagar o custo, e
+trata a resposta de sucesso do npm como promessa, não como prova.
 
 ## Regras que não se negociam
 
@@ -40,12 +40,27 @@ releitura do registry devolve a versão.
 ```bash
 git status --porcelain && git rev-parse --short HEAD
 node -p "const p=require('./package.json'); p.name+'@'+p.version"
-npm view "$(node -p "require('./package.json').name")" versions --json 2>&1 | tail -3
+npm view "$(node -p "require('./package.json').name")" versions --json 2>&1
+npm view "$(node -p "const p=require('./package.json'); p.name+'@'+p.version")" version 2>&1
 ```
 
-Árvore suja → pare e mostre o que está pendente. `E404` no `npm view` significa
-que **este nome** nunca foi publicado — o que é o estado normal de uma primeira
-publicação e um alarme em qualquer outra.
+Árvore suja → pare e mostre o que está pendente. `E404` no `npm view` do nome
+significa que **este nome** nunca foi publicado — o que é o estado normal de uma
+primeira publicação e um alarme em qualquer outra.
+
+A lista de versões sai inteira, sem `tail`. Ela cresce a cada release, e cortar
+a saída esconde justamente o começo da série — onde mora `0.0.0`, a versão
+quebrada que os passos 4 e 7 mandam usar como referência. Um comando de
+checagem que devolve menos do que checou é o modo de falha descrito no passo 8,
+aplicado a esta própria página.
+
+**A quarta linha é a que evita descobrir tarde.** Ela pergunta pelo par exato
+que está no `package.json`. Versão de volta → **já publicada**, e a publicação
+não vai acontecer sem bump; leve isso ao passo 3 agora, não depois. `E404` →
+livre. Sem essa pergunta o conflito só aparece no dry-run do passo 4, e apareceu
+mesmo: a publicação do `0.1.1` começou com o `package.json` marcando `0.1.0`,
+que já estava no ar desde a release anterior. Deu certo por ordem dos passos,
+não por checagem.
 
 **Confira o nome contra o que já está no ar.** O registry indexa por nome, e
 nome diferente é pacote diferente, não versão nova do mesmo. Este repositório
@@ -79,9 +94,10 @@ Precisa sair 0. `verify` roda `format`, que **escreve** arquivos — recheque
 
 Leia a versão atual e decida com o usuário a que vai subir. Não invente bump.
 
-- O nome já está reservado e a série `0.0.x` já foi usada, então toda publicação
-  daqui em diante é release de verdade. `npm view <pacote> versions --json` diz
-  o que está ocupado; não deduza da versão em `package.json`.
+- O nome já está reservado e a série `0.0.x` está queimada, então toda
+  publicação daqui em diante é release de verdade. `npm view <pacote> versions
+  --json` diz o que está ocupado; não deduza da versão em `package.json`, que
+  costuma marcar a última publicada e não a próxima.
 - Release de verdade: `npm version <patch|minor|major>` cria commit **e tag
   git**. Isso é escrita no histórico — confirme antes, e note que a tag ainda
   precisa de `git push --follow-tags` depois.
@@ -117,6 +133,19 @@ Confira na saída, item por item:
   `package.json`.
 
 Mostre esse resumo ao usuário. É o que ele vai aprovar.
+
+Duas coisas na saída do dry-run que parecem defeito e não são:
+
+- **`EPUBLISHCONFLICT` não invalida a revisão.** Se a versão já estiver
+  publicada, o dry-run sai não-zero — e ainda assim imprime a lista de arquivos
+  e os `Tarball Details` inteiros. O conteúdo revisado ali vale: só o número da
+  versão vai mudar depois do bump. Não trate exit ≠ 0 como "não deu para
+  revisar", e não pule a revisão ao repetir o dry-run após o `npm version`.
+- **`default access` na linha final do dry-run não contradiz `--access
+  public`.** O dry-run acima não recebe a flag, então ele relata o padrão do
+  pacote. Quem responde sobre acesso é o publish real do passo 6, que imprime
+  `public access`. Conferir a flag na saída do dry-run é conferir a pergunta
+  errada.
 
 ### 5. Confirmação
 
@@ -192,9 +221,9 @@ Nada disto é automático — são escritas no repositório, e a decisão é do 
   Confira pelo documento cru, e não pelo seletor de campo: `npm view <pacote>@<versão> deprecated`
   imprime **vazio mesmo quando a versão está depreciada**, e vazio se lê como
   "não pegou". O que responde é `npm view <pacote>@<versão> --json` ou
-  `curl -s https://registry.npmjs.org/<pacote com / escapado como %2F>`. É absence-is-not-compliance na
-  ferramenta de checagem: o comando que parecia conferir devolve silêncio,
-  indistinguível do estado que ele deveria detectar.
+  `curl -s https://registry.npmjs.org/<pacote com / escapado como %2F>`. É
+  absence-is-not-compliance na ferramenta de checagem: o comando que parecia
+  conferir devolve silêncio, indistinguível do estado que ele deveria detectar.
 
 **Este arquivo é documentação e envelhece como qualquer outra.** A versão
 anterior desta seção mandava corrigir o README por afirmar que o pacote não
