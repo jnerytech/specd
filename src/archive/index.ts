@@ -22,7 +22,9 @@ import { coverageLayer } from "../verify/layers/coverage.js";
 import { evidenceLayer } from "../verify/layers/evidence.js";
 import type { VerifyLayerContext } from "../verify/layers/types.js";
 import type { Delta } from "../parser/delta.js";
-import { readBoardLinks } from "../sync/link.js";
+import type { BoardAdapter } from "../sync/adapter.js";
+import { createAdapter } from "../sync/adapters/index.js";
+import { readBoardLinks, type BoardLink } from "../sync/link.js";
 import { sync, type SyncReport } from "../sync/index.js";
 import { planApplication, type ApplicationPlan } from "./apply.js";
 
@@ -86,6 +88,10 @@ export interface ArchiveResult {
   // REQ-ARC-013: what stayed out of sync, when a board is configured and
   // `--sync` was not given. Absent when no board is configured.
   unsynced?: UnsyncedCount;
+  // REQ-ARC-014: set when `--sync` ran. `status` is absent when no
+  // `archived_status` is configured, and the empty list then means "nothing was
+  // attempted" rather than "nothing needed moving".
+  transitioned?: { status?: string; items: string[] };
 }
 
 export interface UnsyncedCount {
@@ -130,20 +136,62 @@ export function countUnsyncedItems(
   return { total: missing.length + stale.length, missing, stale };
 }
 
-// Every key recorded under `board:` across the capability files on disk.
-export function recordedLinkKeys(root: string): Set<string> {
+// Every link recorded under `board:` across the capability files on disk.
+export function recordedLinks(root: string): Map<string, BoardLink> {
   const specsDir = join(root, ".specd", "specs");
-  const keys = new Set<string>();
-  if (!existsSync(specsDir)) return keys;
+  const links = new Map<string, BoardLink>();
+  if (!existsSync(specsDir)) return links;
   for (const name of readdirSync(specsDir).filter((f) => f.endsWith(".md"))) {
     const file = join(specsDir, name);
-    for (const key of Object.keys(
+    for (const [key, link] of Object.entries(
       readBoardLinks(readFileSync(file, "utf8"), file),
     )) {
-      keys.add(key);
+      links.set(key, link);
     }
   }
-  return keys;
+  return links;
+}
+
+// Every key recorded under `board:` across the capability files on disk.
+export function recordedLinkKeys(root: string): Set<string> {
+  return new Set(recordedLinks(root).keys());
+}
+
+// The link keys a change owns: its requirements, and the capabilities they are
+// written into. The same set REQ-ARC-013 counts, because it is the same
+// question asked at two moments.
+export function changeLinkKeys(delta: Delta): string[] {
+  const keys: string[] = [];
+  const capabilities = new Set<string>();
+  for (const entry of [...delta.added, ...delta.modified]) {
+    keys.push(entry.requirement.id);
+    if (entry.capability !== undefined) capabilities.add(entry.capability);
+  }
+  return [...keys, ...capabilities];
+}
+
+// REQ-ARC-014 — Archive hands the item over, it does not bury it.
+//
+// Scoped to the archived change on purpose. `sync` reconciles the whole
+// effective spec, and that is right for content: two diverging sides are a
+// conflict wherever they are. A transition is a different claim — it says that
+// work finished — and only the change being archived finished.
+export async function transitionArchivedItems(
+  delta: Delta,
+  root: string,
+  adapter: BoardAdapter,
+  status: string,
+  notes: string,
+): Promise<string[]> {
+  const links = recordedLinks(root);
+  const moved: string[] = [];
+  for (const key of changeLinkKeys(delta)) {
+    const link = links.get(key);
+    if (link === undefined) continue;
+    await adapter.transition({ id: link.ref, url: link.url }, status, notes);
+    moved.push(key);
+  }
+  return moved;
 }
 
 // REQ-ARC-001 — Change is named explicitly.
@@ -249,6 +297,23 @@ export async function archive(
   if (options.sync === true) {
     try {
       result.synced = await sync({ cwd: root, config });
+
+      // REQ-ARC-014: after the content is reconciled, so the transition lands
+      // on items whose text the board already agrees with.
+      const status = config.board.mapping.archived_status;
+      result.transitioned =
+        status === undefined
+          ? { items: [] }
+          : {
+              status,
+              items: await transitionArchivedItems(
+                change.delta,
+                root,
+                createAdapter(config),
+                status,
+                `Archived by specd: change ${change.name}.`,
+              ),
+            };
     } catch (cause) {
       // REQ-ARC-012: nothing is undone. The archive is correct and unstaged.
       throw new ArchiveSyncError(result, cause);
@@ -262,6 +327,26 @@ export async function archive(
     result.unsynced = countUnsyncedItems(change.delta, recordedLinkKeys(root));
   }
   return result;
+}
+
+// REQ-ARC-014 — what the transition did, in one line.
+//
+// Absent status and empty list are different sentences on purpose: "nothing was
+// attempted" and "nothing needed moving" are different facts, and one text for
+// both is the collapse absence-is-not-compliance names.
+export function formatTransition(
+  transitioned: ArchiveResult["transitioned"],
+): string {
+  if (transitioned?.status === undefined) {
+    return "No [board.mapping] archived_status is configured, so no item was moved.";
+  }
+  if (transitioned.items.length === 0) {
+    return `No archived item is linked to the board, so none moved to "${transitioned.status}".`;
+  }
+  return (
+    `Moved ${transitioned.items.length} item${transitioned.items.length === 1 ? "" : "s"} ` +
+    `to "${transitioned.status}": ${transitioned.items.join(", ")}.`
+  );
 }
 
 // REQ-ARC-006 — Archive destination preserves the change name.

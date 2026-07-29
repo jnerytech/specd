@@ -80,6 +80,11 @@ export interface BoardAdapter {
   update(ref: BoardItemRef, content: BoardItemContent): Promise<void>;
   link(child: BoardItemRef, parent: BoardItemRef): Promise<void>;
   close(ref: BoardItemRef, reason: string): Promise<void>;
+  // REQ-SYNC-017: move the item to a named status and prove it landed. Kept
+  // apart from `close` on purpose — a transition says the work reached a stage,
+  // a close says it ended, and one function serving both erases the difference
+  // for every board that has anything between "in progress" and "done".
+  transition(ref: BoardItemRef, status: string, notes: string): Promise<void>;
 
   // --- reads ----------------------------------------------------------------
   // `undefined` when the item is gone: deleted on the board is not the same as

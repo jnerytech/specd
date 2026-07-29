@@ -107,6 +107,10 @@ export interface SpecdConfig {
       collapse?: SpecLevel[];
       // Status name `close` moves an item to. REQ-SYNC-003's single exception.
       closed_status?: string;
+      // REQ-SYNC-017: status name `archive --sync` moves the change's items to.
+      // Absent means no transition is attempted, which is reported rather than
+      // assumed.
+      archived_status?: string;
     };
     fields: BoardFieldConfig[];
   };
@@ -209,6 +213,7 @@ export const ConfigSchema: Record<string, FieldSpec> = {
       task: { kind: "string" },
       collapse: { kind: "string-array", values: SPEC_LEVELS },
       closed_status: { kind: "string" },
+      archived_status: { kind: "string" },
     }),
     // REQ-SYNC-009: neither `id` nor `name` is required on its own, because
     // either identifies a field. `bindFields` rejects an entry that declares

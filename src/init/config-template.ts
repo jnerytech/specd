@@ -55,6 +55,9 @@ language = "en"
 # collapse = ["task"]
 # Status name \`close\` moves an item to, when a requirement leaves the spec.
 # closed_status = "Closed"
+# Status name \`archive --sync\` moves the change's items to. Absent means no
+# transition is attempted, and the archive says so instead of assuming it.
+# archived_status = "In validation"
 
 # Board fields \`specd sync\` writes. Identify a field by id, by name, or by
 # both — if the two disagree, sync refuses rather than guessing.

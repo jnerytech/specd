@@ -47,6 +47,7 @@ function adapterReturning(
     update: () => Promise.reject(new Error("no writes")),
     link: () => Promise.reject(new Error("no writes")),
     close: () => Promise.reject(new Error("no writes")),
+    transition: () => Promise.reject(new Error("no writes")),
     read: (ref) => Promise.resolve(snapshots[ref.id]),
     describeFields: () => Promise.resolve([]),
   };

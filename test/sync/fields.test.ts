@@ -26,6 +26,7 @@ function adapterThatCannotDescribe(cause: Error): BoardAdapter {
     update: () => Promise.reject(new Error("not used")),
     link: () => Promise.reject(new Error("not used")),
     close: () => Promise.reject(new Error("not used")),
+    transition: () => Promise.reject(new Error("not used")),
     read: () => Promise.resolve(undefined),
     describeFields: () => Promise.reject(cause),
   };

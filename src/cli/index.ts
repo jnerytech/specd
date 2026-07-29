@@ -5,7 +5,7 @@ import {
   suggestAnchors,
   suggestForFile,
 } from "../anchors/suggest.js";
-import { archive } from "../archive/index.js";
+import { archive, formatTransition } from "../archive/index.js";
 import { explore } from "../explore/index.js";
 import { formatInstallResult, installHooks } from "../hooks/install.js";
 import { isHookEvent } from "../hooks/protocol.js";
@@ -314,6 +314,9 @@ const archiveCommand: Command = {
 
     if (result.synced !== undefined) {
       lines.push("", formatSyncReport(result.synced));
+      // REQ-ARC-014: no configured status is said out loud. Silence here would
+      // read as "the items moved", which is the one thing it does not mean.
+      lines.push(formatTransition(result.transitioned));
     } else if (result.unsynced !== undefined) {
       // REQ-ARC-013: zero is said out loud. "Nothing to report" and "nothing
       // was counted" have to read differently.

@@ -222,7 +222,7 @@ sendo arquivada.
 
 ```yaml anchors
 - file: src/archive/index.ts
-  symbol: "export function transitionArchivedItems"
+  symbol: "export async function transitionArchivedItems"
 ```
 
 ### REQ-SKL-001 — The package ships the skills of the cycle

@@ -125,7 +125,9 @@ export function createRedmineAdapter(options: RedmineOptions): BoardAdapter {
     return id;
   }
 
-  async function closedStatusId(): Promise<number> {
+  async function statuses(): Promise<
+    { id: number; name: string; is_closed: boolean }[]
+  > {
     if (statusCache === undefined) {
       const { text } = await request("GET", "/issue_statuses.json");
       statusCache = (
@@ -134,21 +136,69 @@ export function createRedmineAdapter(options: RedmineOptions): BoardAdapter {
         }
       ).issue_statuses;
     }
+    return statusCache;
+  }
+
+  async function closedStatusId(): Promise<number> {
+    const known = await statuses();
     const wanted = options.closedStatus;
     const match =
       wanted === undefined
-        ? statusCache.find((s) => s.is_closed)
-        : statusCache.find((s) => s.name === wanted);
+        ? known.find((s) => s.is_closed)
+        : known.find((s) => s.name === wanted);
     if (match === undefined) {
       throw new SyncError(
         wanted === undefined
           ? `The board reports no closed status, so specd cannot close an item. ` +
-              `Statuses: ${statusCache.map((s) => s.name).join(", ")}.`
+              `Statuses: ${known.map((s) => s.name).join(", ")}.`
           : `The board has no status named "${wanted}". ` +
-              `Statuses: ${statusCache.map((s) => s.name).join(", ")}.`,
+              `Statuses: ${known.map((s) => s.name).join(", ")}.`,
       );
     }
     return match.id;
+  }
+
+  async function statusIdNamed(name: string): Promise<number> {
+    const known = await statuses();
+    const match = known.find((s) => s.name === name);
+    if (match === undefined) {
+      throw new SyncError(
+        `The board has no status named "${name}". ` +
+          `Statuses: ${known.map((s) => s.name).join(", ")}.`,
+      );
+    }
+    return match.id;
+  }
+
+  // The write and the proof, once. Redmine accepts `status_id`, answers 204 and
+  // applies nothing when the tracker has no workflow row for the transition; a
+  // success response is not evidence that the write happened, and the reread is
+  // what turns it into evidence.
+  async function applyStatus(
+    ref: BoardItemRef,
+    target: number,
+    notes: string,
+    what: string,
+  ): Promise<void> {
+    await request(
+      "PUT",
+      `/issues/${ref.id}.json`,
+      { issue: { status_id: target, notes } },
+      `issue ${ref.id}`,
+    );
+
+    const { text } = await request("GET", `/issues/${ref.id}.json`);
+    const applied = (JSON.parse(text) as { issue: RedmineIssue }).issue.status;
+    if (applied?.id !== target) {
+      throw new SyncError(
+        `issue ${ref.id}: the board accepted the ${what} and did not apply it. ` +
+          `The status is still "${applied?.name ?? "unknown"}" (id ${applied?.id ?? "unknown"}), not id ${target}.\n` +
+          `In Redmine this happens when the item's tracker has no workflow transition ` +
+          `to that status: the PUT answers 204 and changes nothing.\n` +
+          `specd reports this as a failure rather than as a ${what}, because a ${what} ` +
+          `that did not happen is worse than one that refused.`,
+      );
+    }
   }
 
   function refFor(id: number): BoardItemRef {
@@ -218,27 +268,20 @@ export function createRedmineAdapter(options: RedmineOptions): BoardAdapter {
     // silence presented as approval — so the one status write specd makes is
     // also the one it confirms.
     async close(ref: BoardItemRef, reason: string): Promise<void> {
-      const target = await closedStatusId();
-      await request(
-        "PUT",
-        `/issues/${ref.id}.json`,
-        { issue: { status_id: target, notes: reason } },
-        `issue ${ref.id}`,
-      );
+      await applyStatus(ref, await closedStatusId(), reason, "close");
+    },
 
-      const { text } = await request("GET", `/issues/${ref.id}.json`);
-      const applied = (JSON.parse(text) as { issue: RedmineIssue }).issue
-        .status;
-      if (applied?.id !== target) {
-        throw new SyncError(
-          `issue ${ref.id}: the board accepted the close and did not apply it. ` +
-            `The status is still "${applied?.name ?? "unknown"}" (id ${applied?.id ?? "unknown"}), not id ${target}.\n` +
-            `In Redmine this happens when the item's tracker has no workflow transition ` +
-            `to that status: the PUT answers 204 and changes nothing.\n` +
-            `specd reports this as a failure rather than as a close, because a close ` +
-            `that did not happen is worse than one that refused.`,
-        );
-      }
+    // REQ-SYNC-017. Same proof as `close`, different target and a different
+    // meaning: the item reached a stage of the client's workflow, and is still
+    // alive. A board with `Em homologação` between `Em curso` and `Fechada` had
+    // nowhere to receive "ready to validate", and closing early erases from the
+    // board work that still has steps ahead of it.
+    async transition(
+      ref: BoardItemRef,
+      status: string,
+      notes: string,
+    ): Promise<void> {
+      await applyStatus(ref, await statusIdNamed(status), notes, "transition");
     },
 
     async read(ref: BoardItemRef): Promise<BoardItemSnapshot | undefined> {
