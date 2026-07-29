@@ -255,6 +255,10 @@ function formatManifest(result: Awaited<ReturnType<typeof explore>>): string {
     );
   }
   lines.push(result.manifest.usable ? "bundle: usable" : "bundle: not usable");
+  // REQ-EXP-010: the path is named whether or not the file is there. The
+  // command does not write it, and a location nobody states is one everybody
+  // invents differently.
+  lines.push(`notes: ${result.notesPath}`);
   return lines.join("\n");
 }
 

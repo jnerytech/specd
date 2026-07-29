@@ -3,13 +3,20 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { relative } from "node:path";
 import { resolveConfig } from "../config/resolve.js";
 import type { ExploreSource, SpecdConfig } from "../config/schema.js";
-import { parseCardRef } from "./card-ref.js";
+import { loadChangeFrontmatter } from "../parser/change.js";
+import { assertCardMatchesChange, parseCardRef } from "./card-ref.js";
 import {
   writeManifest,
   type ExploreManifest,
   type ManifestSource,
 } from "./manifest.js";
-import { bundlePath, manifestPath, sourcePath } from "./paths.js";
+import {
+  bundlePath,
+  changePath,
+  manifestPath,
+  notesPath,
+  sourcePath,
+} from "./paths.js";
 import { redactPayload } from "./redact.js";
 import { COLLECTORS, type CollectorContext } from "./sources/index.js";
 
@@ -29,6 +36,9 @@ export interface ExploreResult {
   manifest: ExploreManifest;
   manifestPath: string;
   bundlePath: string;
+  // REQ-EXP-010: where the prose of the exploration belongs. Reported so the
+  // path is known before anyone has to guess it; never written here.
+  notesPath: string;
 }
 
 // REQ-EXP-001 — Card identifier or URL.
@@ -51,6 +61,16 @@ export async function explore(options: ExploreOptions): Promise<ExploreResult> {
     });
 
   const card = parseCardRef(options.card, config.board);
+
+  // REQ-EXP-011: before the network, and before anything is written. Refusing
+  // after collecting would already have paid the cost the refusal exists to
+  // avoid.
+  const declared = loadChangeFrontmatter(
+    changePath(root, options.change),
+    `.specd/changes/${options.change}`,
+  ).frontmatter?.card;
+  assertCardMatchesChange(card, declared, options.change);
+
   const directory = bundlePath(root, options.change);
   mkdirSync(directory, { recursive: true });
 
@@ -81,7 +101,12 @@ export async function explore(options: ExploreOptions): Promise<ExploreResult> {
 
   assertRequiredSources(manifest);
 
-  return { manifest, manifestPath: path, bundlePath: directory };
+  return {
+    manifest,
+    manifestPath: path,
+    bundlePath: directory,
+    notesPath: notesPath(root, options.change),
+  };
 }
 
 // REQ-EXP-003 — Required sources gate the bundle.

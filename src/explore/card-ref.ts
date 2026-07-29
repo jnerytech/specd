@@ -1,3 +1,4 @@
+import { OperationalError } from "../core/operational.js";
 // REQ-EXP-001 — Card identifier or URL.
 export interface CardRef {
   // The card identifier, however it was supplied.
@@ -37,6 +38,33 @@ const CONTAINER_SEGMENTS = new Set([
   "c",
   "b",
 ]);
+
+// REQ-EXP-011 — A card that contradicts the change stops the run.
+//
+// Collecting the context of one card into the change of another is the cheapest
+// way to produce a bundle that justifies work nobody asked for. Neither side is
+// corrected: both were written by a person, and choosing which one is right is
+// guessing (no-guessing-on-conflict).
+//
+// Comparison is by identifier, which is what `parseCardRef` extracts from a URL
+// too, plus a direct URL match. The same card cited in both forms is not a
+// conflict.
+export function assertCardMatchesChange(
+  card: CardRef,
+  declared: { ref: string; url: string } | undefined,
+  change: string,
+): void {
+  if (declared === undefined) return;
+  if (card.id === declared.ref) return;
+  if (card.url !== undefined && card.url === declared.url) return;
+
+  throw new OperationalError(
+    `Change "${change}" declares card ${declared.ref} (${declared.url}), ` +
+      `and this run names ${card.id}${card.url === undefined ? "" : ` (${card.url})`}.\n` +
+      `specd will not choose between them: fix the argument, or fix "card" in the ` +
+      `change's proposal.md.`,
+  );
+}
 
 // Parses the argument of `specd explore`: either a bare board identifier,
 // resolved against `board.project`, or a URL whose provider and identifier come
