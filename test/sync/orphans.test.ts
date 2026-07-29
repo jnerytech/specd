@@ -5,9 +5,11 @@ import type {
 } from "../../src/sync/adapter.js";
 import { UndeclaredOrphanError } from "../../src/sync/errors.js";
 import {
-  assertNoUndeclaredOrphans,
+  assertNoUnsanctionedOrphans,
   bodyKey,
+  classifyOrphans,
   findOrphanedLinks,
+  type DeathSignal,
   type OrphanedLink,
   type SyncItemState,
 } from "../../src/sync/index.js";
@@ -79,8 +81,8 @@ describe("findOrphanedLinks", () => {
       links,
       new Map([["demo", ["REQ-D-002"]]]),
     );
-    expect(orphans.map((o) => [o.key, o.declared])).toEqual([
-      ["REQ-D-002", true],
+    expect(orphans.map((o) => [o.key, o.death])).toEqual([
+      ["REQ-D-002", "declared"],
     ]);
   });
 
@@ -90,8 +92,8 @@ describe("findOrphanedLinks", () => {
       links,
       new Map([["demo", []]]),
     );
-    expect(orphans.map((o) => [o.key, o.declared])).toEqual([
-      ["REQ-D-002", false],
+    expect(orphans.map((o) => [o.key, o.death])).toEqual([
+      ["REQ-D-002", "none"],
     ]);
   });
 
@@ -105,44 +107,122 @@ describe("findOrphanedLinks", () => {
       twoCapabilities,
       new Map([["demo", ["REQ-D-002"]]]),
     );
-    expect(orphans.find((o) => o.key === "REQ-D-002")?.declared).toBe(true);
-    expect(orphans.find((o) => o.key === "REQ-O-001")?.declared).toBe(false);
+    expect(orphans.find((o) => o.key === "REQ-D-002")?.death).toBe("declared");
+    expect(orphans.find((o) => o.key === "REQ-O-001")?.death).toBe("none");
+  });
+
+  // REQ-SYNC-016 — a death an open change proposes is not a death yet.
+  it("marks an orphan proposed when an open change removes it", () => {
+    const orphans = findOrphanedLinks(
+      [planned("REQ-D-001")],
+      links,
+      new Map([["demo", []]]),
+      new Map([["demo", ["REQ-D-002"]]]),
+    );
+    expect(orphans.map((o) => [o.key, o.death])).toEqual([
+      ["REQ-D-002", "proposed"],
+    ]);
+  });
+
+  it("lets a declared death outrank a proposed one", () => {
+    const orphans = findOrphanedLinks(
+      [planned("REQ-D-001")],
+      links,
+      new Map([["demo", ["REQ-D-002"]]]),
+      new Map([["demo", ["REQ-D-002"]]]),
+    );
+    expect(orphans[0]?.death).toBe("declared");
+  });
+
+  it("reads the proposals per capability, not globally", () => {
+    const twoCapabilities = new Map([
+      ["demo", { "REQ-D-002": link("2") }],
+      ["other", { "REQ-O-001": link("3") }],
+    ]);
+    const orphans = findOrphanedLinks(
+      [],
+      twoCapabilities,
+      new Map(),
+      new Map([["demo", ["REQ-D-002"]]]),
+    );
+    expect(orphans.find((o) => o.key === "REQ-D-002")?.death).toBe("proposed");
+    expect(orphans.find((o) => o.key === "REQ-O-001")?.death).toBe("none");
   });
 });
 
-// REQ-SYNC-015 — An undeclared orphan stops the command and names the candidate.
-describe("assertNoUndeclaredOrphans", () => {
-  const orphan = (declared: boolean): OrphanedLink => ({
+// REQ-SYNC-014 / REQ-SYNC-015 — the two conditions for closing, and the refusal
+// that carries the evidence.
+describe("classifyOrphans", () => {
+  const orphan = (death: DeathSignal): OrphanedLink => ({
     capability: "demo",
     key: "REQ-D-002",
     link: link("2"),
-    declared,
+    death,
   });
 
-  it("lets a declared death through", async () => {
-    await expect(
-      assertNoUndeclaredOrphans([orphan(true)], [], adapterReturning({})),
-    ).resolves.toBeUndefined();
+  async function refusal(
+    orphans: OrphanedLink[],
+    states: SyncItemState[],
+    adapter: BoardAdapter,
+  ): Promise<UndeclaredOrphanError> {
+    const classified = await classifyOrphans(orphans, states, adapter);
+    try {
+      assertNoUnsanctionedOrphans(classified);
+    } catch (cause) {
+      return cause as UndeclaredOrphanError;
+    }
+    throw new Error("expected a refusal and got none");
+  }
+
+  it("closes a declared death whose body did not reappear", async () => {
+    const classified = await classifyOrphans(
+      [orphan("declared")],
+      [state("REQ-D-003", "a different body")],
+      adapterReturning({ "2": snapshot("2", "the orphan body") }),
+    );
+    expect(classified[0]?.disposition).toBe("close");
+    expect(() => {
+      assertNoUnsanctionedOrphans(classified);
+    }).not.toThrow();
+  });
+
+  // The Fatia 8 correction. `REMOVED: REQ-D-002` plus `ADDED: REQ-D-003` with
+  // the same body is how a rename of an already realized requirement is
+  // written, because the delta has no other vocabulary for it — so the
+  // declaration does not distinguish a death from a rename, and the body does.
+  it("refuses a declared death whose body reappeared, and names both", async () => {
+    const error = await refusal(
+      [orphan("declared")],
+      [state("REQ-D-003", "the same body")],
+      adapterReturning({ "2": snapshot("2", "the same body") }),
+    );
+    expect(error).toBeInstanceOf(UndeclaredOrphanError);
+    expect(error.exitCode).toBe(2);
+    expect(error.orphans[0]?.declared).toBe(true);
+    expect(error.orphans[0]?.candidates).toEqual(["REQ-D-003"]);
+    expect(error.message).toContain("REQ-D-002");
+    expect(error.message).toContain("REQ-D-003");
+    expect(error.message).toContain("listed as retired");
   });
 
   it("refuses an undeclared orphan with exit code 2", async () => {
-    const error = await assertNoUndeclaredOrphans(
-      [orphan(false)],
+    const error = await refusal(
+      [orphan("none")],
       [],
       adapterReturning({ "2": snapshot("2", "body") }),
-    ).catch((cause: unknown) => cause);
+    );
     expect(error).toBeInstanceOf(UndeclaredOrphanError);
-    expect((error as { exitCode: number }).exitCode).toBe(2);
+    expect(error.exitCode).toBe(2);
   });
 
   // The body is what a rename does not touch. The title is derived from the
   // identifier, so comparing whole projections would never match here.
   it("names an unlinked item with the same body as a probable rename", async () => {
-    const error = (await assertNoUndeclaredOrphans(
-      [orphan(false)],
+    const error = await refusal(
+      [orphan("none")],
       [state("REQ-D-003", "the same body")],
       adapterReturning({ "2": snapshot("2", "the same body") }),
-    ).catch((cause: unknown) => cause)) as UndeclaredOrphanError;
+    );
 
     expect(error.orphans[0]?.candidates).toEqual(["REQ-D-003"]);
     expect(error.message).toContain("REQ-D-003");
@@ -150,41 +230,86 @@ describe("assertNoUndeclaredOrphans", () => {
   });
 
   it("lists every candidate and chooses none", async () => {
-    const error = (await assertNoUndeclaredOrphans(
-      [orphan(false)],
+    const error = await refusal(
+      [orphan("none")],
       [state("REQ-D-003", "same"), state("REQ-D-004", "same")],
       adapterReturning({ "2": snapshot("2", "same") }),
-    ).catch((cause: unknown) => cause)) as UndeclaredOrphanError;
+    );
     expect(error.orphans[0]?.candidates).toEqual(["REQ-D-003", "REQ-D-004"]);
   });
 
   it("ignores an item that already has its own link", async () => {
-    const error = (await assertNoUndeclaredOrphans(
-      [orphan(false)],
+    const error = await refusal(
+      [orphan("none")],
       [state("REQ-D-003", "same", true)],
       adapterReturning({ "2": snapshot("2", "same") }),
-    ).catch((cause: unknown) => cause)) as UndeclaredOrphanError;
+    );
     expect(error.orphans[0]?.candidates).toEqual([]);
   });
 
   it("still refuses when no candidate matches", async () => {
-    const error = (await assertNoUndeclaredOrphans(
-      [orphan(false)],
+    const error = await refusal(
+      [orphan("none")],
       [state("REQ-D-003", "different body")],
       adapterReturning({ "2": snapshot("2", "the orphan body") }),
-    ).catch((cause: unknown) => cause)) as UndeclaredOrphanError;
+    );
     expect(error.orphans[0]?.candidates).toEqual([]);
     expect(error.message).toContain("Nothing was written");
   });
 
-  it("names both ways out", async () => {
-    const error = (await assertNoUndeclaredOrphans(
-      [orphan(false)],
+  it("names the ways out, including the one for a body that reappeared", async () => {
+    const error = await refusal(
+      [orphan("none")],
       [],
       adapterReturning({ "2": snapshot("2", "b") }),
-    ).catch((cause: unknown) => cause)) as Error;
+    );
     expect(error.message).toContain("rename the key");
     expect(error.message).toContain("retired");
+    expect(error.message).toContain("close the item on the board yourself");
+  });
+
+  // A 404 is the only thing that makes `read` return undefined, so this is a
+  // verified absence and not an unverified one. A card that is not there has no
+  // body to reappear.
+  it("falls back to the declaration when the board item is gone", async () => {
+    const classified = await classifyOrphans(
+      [orphan("declared")],
+      [state("REQ-D-003", "same")],
+      adapterReturning({}),
+    );
+    expect(classified[0]?.candidates).toEqual([]);
+    expect(classified[0]?.disposition).toBe("close");
+  });
+
+  // REQ-SYNC-016 — the third branch, and the two ways it must not collapse.
+  it("leaves a proposed death alone", async () => {
+    const classified = await classifyOrphans(
+      [orphan("proposed")],
+      [state("REQ-D-003", "a different body")],
+      adapterReturning({ "2": snapshot("2", "the orphan body") }),
+    );
+    expect(classified[0]?.disposition).toBe("leave");
+    expect(() => {
+      assertNoUnsanctionedOrphans(classified);
+    }).not.toThrow();
+  });
+
+  it("still refuses a proposed death whose body reappeared", async () => {
+    const error = await refusal(
+      [orphan("proposed")],
+      [state("REQ-D-003", "the same body")],
+      adapterReturning({ "2": snapshot("2", "the same body") }),
+    );
+    expect(error.orphans[0]?.declared).toBe(false);
+    expect(error.orphans[0]?.candidates).toEqual(["REQ-D-003"]);
+  });
+
+  it("does not touch the board when there is no orphan at all", async () => {
+    const exploding: BoardAdapter = {
+      ...adapterReturning({}),
+      read: () => Promise.reject(new Error("must not be read")),
+    };
+    await expect(classifyOrphans([], [], exploding)).resolves.toEqual([]);
   });
 });
 

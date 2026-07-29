@@ -17,6 +17,12 @@ Estes não são preferências. Violá-los destrói a proposta de valor do produt
 **P1 — A CLI nunca chama LLM no caminho de decisão.**
 Se um exit code depender de um modelo, ele deixa de ser determinístico. Nenhum módulo alcançável a partir de `verify()` pode importar cliente de LLM. Há teste de arquitetura para isso.
 
+A regra tem duas justificativas, e a segunda cobre território que a primeira não alcança. Determinismo protege o exit code; **irreversibilidade protege a escrita externa.** Nenhuma declaração que decide escrita destrutiva em sistema de terceiro pode ter sido escrita por um modelo — não porque o resultado deixaria de ser determinístico, mas porque ele deixaria de ser desfazível.
+
+A assimetria é o motivo. Exit code errado se roda de novo: o preço do erro é uma execução. Card fechado com o apontamento de hora de alguém dentro não se roda de novo — o comentário, o anexo e as horas não voltam porque o commit seguinte está certo. Onde o erro é recuperável, determinismo basta; onde não é, a mesma disciplina vale com força maior, e é por isso que ela se estende a operações que exit code nenhum atravessa.
+
+A instância concreta é um formato que ainda não existe. Um delta que declarasse transições — `RENAMED`, `SPLIT` — colocaria a decisão de fechar o card de um cliente na saída de quem escreve o delta, e o escritor confiável desse campo seria `propose`. Ali o specd não estaria adivinhando: estaria obedecendo a um palpite, o que é pior, porque parece declarado. Daí a preferência por identidade que não precisa ser declarada — detectada e recusada (P4) em vez de declarada e obedecida.
+
 **P2 — Um único gate.**
 Só `specd verify` retorna 1 por reprovação de qualidade. Outros comandos retornam não-zero apenas por falha operacional.
 
@@ -114,3 +120,20 @@ Duas restrições que a Fatia 6 deixou herdadas e que valem para os dois:
 `npm run verify` roda format, lint, testes e build, offline e sem Docker — e a camada `project` do `specd verify` delega a ele, então o gate valida este próprio repositório.
 
 `npm run test:integration` sobe um Redmine em container, semeia, roda a suíte de integração e derruba. Ele é deliberadamente separado: o gate não pode exigir Docker, senão as cinco camadas offline deixam de ser offline.
+
+## Agents do plugin feature-dev
+
+O plugin `feature-dev@claude-plugins-official` está instalado. Use os
+agents dentro do ciclo do OpenSpec, nunca o comando `/feature-dev` inteiro.
+
+| Momento                            | Agent                                            | Contenção                                                                                                           |
+| ---------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `/opsx:explore`                    | 2–3 `code-explorer` em paralelo, focos distintos | Vale a regra do `.reference/README.md`: leitura pontual, nunca varredura. As ferramentas dele convidam ao contrário |
+| Antes de escrever delta            | 2 `code-architect` com focos divergentes         | Arquitetura de código, sim. Semântica do modelo de spec, não — nessas a incerteza tem que chegar ao autor, P4       |
+| Antes de commit e antes de archive | 3 `code-reviewer`, um focado só em P1–P9         | Corte de confiança em 80. Revisor que reporta tudo é ignorado, como gate que dói é desligado                        |
+
+**Não rode `/feature-dev` neste repositório.** Ele produz código sem
+requisito que o reivindique — a direção de drift que o specd não detecta.
+Ele serve para projeto que ainda não tem specd, como caminho de entrada:
+implementa, e depois `anchor suggest --file` transforma o escrito em
+requisito ancorado.

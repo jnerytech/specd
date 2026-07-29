@@ -5,7 +5,8 @@ import type { SpecdConfig } from "../config/schema.js";
 import { requireProjectRoot } from "../core/root.js";
 import type { Requirement } from "../parser/requirement.js";
 import type { Task } from "../parser/task.js";
-import { readOpenChanges } from "../verify/changes.js";
+import type { Capability } from "../parser/capability.js";
+import { readOpenChanges, type OpenChange } from "../verify/changes.js";
 import { effectiveSpecs } from "../verify/effective.js";
 import type {
   BoardAdapter,
@@ -54,7 +55,11 @@ export interface SyncItemState {
 // REQ-SYNC-003: `closed` is not a merge outcome. It is what happens to a board
 // item whose requirement left the spec — the archived case, and the single
 // sanctioned status write.
-export type SyncOutcome = MergeOutcome | "closed";
+//
+// REQ-SYNC-016: `retiring` is not a write at all. It is the report of an item
+// deliberately left alone, and it exists because staying silent about it would
+// be P8 by the definition — checked, found something, said nothing.
+export type SyncOutcome = MergeOutcome | "closed" | "retiring";
 
 export interface SyncAction {
   key: string;
@@ -76,14 +81,26 @@ export interface SyncReport {
   counts: Record<SyncOutcome, number>;
 }
 
+// What the spec says about the death of the requirement behind an orphaned
+// link, and the three answers are genuinely three.
+//
+// `declared` — REQ-SYNC-014: the identifier is listed as `retired` in the
+// capability frontmatter. `archive` writes it there for every identifier under
+// REMOVED, so this is a death that already happened.
+//
+// `proposed` — REQ-SYNC-016: the identifier is under REMOVED of a change that
+// is still open. The death is planned and has not happened; the board item is
+// left alone until `archive` turns the proposal into a fact.
+//
+// `none` — nothing in the spec says the requirement died, and the link is an
+// accident until somebody says otherwise.
+export type DeathSignal = "declared" | "proposed" | "none";
+
 export interface OrphanedLink {
   capability: string;
   key: string;
   link: BoardLink;
-  // REQ-SYNC-014: the identifier is listed as `retired` in the capability
-  // frontmatter, which is how a death gets declared. `archive` writes it there
-  // for every identifier under REMOVED.
-  declared: boolean;
+  death: DeathSignal;
 }
 
 // REQ-SYNC-014 — a link whose item is no longer in the spec, and whether its
@@ -98,18 +115,38 @@ export interface OrphanedLink {
 // requirement is gone", `archive` populates it from every REMOVED identifier,
 // and comparing linked keys against planned keys and calling every difference a
 // death was the tool ignoring its own model.
+//
+// REQ-SYNC-016 reads the second map. `buildSpecTree` already loaded the open
+// changes to build the task level and threw away `delta.removed` — the same
+// shape as the defect above, one signal later: a fact was on disk and nobody
+// asked for it.
 export function findOrphanedLinks(
   planned: readonly PlannedItem[],
   links: Map<string, Record<string, BoardLink>>,
   retiredByCapability: ReadonlyMap<string, readonly string[]>,
+  retiringByCapability: ReadonlyMap<string, readonly string[]> = new Map(),
 ): OrphanedLink[] {
   const live = new Set(planned.map((item) => item.key));
   const orphans: OrphanedLink[] = [];
   for (const [capability, entries] of links) {
     const retired = retiredByCapability.get(capability) ?? [];
+    const retiring = retiringByCapability.get(capability) ?? [];
     for (const [key, link] of Object.entries(entries)) {
       if (live.has(key)) continue;
-      orphans.push({ capability, key, link, declared: retired.includes(key) });
+      // Declared outranks proposed, and the tie it breaks is one `buildSpecTree`
+      // cannot produce: `collectRetiring` only names identifiers that are still
+      // live requirement headings, and the parser refuses a heading whose
+      // identifier is already in `retired`, so the two lists are disjoint by
+      // construction. The order is here for a caller that builds the maps by
+      // hand, and declared is the safer default — an archive that happened is a
+      // fact, an open change is not. `spec-tree.test.ts` pins the invariant so
+      // it is checked rather than assumed.
+      const death: DeathSignal = retired.includes(key)
+        ? "declared"
+        : retiring.includes(key)
+          ? "proposed"
+          : "none";
+      orphans.push({ capability, key, link, death });
     }
   }
   return orphans;
@@ -196,27 +233,39 @@ export async function sync(options: SyncOptions = {}): Promise<SyncReport> {
   // capability whose requirements were all removed still holds the links whose
   // cards have to be dealt with.
   const links = readLinksByCapability(root, [
-    ...new Set([...tree.retired.keys(), ...planned.map((i) => i.capability)]),
+    ...new Set([
+      ...tree.retired.keys(),
+      ...tree.retiring.keys(),
+      ...planned.map((i) => i.capability),
+    ]),
   ]);
   const states = await readStates(planned, links, bindings, adapter);
-  const orphans = findOrphanedLinks(planned, links, tree.retired);
+  const orphans = findOrphanedLinks(
+    planned,
+    links,
+    tree.retired,
+    tree.retiring,
+  );
+  const classified = await classifyOrphans(orphans, states, adapter);
 
   // REQ-SYNC-015: raised before the conflict check and before any write, so an
-  // undeclared orphan never costs a card while the rest of the run reports
-  // success around it.
-  await assertNoUndeclaredOrphans(orphans, states, adapter);
+  // orphan specd was not told to close never costs a card while the rest of the
+  // run reports success around it.
+  assertNoUnsanctionedOrphans(classified);
 
   const actions = [
     ...planActions(states, boundIds),
-    // REQ-SYNC-014: only declared deaths reach here.
-    ...orphans
-      .filter((orphan) => orphan.declared)
-      .map((orphan): SyncAction => ({
+    // REQ-SYNC-014: only deaths that are declared *and* unambiguous become
+    // `closed`. REQ-SYNC-016: a proposed death becomes `retiring`, which is
+    // reported and never written.
+    ...classified
+      .filter((entry) => entry.disposition !== "refuse")
+      .map(({ orphan, disposition }): SyncAction => ({
         key: orphan.key,
         capability: orphan.capability,
         level: "",
         type: "",
-        outcome: "closed",
+        outcome: disposition === "close" ? "closed" : "retiring",
         oursHash: "",
         conflicts: [],
         ref: { id: orphan.link.ref, url: orphan.link.url },
@@ -254,43 +303,104 @@ export async function sync(options: SyncOptions = {}): Promise<SyncReport> {
   return report;
 }
 
-// REQ-SYNC-015 — refuse, and hand over the evidence rather than a verdict.
+// What `sync` may do with an orphaned link.
+export type OrphanDisposition = "close" | "refuse" | "leave";
+
+export interface ClassifiedOrphan {
+  orphan: OrphanedLink;
+  // Planned items with no link yet whose body matches the board item's.
+  candidates: string[];
+  disposition: OrphanDisposition;
+}
+
+// REQ-SYNC-014 / REQ-SYNC-015 — the two conditions for closing, decided in one
+// place, and the evidence handed over rather than a verdict.
 //
-// The board is read only for the orphans that are undeclared, and only to find
-// candidates: an item with no link yet whose body is identical to the card's.
-// A rename produces exactly that, because the body is what a rename does not
-// touch.
-export async function assertNoUndeclaredOrphans(
+// Every orphan costs one board read, the declared ones included. That is not
+// negotiable and it is not the network being asked for out of convenience: the
+// requirement that died has left the spec, so the only surviving copy of its
+// body is the card. Without reading it there is no way to tell a death from a
+// rename, which is the whole question.
+//
+// A card that cannot be read has no body to reappear. `read` returns undefined
+// only for a 404 — every other failure throws — so this is a verified absence,
+// not an unverified one, and the disposition falls back to the declaration
+// exactly as before.
+export async function classifyOrphans(
   orphans: readonly OrphanedLink[],
   states: readonly SyncItemState[],
   adapter: BoardAdapter,
-): Promise<void> {
-  const undeclared = orphans.filter((orphan) => !orphan.declared);
-  if (undeclared.length === 0) return;
+): Promise<ClassifiedOrphan[]> {
+  if (orphans.length === 0) return [];
 
   // Only items that are not linked to anything yet can be the other end of a
   // rename; one that already has its own card is a different item.
   const unlinked = states.filter((state) => state.link === undefined);
 
-  const reports: OrphanReport[] = [];
-  for (const orphan of undeclared) {
-    const ref = { id: orphan.link.ref, url: orphan.link.url };
-    const snapshot = await adapter.read(ref);
+  const classified: ClassifiedOrphan[] = [];
+  for (const orphan of orphans) {
+    const snapshot = await adapter.read({
+      id: orphan.link.ref,
+      url: orphan.link.url,
+    });
     const remoteBody =
       snapshot === undefined ? undefined : bodyKey(snapshot.content.body);
-    reports.push({
-      key: orphan.key,
-      ref: ref.id,
-      url: ref.url,
-      candidates:
-        remoteBody === undefined
-          ? []
-          : unlinked
-              .filter((state) => bodyKey(state.content.body) === remoteBody)
-              .map((state) => state.item.key),
+    // Exact equality of the normalized body, and it has to stay exact. A looser
+    // comparison — fuzzy, prefix, similarity above some threshold — would turn
+    // this from evidence into a judgement, and the branch it feeds decides
+    // whether somebody's card closes. P1: where the write cannot be undone, the
+    // tool detects and refuses; it does not estimate.
+    const candidates =
+      remoteBody === undefined
+        ? []
+        : unlinked
+            .filter((state) => bodyKey(state.content.body) === remoteBody)
+            .map((state) => state.item.key);
+    classified.push({
+      orphan,
+      candidates,
+      disposition: dispose(orphan, candidates),
     });
   }
+  return classified;
+}
 
+// The four branches, in the order that makes them disjoint. The order is the
+// design, not an implementation detail:
+//
+//   corpo reaparece      -> refuse   a body under two identifiers is the most
+//                                    ambiguous pair in the model, not the least
+//   morte proposta       -> leave    proposed is not declared; closing here
+//                                    would lose the card of an abandoned change
+//   morte declarada      -> close    the only sanctioned status write
+//   nada                 -> refuse   an accident until somebody says otherwise
+//
+// A reappearing body outranks a declaration because the author who renames an
+// already realized requirement has to write `REMOVED` plus `ADDED` — the delta
+// offers no other words — so the declaration cannot distinguish the readings.
+function dispose(
+  orphan: OrphanedLink,
+  candidates: readonly string[],
+): OrphanDisposition {
+  if (candidates.length > 0) return "refuse";
+  if (orphan.death === "proposed") return "leave";
+  return orphan.death === "declared" ? "close" : "refuse";
+}
+
+// REQ-SYNC-015 — refuse before anything is written, and name both ends.
+export function assertNoUnsanctionedOrphans(
+  classified: readonly ClassifiedOrphan[],
+): void {
+  const refused = classified.filter((entry) => entry.disposition === "refuse");
+  if (refused.length === 0) return;
+
+  const reports: OrphanReport[] = refused.map((entry) => ({
+    key: entry.orphan.key,
+    ref: entry.orphan.link.ref,
+    url: entry.orphan.link.url,
+    declared: entry.orphan.death === "declared",
+    candidates: entry.candidates,
+  }));
   throw new UndeclaredOrphanError(reports);
 }
 
@@ -342,6 +452,11 @@ async function applyActions(ctx: ApplyContext): Promise<void> {
   const touched = new Set<string>();
 
   for (const action of ctx.actions) {
+    // REQ-SYNC-016: the death is proposed and not declared, so the item is
+    // left exactly as it is — no status write, and the link stays in the
+    // frontmatter so `archive` finds it there.
+    if (action.outcome === "retiring") continue;
+
     // REQ-SYNC-003: the requirement left the spec, so the board item stops
     // asking to be worked on. This is the single status write, and the adapter
     // reads back to confirm it landed.
@@ -528,11 +643,20 @@ export interface SpecTree {
   // Capability name -> the identifiers its frontmatter declares retired.
   // REQ-SYNC-014 reads this to tell a declared death from an accident.
   retired: Map<string, readonly string[]>;
+  // Capability name -> the identifiers open changes propose to remove.
+  // REQ-SYNC-016 reads this to tell a proposed death from a declared one.
+  retiring: Map<string, readonly string[]>;
 }
 
 export function buildSpecTree(root: string): SpecTree {
-  const effective = effectiveSpecs(root, { pathsRelativeTo: root });
-  const tasks = readOpenChanges(root).flatMap((change) => change.tasks);
+  // One read of the open changes, shared. Reading them twice would let the
+  // overlay that decides `roots` and the list that decides `retiring` come from
+  // two different observations of the same directory, and the disagreement
+  // between them would be a card closed or a card refused for no visible
+  // reason.
+  const changes = readOpenChanges(root);
+  const effective = effectiveSpecs(root, { pathsRelativeTo: root, changes });
+  const tasks = changes.flatMap((change) => change.tasks);
 
   const retired = new Map<string, readonly string[]>(
     effective.capabilities.map((capability) => [
@@ -540,6 +664,7 @@ export function buildSpecTree(root: string): SpecTree {
       capability.retired,
     ]),
   );
+  const retiring = collectRetiring(changes, effective.capabilities);
   const byCapability = new Map<string, SpecNode>();
   for (const entry of effective.requirements) {
     const capability = entry.capability;
@@ -557,7 +682,41 @@ export function buildSpecTree(root: string): SpecTree {
     }
     node.children.push(requirementNode(entry.requirement, capability, tasks));
   }
-  return { roots: [...byCapability.values()], retired };
+  return { roots: [...byCapability.values()], retired, retiring };
+}
+
+// REQ-SYNC-016 — which capability owns an identifier an open change proposes to
+// remove.
+//
+// The requirement has already left the effective spec, so the answer is not
+// there. It is still in the capability file on disk, which is exactly what
+// `archive` will rewrite later, and that file is the only place that knows.
+//
+// An identifier that no capability claims is skipped rather than guessed:
+// `effectiveSpecs` already reports it as "REMOVED but exists nowhere", and a
+// second, quieter opinion about it here would be the tool arguing with itself.
+function collectRetiring(
+  changes: readonly OpenChange[],
+  capabilities: readonly Capability[],
+): Map<string, readonly string[]> {
+  const owners = new Map<string, string>();
+  for (const capability of capabilities) {
+    for (const requirement of capability.requirements) {
+      owners.set(requirement.id, capability.name);
+    }
+  }
+
+  const retiring = new Map<string, string[]>();
+  for (const change of changes) {
+    for (const id of change.delta?.removed ?? []) {
+      const owner = owners.get(id);
+      if (owner === undefined) continue;
+      const list = retiring.get(owner) ?? [];
+      list.push(id);
+      retiring.set(owner, list);
+    }
+  }
+  return retiring;
 }
 
 function requirementNode(
@@ -605,6 +764,7 @@ function countOutcomes(
     converged: 0,
     conflict: 0,
     closed: 0,
+    retiring: 0,
   };
   for (const action of actions) counts[action.outcome]++;
   return counts;

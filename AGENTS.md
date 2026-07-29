@@ -17,6 +17,12 @@ Estes não são preferências. Violá-los destrói a proposta de valor do produt
 **P1 — A CLI nunca chama LLM no caminho de decisão.**
 Se um exit code depender de um modelo, ele deixa de ser determinístico. Nenhum módulo alcançável a partir de `verify()` pode importar cliente de LLM. Há teste de arquitetura para isso.
 
+A regra tem duas justificativas, e a segunda cobre território que a primeira não alcança. Determinismo protege o exit code; **irreversibilidade protege a escrita externa.** Nenhuma declaração que decide escrita destrutiva em sistema de terceiro pode ter sido escrita por um modelo — não porque o resultado deixaria de ser determinístico, mas porque ele deixaria de ser desfazível.
+
+A assimetria é o motivo. Exit code errado se roda de novo: o preço do erro é uma execução. Card fechado com o apontamento de hora de alguém dentro não se roda de novo — o comentário, o anexo e as horas não voltam porque o commit seguinte está certo. Onde o erro é recuperável, determinismo basta; onde não é, a mesma disciplina vale com força maior, e é por isso que ela se estende a operações que exit code nenhum atravessa.
+
+A instância concreta é um formato que ainda não existe. Um delta que declarasse transições — `RENAMED`, `SPLIT` — colocaria a decisão de fechar o card de um cliente na saída de quem escreve o delta, e o escritor confiável desse campo seria `propose`. Ali o specd não estaria adivinhando: estaria obedecendo a um palpite, o que é pior, porque parece declarado. Daí a preferência por identidade que não precisa ser declarada — detectada e recusada (P4) em vez de declarada e obedecida.
+
 **P2 — Um único gate.**
 Só `specd verify` retorna 1 por reprovação de qualidade. Outros comandos retornam não-zero apenas por falha operacional.
 

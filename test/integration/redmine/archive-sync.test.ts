@@ -220,20 +220,30 @@ Nada a adicionar.
 
     addChange(root, "arc-sync");
 
-    // While the change is open the death is proposed and not declared, so a
-    // plain `sync` refuses rather than closing the card early. `archive --sync`
-    // is what turns the proposal into `retired`, and then into a closed card.
-    await expect(sync({ cwd: root })).rejects.toThrowError(
-      /not listed as retired/,
-    );
+    // REQ-SYNC-016. While the change is open the death is proposed and not
+    // declared, so a plain `sync` leaves the card alone and says so — it used
+    // to refuse, which blocked `sync` for the whole life of the change.
+    // `archive --sync` is what turns the proposal into `retired`, and then into
+    // a closed card.
+    // The two moments, in one run. The requirement the change ADDs becomes real
+    // on the board right away, because the board projects the plan; the one it
+    // REMOVEs stays open, because the death is proposed and not declared.
+    const proposed = await sync({ cwd: root });
+    expect(proposed.counts.create).toBe(1);
+    expect(proposed.counts.retiring).toBe(1);
+    expect(proposed.counts.closed).toBe(0);
+    expect(
+      (await redmineApi(env).issue(doomed))["status"] as { is_closed: boolean },
+    ).toMatchObject({ is_closed: false });
 
     const result = await archive("demo-change", { cwd: root, sync: true });
 
     expect(result.destination).toContain("archive/demo-change");
     expect(result.synced).toBeDefined();
-    // The new requirement got a card; the removed one got closed, because
-    // `archive` wrote it into `retired` and REQ-SYNC-014 read that.
-    expect(result.synced?.counts.create).toBe(1);
+    // Nothing new to create — the card already exists from the run above. What
+    // `archive` adds is the declaration, and that is what closes the old card.
+    expect(result.synced?.counts.create).toBe(0);
+    expect(result.synced?.counts.retiring).toBe(0);
     expect(result.synced?.counts.closed).toBe(1);
 
     const links = readBoardLinks(readCapability(root, "arc-sync"));
@@ -255,6 +265,66 @@ Nada a adicionar.
     expect(readCapability(root, "arc-nosync-board")).not.toContain(
       "REQ-DEMO-003",
     );
+  });
+
+  // REQ-SYNC-014 through the real cycle: the delta says REMOVED plus ADDED with
+  // the same body, `archive` writes `retired` and the new block, and the sync
+  // that follows has to refuse instead of closing. This is the rename of an
+  // already realized requirement, written in the only vocabulary the delta has.
+  it("refuses after archiving a removal whose body came back under a new identifier", async () => {
+    const root = makeBase("arc-rename");
+    const { sync } = await import("../../../src/sync/index.js");
+    await sync({ cwd: root });
+    const doomed = readBoardLinks(readCapability(root, "arc-rename"))[
+      "REQ-DEMO-002"
+    ]?.ref as string;
+
+    // The change removes REQ-DEMO-002 and adds REQ-DEMO-003 carrying its body.
+    addChange(root, "arc-rename");
+    writeFileSync(
+      join(root, ".specd", "changes", "demo-change", "delta.md"),
+      `---
+change: demo-change
+---
+
+# Delta
+
+## ADDED
+
+### REQ-DEMO-003 — Second
+
+**Capability.** arc-rename
+
+**Statement.** The demo system SHALL do the second thing.
+
+**Acceptance.**
+
+- segundo critério
+
+## MODIFIED
+
+Nenhum.
+
+## REMOVED
+
+- REQ-DEMO-002
+`,
+      "utf8",
+    );
+
+    await archive("demo-change", { cwd: root });
+
+    const error = await sync({ cwd: root }).catch((cause: unknown) => cause);
+    expect((error as Error).name).toBe("UndeclaredOrphanError");
+    expect((error as Error).message).toContain("listed as retired");
+    expect((error as Error).message).toContain("REQ-DEMO-003");
+
+    // The card survived the archive: the spec moved and the board did not.
+    const issue = await redmineApi(env).issue(doomed);
+    expect((issue["status"] as { is_closed: boolean }).is_closed).toBe(false);
+    expect(
+      readBoardLinks(readCapability(root, "arc-rename"))["REQ-DEMO-003"],
+    ).toBeUndefined();
   });
 
   // REQ-ARC-012 — the spec moves ahead, and stays there.

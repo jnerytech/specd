@@ -76,11 +76,16 @@ export interface OrphanReport {
   key: string;
   ref: string;
   url: string;
+  // The identifier is listed as `retired`, so a death was declared. The link is
+  // refused anyway, because the body reappeared under another identifier and a
+  // declared death whose body reappeared is not less ambiguous than an
+  // undeclared one — it is more.
+  declared: boolean;
   // Planned items with no link yet whose body matches the board item's.
   candidates: string[];
 }
 
-// REQ-SYNC-015 — An undeclared orphan stops the command.
+// REQ-SYNC-015 — An orphan specd was not told to close stops the command.
 //
 // Two possible states — the requirement died, or it was renamed — and the
 // difference is destructive in one direction. Closing a card discards the
@@ -91,17 +96,28 @@ export interface OrphanReport {
 // title is derived from its identifier, so renaming changes the title by
 // construction; comparing projections would never match in exactly the case
 // this error exists to catch. The body is what survives a rename.
+//
+// The declared case reaches here too, and that is the Fatia 8 correction. A
+// rename of an already realized requirement is written `REMOVED: REQ-002` plus
+// `ADDED: REQ-009`, because the delta has no vocabulary for renaming — so the
+// declaration does not distinguish the two readings, and trusting it there is
+// reading intent where only vocabulary is missing.
 export class UndeclaredOrphanError extends SyncError {
   readonly orphans: readonly OrphanReport[];
 
   constructor(orphans: readonly OrphanReport[]) {
+    const one = orphans.length === 1;
     super(
-      `${orphans.length} board link${orphans.length === 1 ? "" : "s"} no longer ` +
-        `${orphans.length === 1 ? "has a" : "have"} requirement in the spec, and ${orphans.length === 1 ? "its identifier is" : "their identifiers are"} not listed as retired.\n` +
+      `${orphans.length} board link${one ? "" : "s"} no longer ` +
+        `${one ? "has a" : "have a"} requirement in the spec, and specd was not told to close ` +
+        `${one ? "it" : "them"}.\n` +
         orphans.map(describeOrphan).join("\n") +
-        `\nspecd will not close a board item it was not told to close. Either:\n` +
-        `  - rename the key under \`board:\` in the capability frontmatter, if the requirement was renamed\n` +
-        `  - or add the identifier to \`retired\` in that frontmatter, if it really is gone\n` +
+        `\nspecd will not close a board item it was not told to close.\n` +
+        `  - renamed: rename the key under \`board:\` in the capability frontmatter, and drop the\n` +
+        `    identifier from \`retired\` if it is listed there\n` +
+        `  - really gone, and no body reappeared: add the identifier to \`retired\` in that frontmatter\n` +
+        `  - really gone, and a body did reappear: close the item on the board yourself and delete its\n` +
+        `    entry from \`board:\` — by hand, because that is what makes the cost visible\n` +
         `Nothing was written, to either side.`,
     );
     this.name = "UndeclaredOrphanError";
@@ -112,10 +128,17 @@ export class UndeclaredOrphanError extends SyncError {
 function describeOrphan(orphan: OrphanReport): string {
   const head = `  ${orphan.key} -> ${orphan.url} (ref ${orphan.ref})`;
   if (orphan.candidates.length === 0) return head;
+  const names = orphan.candidates.join(", ");
+  if (orphan.declared) {
+    return (
+      `${head}\n` +
+      `      listed as retired, and the same body is now ${names} — a declared death whose ` +
+      `body reappeared is still ambiguous`
+    );
+  }
   return (
     `${head}\n` +
-    `      same body as ${orphan.candidates.join(", ")} — probably a rename, ` +
-    `but specd does not decide that`
+    `      same body as ${names} — probably a rename, but specd does not decide that`
   );
 }
 

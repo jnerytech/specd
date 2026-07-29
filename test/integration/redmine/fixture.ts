@@ -153,6 +153,15 @@ export function retitle(
 
 // Removes one requirement block, frontmatter untouched — the spec-side shape of
 // "this requirement was archived".
+//
+// Sliced by index. The regex this used to use,
+// `^### ${id} — [\s\S]*?(?=^### |\s*$)` with the `m` flag, matched the heading
+// line and nothing else: under `m` the `$` inside the lookahead is satisfied at
+// the end of the heading itself. It deleted the title and left the statement
+// and the acceptance criteria behind, where `splitRequirementSections` appended
+// them to the *previous* requirement's body. Harmless in the fixtures that
+// existed — nothing asserted on the contaminated block — and a trap for the
+// next one, especially a block carrying anchors.
 export function dropRequirement(
   root: string,
   capability: string,
@@ -160,11 +169,11 @@ export function dropRequirement(
 ): void {
   const path = capabilityPath(root, capability);
   const source = readFileSync(path, "utf8");
-  const pattern = new RegExp(`^### ${id} — [\\s\\S]*?(?=^### |\\s*$)`, "m");
-  if (!pattern.test(source)) {
-    throw new Error(`no block for ${id} in ${path}`);
-  }
-  writeFileSync(path, source.replace(pattern, ""), "utf8");
+  const start = source.indexOf(`### ${id} — `);
+  if (start < 0) throw new Error(`no block for ${id} in ${path}`);
+  const next = source.indexOf("\n### ", start + 1);
+  const end = next < 0 ? source.length : next + 1;
+  writeFileSync(path, source.slice(0, start) + source.slice(end), "utf8");
 }
 
 export function capabilityPath(root: string, capability: string): string {
@@ -267,4 +276,84 @@ export function renameRequirement(
   const heading = new RegExp(`^### ${from} — `, "m");
   if (!heading.test(source)) throw new Error(`no heading for ${from}`);
   writeFileSync(path, source.replace(heading, `### ${to} — `), "utf8");
+}
+
+// Rewrites the statement of one requirement in place.
+//
+// The mirror image of `renameRequirement`: this one changes exactly the part a
+// rename does not touch, which is how the declared limit of REQ-SYNC-014 gets
+// exercised instead of asserted.
+export function rewordStatement(
+  root: string,
+  capability: string,
+  id: string,
+  statement: string,
+): void {
+  const path = capabilityPath(root, capability);
+  const source = readFileSync(path, "utf8");
+  const block = new RegExp(
+    `(^### ${id} — [\\s\\S]*?\\*\\*Statement\\.\\*\\* ).*$`,
+    "m",
+  );
+  if (!block.test(source)) throw new Error(`no statement for ${id}`);
+  writeFileSync(path, source.replace(block, `$1${statement}`), "utf8");
+}
+
+// Opens a change that proposes removing an identifier, and nothing else.
+//
+// REMOVED needs no task (the coverage layer says so), so a delta is the whole
+// artefact — which is also the smallest thing that reproduces the state run 007
+// found: the death is proposed and not yet declared.
+export function openRemovalChange(
+  root: string,
+  change: string,
+  id: string,
+): void {
+  const dir = join(root, ".specd", "changes", change);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(
+    join(dir, "delta.md"),
+    `---
+change: ${change}
+---
+
+# Delta
+
+## ADDED
+
+Nenhum.
+
+## MODIFIED
+
+Nenhum.
+
+## REMOVED
+
+- ${id}
+`,
+    "utf8",
+  );
+}
+
+// Appends a copy of one requirement block under a new identifier, leaving the
+// original in place — two requirements with the same body, which is what a
+// proposed removal needs to still own a capability while a candidate exists.
+export function copyRequirement(
+  root: string,
+  capability: string,
+  from: string,
+  to: string,
+): void {
+  const path = capabilityPath(root, capability);
+  const source = readFileSync(path, "utf8");
+  // Sliced by index rather than matched by regex: `[\s\S]*?(?=^### |\s*$)` with
+  // the `m` flag stops at the end of the heading line, because `$` matches
+  // there too — it captures the title and none of the body, which is exactly
+  // the opposite of what a copy needs.
+  const start = source.indexOf(`### ${from} — `);
+  if (start < 0) throw new Error(`no block for ${from}`);
+  const next = source.indexOf("\n### ", start + 1);
+  const block = next < 0 ? source.slice(start) : source.slice(start, next + 1);
+  const copy = block.replace(`### ${from} — `, `### ${to} — `);
+  writeFileSync(path, `${source.trimEnd()}\n\n${copy.trimEnd()}\n`, "utf8");
 }
