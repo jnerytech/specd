@@ -17,7 +17,6 @@
 // are judgement rather than enumeration, and no metadata would produce them.
 
 import { HOOK_EVENTS } from "../hooks/protocol.js";
-import { DEFAULT_PORT } from "../read/server.js";
 
 export interface CommandSummary {
   name: string;
@@ -95,7 +94,7 @@ export const SCOPE_USAGE = {
       { flags: "--full", summary: "Omit nothing: render the Markdown whole" },
       {
         flags: "--port <number>",
-        summary: `Port to serve on (default ${DEFAULT_PORT})`,
+        summary: "Port to serve on; the system picks one when absent",
       },
       { flags: "--open", summary: "Launch the system browser on the URL" },
     ],

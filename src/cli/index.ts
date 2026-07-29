@@ -12,7 +12,7 @@ import { isHookEvent } from "../hooks/protocol.js";
 import { runHook } from "../hooks/run.js";
 import { formatUninstallResult, uninstallHooks } from "../hooks/uninstall.js";
 import { formatInitResult, init } from "../init/index.js";
-import { DEFAULT_PORT, openInBrowser, read } from "../read/index.js";
+import { EPHEMERAL_PORT, openInBrowser, read } from "../read/index.js";
 import { formatStatus, status } from "../status/index.js";
 import { formatSyncReport, sync } from "../sync/index.js";
 import { verify } from "../verify/index.js";
@@ -164,7 +164,7 @@ const readCommand: Command = {
 };
 
 function parsePort(value: string | undefined): number {
-  if (value === undefined) return DEFAULT_PORT;
+  if (value === undefined) return EPHEMERAL_PORT;
   const port = Number(value);
   if (!Number.isInteger(port) || port < 0 || port > 65535) {
     throw new UsageError(

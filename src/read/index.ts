@@ -3,7 +3,7 @@ import { collectDefault, collectPaths } from "./collect.js";
 import { buildDocument } from "./document.js";
 import { serveDocument, type ServedDocument } from "./server.js";
 
-export { DEFAULT_PORT, openInBrowser } from "./server.js";
+export { EPHEMERAL_PORT, openInBrowser } from "./server.js";
 
 export interface ReadOptions {
   cwd: string;

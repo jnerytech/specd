@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { LOOPBACK, serveDocument } from "../../src/read/server.js";
+import {
+  EPHEMERAL_PORT,
+  LOOPBACK,
+  serveDocument,
+} from "../../src/read/server.js";
 
 const DOCUMENT = '<!doctype html>\n<html lang="pt-BR"><body>hi</body></html>\n';
 
@@ -79,5 +83,42 @@ describe("serveDocument — REQ-READ-005", () => {
     const second = await serveDocument(DOCUMENT, { port });
     expect(second.port).toBe(port);
     await second.close();
+  });
+});
+
+describe("EPHEMERAL_PORT — REQ-READ-009", () => {
+  it("is zero, which asks the operating system rather than drawing lots", () => {
+    expect(EPHEMERAL_PORT).toBe(0);
+  });
+
+  // The case the requirement exists for: the spec in one terminal, a folder of
+  // notes in the other.
+  it("lets two instances serve at once, on different ports", async () => {
+    const first = await serveDocument(DOCUMENT, { port: EPHEMERAL_PORT });
+    const second = await serveDocument(DOCUMENT, { port: EPHEMERAL_PORT });
+
+    try {
+      expect(first.port).not.toBe(second.port);
+      expect(first.port).toBeGreaterThan(0);
+      expect(second.port).toBeGreaterThan(0);
+
+      const bodies = await Promise.all(
+        [first, second].map(async (s) => (await fetch(s.url)).text()),
+      );
+      expect(bodies).toEqual([DOCUMENT, DOCUMENT]);
+    } finally {
+      await first.close();
+      await second.close();
+    }
+  });
+
+  it("still binds exactly the port that was asked for", async () => {
+    const probe = await serveDocument(DOCUMENT, { port: EPHEMERAL_PORT });
+    const { port } = probe;
+    await probe.close();
+
+    const pinned = await serveDocument(DOCUMENT, { port });
+    expect(pinned.port).toBe(port);
+    await pinned.close();
   });
 });

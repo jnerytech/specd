@@ -149,6 +149,27 @@ function escape(text: string): string {
     .replace(/>/g, "&gt;");
 }
 
+// REQ-READ-010 — The document is typeset like a rendered Markdown page.
+//
+// Reading the spec here and reading the same file in a Markdown preview have to
+// feel like the same activity. A serif face is not wrong, and is different
+// enough to cost half a second of reorientation per file — expensive in a
+// document that exists to be moved through.
+//
+// Every stack ends in a generic family, so a system with none of the named
+// faces still renders. And nothing is fetched: `read` serves on loopback and
+// REQ-READ-005 says nothing leaves the machine, so a remote `@font-face` would
+// open exactly the hole that requirement closes, by the route nobody inspects.
+//
+// This does not claim parity with GitHub. Their stack changes when they want it
+// to, and asserting a match would claim a third party's fact this repository
+// cannot verify — the line REQ-READ-007 already drew about voice switching.
+export const FONT_STACK =
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif';
+
+const MONO_STACK =
+  'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace';
+
 // No JavaScript, on purpose: a screen reader works over the DOM it is handed,
 // and a page that assembles its content afterwards is a page it reads half of.
 const STYLE = `
@@ -178,9 +199,9 @@ body {
   margin: 0 auto;
   max-width: 42rem;
   padding: 2rem 1.25rem 6rem;
-  font-family: Georgia, "Iowan Old Style", serif;
-  font-size: 1.125rem;
-  line-height: 1.7;
+  font-family: ${FONT_STACK};
+  font-size: 16px;
+  line-height: 1.5;
   background: var(--bg);
   color: var(--fg);
 }
@@ -191,26 +212,26 @@ fieldset.theme {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-family: system-ui, sans-serif;
+  font-family: ${FONT_STACK};
   font-size: 0.85rem;
 }
 fieldset.theme legend { float: left; padding: 0 0.5rem 0 0; opacity: 0.7; }
 fieldset.theme input { margin: 0 0.15rem 0 0.5rem; }
 fieldset.theme label { opacity: 0.8; }
 header { border-bottom: 1px solid var(--rule); margin-bottom: 2rem; }
-h1, h2, h3, h4 { font-family: system-ui, sans-serif; line-height: 1.3; }
+h1, h2, h3, h4 { font-family: ${FONT_STACK}; line-height: 1.25; }
 h2.file {
   margin-top: 3.5rem;
   padding-top: 1rem;
   border-top: 1px solid var(--rule);
   font-size: 1rem;
   opacity: 0.7;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: ${MONO_STACK};
 }
 nav ul { padding-left: 1.25rem; }
 nav a { text-decoration: none; }
 p.summary { opacity: 0.7; font-size: 0.95rem; }
 p.omitted { opacity: 0.55; font-style: italic; font-size: 0.95rem; }
 ul.table-as-list li { margin-bottom: 0.35rem; }
-code { font-size: 0.95em; }
+code, pre { font-family: ${MONO_STACK}; font-size: 0.9em; }
 `.trim();

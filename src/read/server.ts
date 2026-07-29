@@ -10,7 +10,17 @@ import { OperationalError } from "../core/operational.js";
 // reach, and nothing in the command's output would say so.
 export const LOOPBACK = "127.0.0.1";
 
-export const DEFAULT_PORT = 4173;
+// REQ-READ-009: zero asks the operating system for a port it knows is free.
+//
+// Reading two things at once is the normal use — the spec in one terminal, a
+// folder of notes in the other — and a fixed port made the second command die
+// on EADDRINUSE telling the reader to pick another by hand. A correct and
+// useless error: it names a problem the machine solves on its own.
+//
+// Not a random port in a range. That has no advantage over this — same
+// unpredictable URL, more code, and it can still lose the draw. Drawing lots
+// where a deterministic answer exists is guessing with extra steps.
+export const EPHEMERAL_PORT = 0;
 
 export interface ServedDocument {
   url: string;

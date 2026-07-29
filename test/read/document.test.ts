@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { collectPaths } from "../../src/read/collect.js";
-import { buildDocument } from "../../src/read/document.js";
+import { buildDocument, FONT_STACK } from "../../src/read/document.js";
 import { cleanupWorkspaces, makeWorkspace } from "../verify/helpers.js";
 
 afterEach(cleanupWorkspaces);
@@ -141,5 +141,34 @@ describe("themeControl — REQ-READ-008", () => {
     const withTheme = documentOf({ "docs/a.md": "one two three\n" }, ["docs"]);
 
     expect(withTheme).toMatch(/1 file, 3 words/);
+  });
+});
+
+describe("FONT_STACK — REQ-READ-010", () => {
+  it("sets a system sans stack on the body, ending in a generic family", () => {
+    const html = documentOf({ "docs/a.md": "# Alpha\n" }, ["docs"]);
+
+    expect(html).toContain(FONT_STACK);
+    expect(FONT_STACK).toMatch(/sans-serif$/);
+    expect(html).not.toContain("Georgia");
+  });
+
+  it("keeps monospace where the source was monospace, ending in a generic", () => {
+    const html = documentOf({ "docs/a.md": "Prose with `code` in it.\n" }, [
+      "docs",
+    ]);
+
+    expect(html).toMatch(/code, pre \{ font-family: [^;]*monospace;/);
+    expect(html).toContain("<code>code</code>");
+  });
+
+  // REQ-READ-005 says nothing leaves the machine. CSS is the route nobody
+  // inspects, so a remote face would open that hole from the side.
+  it("fetches no font", () => {
+    const html = documentOf({ "docs/a.md": "# Alpha\n" }, ["docs"]);
+
+    expect(html).not.toContain("@font-face");
+    expect(html).not.toContain("@import");
+    expect(html).not.toMatch(/https?:\/\/fonts\./);
   });
 });
