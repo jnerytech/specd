@@ -186,6 +186,33 @@ gravado no frontmatter da capability — nunca do carimbo de tempo do board, que
 se move por evento estrutural. Os dois lados alterados de formas diferentes
 saem 2, listam o conflito e não resolvem nada.
 
+## Ler a spec em voz alta
+
+```bash
+specd read                       # .specd/specs/ + changes abertas, num documento só
+specd read --all                 # inclui o archive
+specd read docs/ NOTAS.md        # qualquer pasta ou arquivo, na ordem escrita
+specd read --open                # abre o navegador; sem a flag, só imprime a URL
+```
+
+Junta o Markdown num único HTML e serve em `127.0.0.1`, para o read-aloud do
+navegador ler de ponta a ponta. Um documento, não uma página por arquivo: o
+read-aloud para no fim da página, então dez arquivos em dez páginas seriam dez
+interrupções.
+
+O modo leitura **subtrai**. Frontmatter, blocos `yaml anchors` e código saem, e
+cada corte deixa um marcador — âncora responde _onde no código_, pergunta que
+não existe para quem ouve longe do editor, e 21% das linhas das capabilities
+deste repositório são bloco de âncora. Tabela vira lista que nomeia as colunas,
+porque leitor de tela solta o cabeçalho na terceira linha. `--full` desliga tudo.
+
+O default deixa `changes/archive/` de fora: aqui ele é dois terços do volume, e
+ninguém escuta task de change encerrada. Seletor de tema claro/escuro no topo,
+sem JavaScript.
+
+Bind em `127.0.0.1` apenas, documento servido de memória, nenhuma rota lê o
+sistema de arquivos. Sai 0 ou 2, nunca 1 — `read` não emite veredito.
+
 ## Validar
 
 ```bash
@@ -229,21 +256,22 @@ Tudo versionado no repositório. Nada em `~/`.
 
 ## Dogfooding
 
-O `specd` é especificado no próprio formato. `.specd/specs/` tem 7 capabilities e 48 requisitos descrevendo a ferramenta, com âncoras apontando para os módulos que a implementarão.
+O `specd` é especificado no próprio formato. `.specd/specs/` tem 11 capabilities e 116 requisitos descrevendo a ferramenta, com âncoras apontando para os módulos que a implementam.
 
 O primeiro repositório que o `verify` valida é este, a cada commit e a cada `Stop` do agente.
 
 ## Roadmap
 
-| Change                              | Escopo                                                        | Status           |
-| ----------------------------------- | ------------------------------------------------------------- | ---------------- |
-| `verify-gate-and-anchor-ladder`     | `init` · `explore` · `verify` · `status` · `anchor suggest`   | Entregue         |
-| `archive-cycle-and-effective-specs` | `archive` · `anchor fix` · camadas coverage e evidence        | Entregue         |
-| `provenance-and-mcp-transport`      | camada provenance · transporte MCP                            | Entregue         |
-| `project-root-and-file-visibility`  | raiz do projeto · listagem com fallback · `detect-stack` .NET | Entregue         |
-| `hooks-enforce-the-gate`            | hooks · `anchor suggest --file`                               | Entregue         |
-| `board-sync-redmine`                | `sync` · adaptador Redmine                                    | Entregue         |
-| —                                   | `propose` · `apply` · memória                                 | Não especificada |
+| Change                              | Escopo                                                         | Status           |
+| ----------------------------------- | -------------------------------------------------------------- | ---------------- |
+| `verify-gate-and-anchor-ladder`     | `init` · `explore` · `verify` · `status` · `anchor suggest`    | Entregue         |
+| `archive-cycle-and-effective-specs` | `archive` · `anchor fix` · camadas coverage e evidence         | Entregue         |
+| `provenance-and-mcp-transport`      | camada provenance · transporte MCP                             | Entregue         |
+| `project-root-and-file-visibility`  | raiz do projeto · listagem com fallback · `detect-stack` .NET  | Entregue         |
+| `hooks-enforce-the-gate`            | hooks · `anchor suggest --file`                                | Entregue         |
+| `board-sync-redmine`                | `sync` · adaptador Redmine                                     | Entregue         |
+| `read-aloud`                        | `read` — spec num documento só, para o read-aloud do navegador | Entregue         |
+| —                                   | `propose` · `apply` · memória                                  | Não especificada |
 
 A change `archive-cycle-and-effective-specs` fechou o ciclo `change → verify → archive`: uma change do specd passa a poder ser encerrada pela própria ferramenta, que aplica o delta às capabilities e arquiva o diretório.
 
