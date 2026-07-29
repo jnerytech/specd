@@ -74,6 +74,9 @@ export interface ProjectOptions {
   requirements: RequirementSpec[];
   // Extra TOML appended to [board]; used to vary the field configuration.
   fieldsToml?: string;
+  // Extra TOML appended to [board.mapping]; used by the transition tests to
+  // declare `archived_status` without touching the shared mapping above.
+  mappingToml?: string;
   tokenEnv?: string;
 }
 
@@ -97,6 +100,7 @@ capability = "Epic"
 requirement = "Story"
 collapse = ["task"]
 closed_status = "Closed"
+${options.mappingToml ?? ""}
 ${options.fieldsToml ?? ""}`,
     "utf8",
   );
