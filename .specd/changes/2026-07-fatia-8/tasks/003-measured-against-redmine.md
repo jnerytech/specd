@@ -2,9 +2,9 @@
 id: "003-measured-against-redmine"
 change: 2026-07-fatia-8
 req: [REQ-SYNC-014, REQ-SYNC-015, REQ-SYNC-016]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["38a108a"]
 ---
 
 ## Objetivo
