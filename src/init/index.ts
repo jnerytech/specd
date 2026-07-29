@@ -8,11 +8,20 @@ import {
   type StackDetection,
 } from "./detect-stack.js";
 import { GENERATED_PATTERNS, GITATTRIBUTES_HEADER } from "./gitattributes.js";
+import {
+  formatInstalledSkills,
+  installSkills,
+  type InstalledSkill,
+} from "./skills.js";
 
 export interface InitOptions {
   cwd?: string;
-  // Overwrite an existing `.specd/config.toml`.
+  // Overwrite an existing `.specd/config.toml`, and an installed skill whose
+  // content differs from the packaged one.
   force?: boolean;
+  // REQ-SKL-002: write the packaged skills into `.claude/skills/`. Opt-in,
+  // because it writes outside `.specd/`, into another tool's territory.
+  skills?: boolean;
 }
 
 export interface InitResult {
@@ -23,6 +32,9 @@ export interface InitResult {
   // REQ-CFG-005: build manifests found but not understood. Named so the
   // message can be true when no command could be proposed.
   unrecognisedManifests: string[];
+  // REQ-SKL-002: absent unless `--skills` was given. An empty list would say
+  // "nothing was installed", which is not the same as "nothing was asked for".
+  skills?: InstalledSkill[];
 }
 
 // REQ-CFG-004. `.specd/changes/archive/` and not `.specd/archive/`: the second
@@ -67,6 +79,9 @@ export function init(options: InitOptions = {}): InitResult {
     unrecognisedManifests: unrecognised,
     ...(detection === undefined ? {} : { detection }),
     gitattributesUpdated: updateGitattributes(root),
+    ...(options.skills === true
+      ? { skills: installSkills(root, { force: options.force === true }) }
+      : {}),
   };
 }
 
@@ -119,6 +134,11 @@ export function formatInitResult(result: InitResult): string {
   }
   if (result.gitattributesUpdated) {
     lines.push("Registered the explore bundle in .gitattributes");
+  }
+  // REQ-SKL-002: every path is named. Writing into `.claude/` is writing in
+  // another tool's territory, and a write nobody sees is one nobody reviews.
+  if (result.skills !== undefined) {
+    lines.push(formatInstalledSkills(result.skills));
   }
   lines.push(
     "",

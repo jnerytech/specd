@@ -51,14 +51,20 @@ const JSON_OPTION: OptionLine = {
 
 export const SCOPE_USAGE = {
   init: {
-    signature: ["specd init [--force]"],
+    signature: ["specd init [--force] [--skills]"],
     summary: "Scaffold .specd/ and write a complete config.",
     options: [
       {
         flags: "--force",
-        summary: "Overwrite an existing .specd/config.toml",
+        summary:
+          "Overwrite an existing .specd/config.toml, and a modified skill",
+      },
+      {
+        flags: "--skills",
+        summary: "Also write the packaged cycle skills into .claude/skills/",
       },
     ],
+    note: "Without --skills nothing is written outside .specd/ and .gitattributes.",
   },
 
   verify: {

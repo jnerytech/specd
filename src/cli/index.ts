@@ -89,8 +89,12 @@ const initCommand: Command = {
   summary: "Scaffold .specd/ and write a complete config",
   run(argv, io): Promise<ExitCode> {
     if (helpRequested(argv)) return help("init", io);
-    const flags = parseFlags(argv, ["--force"], "init");
-    const result = init({ cwd: io.cwd, force: flags.has("--force") });
+    const flags = parseFlags(argv, ["--force", "--skills"], "init");
+    const result = init({
+      cwd: io.cwd,
+      force: flags.has("--force"),
+      skills: flags.has("--skills"),
+    });
     io.stdout(`${formatInitResult(result)}\n`);
     return Promise.resolve(EXIT.OK);
   },
