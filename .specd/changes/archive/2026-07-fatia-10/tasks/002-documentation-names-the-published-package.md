@@ -2,9 +2,9 @@
 id: "002-documentation-names-the-published-package"
 change: 2026-07-fatia-10
 req: [REQ-CLI-007]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["8cb4633"]
 ---
 
 ## Objetivo

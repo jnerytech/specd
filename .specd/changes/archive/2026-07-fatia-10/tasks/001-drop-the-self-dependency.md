@@ -2,9 +2,9 @@
 id: "001-drop-the-self-dependency"
 change: 2026-07-fatia-10
 req: [REQ-CLI-012]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["8cb4633"]
 ---
 
 ## Objetivo
