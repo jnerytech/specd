@@ -2,9 +2,9 @@
 id: "001-orphan-refuses"
 change: 2026-07-fatia-7
 req: [REQ-SYNC-014, REQ-SYNC-015]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["079312f9d3acb19c3e1cb8d052bc45134835376f"]
 ---
 
 ## Objetivo

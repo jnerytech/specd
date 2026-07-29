@@ -2,9 +2,9 @@
 id: "005-validation-command-operational"
 change: 2026-07-fatia-7
 req: [REQ-VER-013]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["079312f9d3acb19c3e1cb8d052bc45134835376f"]
 ---
 
 ## Objetivo
