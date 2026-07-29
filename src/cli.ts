@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createRequire } from "node:module";
-import { resolve } from "node:path";
+import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { EXIT, type ExitCode } from "./cli/exit-codes.js";
 import { registerCommands, USAGE } from "./cli/index.js";
@@ -54,10 +54,12 @@ function defaultIo(): MainIo {
 }
 
 // Only run when invoked as the binary; importing this module from a test must
-// not execute a command.
+// not execute a command. npm installs `bin` entries as symlinks under
+// node_modules/.bin/, and Node's ESM loader resolves import.meta.url through
+// them — so this must compare realpaths, not the raw argv[1] symlink path.
 if (
   process.argv[1] !== undefined &&
-  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+  realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
   process.exitCode = await main(process.argv.slice(2));
 }

@@ -1,5 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import {
+  chmodSync,
   existsSync,
   mkdtempSync,
   readFileSync,
@@ -35,6 +36,7 @@ const manifest = require("../../package.json") as Manifest;
 describe("packaged distribution", () => {
   let extracted: string;
   let workspace: string;
+  let binSymlink: string;
 
   beforeAll(() => {
     // `npm pack` honours `files`, but does not build. On a clean checkout dist/
@@ -61,10 +63,26 @@ describe("packaged distribution", () => {
       join(extracted, "node_modules"),
       "dir",
     );
+
+    // npm's own install step turns `bin` entries into symlinks under
+    // node_modules/.bin/ — it never invokes `node <target>` directly. Node's
+    // ESM loader resolves import.meta.url through that symlink, so a test
+    // that skips it can pass while the real, installed binary is silently
+    // inert. Reproduce that symlink here rather than spawning the target file
+    // straight. The tarball itself stores dist/cli.js without the executable
+    // bit; a real `npm install`/`npx` sets it via npm's bin-links step, which
+    // plain `tar -xzf` skips, so that's reproduced by hand too.
+    const target = join(extracted, "dist", "cli.js");
+    chmodSync(target, 0o755);
+    const binDir = mkdtempSync(join(tmpdir(), "specd-bin-"));
+    binSymlink = join(binDir, "specd");
+    symlinkSync(target, binSymlink);
   }, 120_000);
 
   afterAll(() => {
     if (workspace) rmSync(workspace, { recursive: true, force: true });
+    if (binSymlink)
+      rmSync(join(binSymlink, ".."), { recursive: true, force: true });
   });
 
   it("publishes under the reserved scope", () => {
@@ -81,25 +99,17 @@ describe("packaged distribution", () => {
     expect(existsSync(join(extracted, target))).toBe(true);
   });
 
-  it("the packaged binary runs and reports its version", () => {
-    const result = spawnSync(
-      process.execPath,
-      [join(extracted, manifest.bin?.["specd"] as string), "--version"],
-      { encoding: "utf8" },
-    );
+  it("the packaged binary runs and reports its version, invoked through the bin symlink npm creates", () => {
+    const result = spawnSync(binSymlink, ["--version"], { encoding: "utf8" });
     expect(result.status).toBe(0);
     expect(result.stdout.trim()).toBe(
       `specd ${(require("../../package.json") as { version: string }).version}`,
     );
   });
 
-  it("the packaged binary honours the exit code contract", () => {
+  it("the packaged binary honours the exit code contract, invoked through the bin symlink npm creates", () => {
     // Exit 2 for an unknown command, never 1: only `verify` is a gate.
-    const result = spawnSync(
-      process.execPath,
-      [join(extracted, manifest.bin?.["specd"] as string), "nope"],
-      { encoding: "utf8" },
-    );
+    const result = spawnSync(binSymlink, ["nope"], { encoding: "utf8" });
     expect(result.status).toBe(2);
   });
 
