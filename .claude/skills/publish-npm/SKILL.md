@@ -1,6 +1,6 @@
 ---
 name: publish-npm
-description: Publica o pacote `@jnerytech/specd` no registry npm usando o token do .env, com gate verde, dry-run revisado, confirmação explícita do autor e releitura do registry como prova. Use quando o usuário pedir para publicar no npm, subir versão, lançar release, rodar npm publish, depreciar uma versão publicada, ou perguntar por que uma versão no registry não roda — e também quando pedir só o dry-run ou verificar o que iria no tarball.
+description: Publica o pacote `@jnerytech/specd` no registry npm usando o token do .env, com gate verde, dry-run revisado, commit e push antes da publicação, confirmação explícita do autor e releitura do registry como prova. Use quando o usuário pedir para publicar no npm, subir versão, lançar release, rodar npm publish, depreciar uma versão publicada, ou perguntar por que uma versão no registry não roda — e também quando pedir só o dry-run ou verificar o que iria no tarball.
 ---
 
 # publish-npm
@@ -30,6 +30,11 @@ A confirmação é para a versão exata e a dist-tag exata, depois do dry-run.
 `git status` limpo são pré-condição, não gentileza. O tarball sai do `dist/`,
 e `dist/` só é confiável se foi construído do commit que está publicado.
 
+**Nunca publica de commit que só existe nesta máquina.** Commit e push vêm
+antes — passo 6. Versão no registry é permanente; commit local não é, e um
+`rebase` ou um disco morto deixam a versão publicada sem fonte que alguém
+alcance.
+
 **Sucesso do npm não é prova.** A publicação só está feita quando uma
 releitura do registry devolve a versão.
 
@@ -50,8 +55,8 @@ primeira publicação e um alarme em qualquer outra.
 
 A lista de versões sai inteira, sem `tail`. Ela cresce a cada release, e cortar
 a saída esconde justamente o começo da série — onde mora `0.0.0`, a versão
-quebrada que os passos 4 e 7 mandam usar como referência. Um comando de
-checagem que devolve menos do que checou é o modo de falha descrito no passo 8,
+quebrada que os passos 4 e 8 mandam usar como referência. Um comando de
+checagem que devolve menos do que checou é o modo de falha descrito no passo 9,
 aplicado a esta própria página.
 
 **A quarta linha é a que evita descobrir tarde.** Ela pergunta pelo par exato
@@ -99,8 +104,8 @@ Leia a versão atual e decida com o usuário a que vai subir. Não invente bump.
   --json` diz o que está ocupado; não deduza da versão em `package.json`, que
   costuma marcar a última publicada e não a próxima.
 - Release de verdade: `npm version <patch|minor|major>` cria commit **e tag
-  git**. Isso é escrita no histórico — confirme antes, e note que a tag ainda
-  precisa de `git push --follow-tags` depois.
+  git**. Isso é escrita no histórico — confirme antes. A tag nasce local; quem
+  a leva ao remoto é o passo 6, antes da publicação e não depois.
 
 Versão já publicada é rejeitada pelo registry (`EPUBLISHCONFLICT`). Se
 acontecer, é sinal de que faltou bump, nunca de que cabe `--force`.
@@ -143,7 +148,7 @@ Duas coisas na saída do dry-run que parecem defeito e não são:
   revisar", e não pule a revisão ao repetir o dry-run após o `npm version`.
 - **`default access` na linha final do dry-run não contradiz `--access
   public`.** O dry-run acima não recebe a flag, então ele relata o padrão do
-  pacote. Quem responde sobre acesso é o publish real do passo 6, que imprime
+  pacote. Quem responde sobre acesso é o publish real do passo 7, que imprime
   `public access`. Conferir a flag na saída do dry-run é conferir a pergunta
   errada.
 
@@ -153,7 +158,45 @@ Pergunte, nomeando os três: **pacote, versão e dist-tag**. Diga na mesma frase
 que o par nome+versão é permanente. Sem resposta afirmativa explícita, pare
 aqui — parar é um resultado legítimo desta skill.
 
-### 6. Publicação
+### 6. Commit e push, antes de publicar
+
+O registry é permanente e o working tree não é. Publicar de um commit que só
+existe nesta máquina cria uma versão imutável cujo fonte ninguém alcança — e
+que some se o disco morrer, se alguém fizer `rebase`, ou se `--amend` reescrever
+o commit depois. A ordem não é arrumação: é a única que garante que a versão
+publicada corresponde a algo que existe fora daqui.
+
+Vale também na direção inversa. Publicar primeiro e empurrar depois deixa uma
+janela em que o registry está adiante do GitHub, e quem for olhar o código da
+versão recém-anunciada não o encontra. É a mesma escolha de direção de
+REQ-ARC-012 — o lado recuperável adiante, nunca o irreversível.
+
+```bash
+git status --porcelain    # tem que sair vazio
+git log --oneline @{u}..HEAD
+git push --follow-tags origin main
+git ls-remote --tags origin | grep "v<versão>"
+```
+
+**`--follow-tags` só empurra tag anotada.** `npm version` cria anotada, mas
+qualquer `git tag -f` feito depois — para mover a tag até um commit posterior,
+por exemplo — a recria **leve**, e leve o `--follow-tags` ignora em silêncio: o
+push sai 0, os commits sobem e a tag fica para trás. Isto aconteceu na
+publicação da `0.2.0`. Por isso a quarta linha existe, e por isso ela é
+`ls-remote` e não `git tag -l`, que responderia sobre o repositório local.
+
+Se precisar mover a tag, recrie-a anotada: `git tag -f -a v<versão> -m "<nota>"
+<commit>` e depois `git push origin v<versão> --force`.
+
+**Se algo mudou no repositório entre o passo 4 e aqui** — README corrigido,
+arquivo formatado — o `dist/` e o dry-run revisados envelheceram. Refaça o
+build e o dry-run antes de seguir; o tarball que o usuário aprovou tem que ser o
+tarball que sobe.
+
+Push é escrita em sistema de terceiro, então vale costly-ops-are-not-silent:
+diga o que vai subir — quantos commits, qual tag — antes de empurrar.
+
+### 7. Publicação
 
 ```bash
 set -a; . ./.env; set +a
@@ -178,7 +221,7 @@ Erros que têm tratamento próprio:
 - `E403` — nome ocupado por outro autor, ou conta sem direito sobre o pacote.
   Pare: isso não se resolve com flag.
 
-### 7. Prova (absence-is-not-compliance)
+### 8. Prova (absence-is-not-compliance)
 
 O `+<pacote>@<versão>` impresso pelo publish é a resposta de quem recebeu o
 pedido. A releitura é a primeira prova:
@@ -188,7 +231,7 @@ npm view <pacote>@<versão> version dist-tags dist.fileCount dist.unpackedSize
 ```
 
 Versão de volta → o registro existe. `E404` ou versão diferente → **não
-publicado**, mesmo que o passo 6 tenha saído 0. Relate como falha e investigue;
+publicado**, mesmo que o passo 7 tenha saído 0. Relate como falha e investigue;
 não republique por reflexo.
 
 **E registro não é pacote utilizável.** `npm view` responder a versão prova que
@@ -204,11 +247,13 @@ Rodou e imprimiu o uso → publicado de verdade. `could not determine executable
 ou `MODULE_NOT_FOUND` → subiu pacote quebrado, e o conserto é uma versão nova,
 porque a que está no ar não se corrige no lugar.
 
-### 8. Depois
+### 9. Depois
 
 Nada disto é automático — são escritas no repositório, e a decisão é do autor:
 
-- Se houve `npm version`, a tag ainda é local: `git push --follow-tags`.
+- Commits e tag já subiram no passo 6. Se algo foi commitado **depois** da
+  publicação, ele descreve uma versão que já está no ar: empurre também, senão
+  o remoto conta uma história diferente da que o registry entregou.
 - Há teste amarrando o nome e o caminho citados na documentação ao `name` e ao
   `bin` do `package.json` — se README, CLAUDE.md ou AGENTS.md mudarem, rode
   `npm test` antes de commitar.
