@@ -25,6 +25,15 @@ npx @jnerytech/specd --help
 > Ele não foi reservado, então digitá-lo leva a 404 ou a um pacote de outro
 > autor. O escopo faz parte do nome.
 
+Para ter `specd` no PATH:
+
+```bash
+npm i -g @jnerytech/specd
+```
+
+`npm i` sem `-g` instala em `./node_modules/.bin/` e **não** coloca nada no
+PATH — é o tropeço mais comum, e não é defeito.
+
 Para trabalhar no próprio specd, ou rodar uma versão ainda não publicada, o
 caminho é o clone:
 
@@ -36,19 +45,9 @@ npm run build
 node dist/cli.js --help
 ```
 
-Para usar contra outro repositório, chame o caminho absoluto de lá:
-
-```bash
-cd /caminho/do/seu/projeto
-node /caminho/do/specd/dist/cli.js init
-```
-
-Ou registre o binário no PATH uma vez, e aí `specd` funciona como nos exemplos
-deste README:
-
-```bash
-cd /caminho/do/specd && npm link
-```
+**[docs/instalacao.md](docs/instalacao.md)** tem as três formas de instalar em
+detalhe, o conflito entre `npm link` e `npm i -g`, como descobrir qual binário
+está ativo, e uma tabela de sintoma → causa.
 
 ## Primeiros passos
 

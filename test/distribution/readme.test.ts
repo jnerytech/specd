@@ -3,7 +3,11 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROOT = join(import.meta.dirname, "..", "..");
-const DOCUMENTS = ["README.md", "AGENTS.md", "CLAUDE.md"];
+// `docs/instalacao.md` is here because it is nothing but install commands, and
+// the unscoped name is a trap precisely there: a page that offers `npx specd`
+// as the way in sends every reader to a package that is not this one. The three
+// files above name the package in passing; that one is where someone copies.
+const DOCUMENTS = ["README.md", "AGENTS.md", "CLAUDE.md", "docs/instalacao.md"];
 
 function read(name: string): string {
   return readFileSync(join(ROOT, name), "utf8");
