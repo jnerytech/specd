@@ -3,12 +3,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { projectContent, syncedHash } from "../../../src/sync/hash.js";
 import { sync } from "../../../src/sync/index.js";
 import {
-  dropRequirement,
   loadRedmineEnv,
   makeProject,
   readCapability,
   redmineApi,
   REQUIREMENTS,
+  retire,
   retitle,
   type RedmineEnv,
 } from "./fixture.js";
@@ -233,14 +233,17 @@ describe("sync against a live Redmine", () => {
   //
   // Reachable rather than decorative: an operation nothing invokes is a
   // requirement that passes vacuously.
-  it("closes the board item of a requirement that left the spec, and confirms it landed", async () => {
+  // Fatia 7 narrowed this: removing the block is no longer enough. The death
+  // has to be declared in `retired`, which is what `archive` writes — otherwise
+  // a typo would close a client's card (REQ-SYNC-014).
+  it("closes the board item of a requirement declared retired, and confirms it landed", async () => {
     const root = project("demo-close");
     await sync({ cwd: root });
     const ref = readBoardLinks(readCapability(root, "demo-close"))[
       "REQ-DEMO-002"
     ]?.ref as string;
 
-    dropRequirement(root, "demo-close", "REQ-DEMO-002");
+    retire(root, "demo-close", "REQ-DEMO-002");
     const report = await sync({ cwd: root });
     expect(report.counts.closed).toBe(1);
 

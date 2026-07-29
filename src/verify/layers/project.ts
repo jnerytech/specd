@@ -35,13 +35,20 @@ export const projectLayer: VerifyLayer = {
       };
     }
 
+    const kind = classifyCommandFailure(outcome);
     return {
-      status: "failed",
+      status: kind === "unrunnable" ? "blocked" : "failed",
       violations: [
         error({
           file: ".specd/config.toml",
           line: 1,
-          message: `verify.validation_command exited with code ${outcome.exitCode}: ${command.join(" ")}`,
+          message:
+            kind === "unrunnable"
+              ? `verify.validation_command could not be executed: ${command.join(" ")}\n` +
+                `${outcome.stderr.trim()}\n` +
+                `This is the tool failing to run, not the spec failing a check, so verify exits 2.\n` +
+                `Install the executable, change verify.validation_command, or drop "project" from verify.levels.`
+              : `verify.validation_command exited with code ${outcome.exitCode}: ${command.join(" ")}`,
         }),
       ],
       command,
@@ -52,10 +59,31 @@ export const projectLayer: VerifyLayer = {
   },
 };
 
+// REQ-VER-013 — telling "could not run" from "ran and disapproved".
+//
+// `dotnet` not installed used to fail the gate as if the spec were wrong, and
+// the README sells exactly the distinction that breaks: CI has to separate
+// "the spec disapproved" from "the tool broke". A missing executable is the
+// second one, and `init` proposes the command by itself, so nobody even chose
+// to run `dotnet test`.
+//
+// It is P8 one storey up. Not green where it should be red — red of the wrong
+// kind, which whoever trusts the distinction acts on with the usual confidence.
+export type CommandFailureKind = "unrunnable" | "verdict";
+
+export function classifyCommandFailure(
+  outcome: Pick<CommandOutcome, "spawnFailed">,
+): CommandFailureKind {
+  return outcome.spawnFailed ? "unrunnable" : "verdict";
+}
+
 interface CommandOutcome {
   exitCode: number;
   stdout: string;
   stderr: string;
+  // The process never started: missing executable, permission denied. Distinct
+  // from a process that started and returned non-zero (REQ-VER-013).
+  spawnFailed: boolean;
 }
 
 function run(command: string[], cwd: string): Promise<CommandOutcome> {
@@ -73,6 +101,7 @@ function run(command: string[], cwd: string): Promise<CommandOutcome> {
         exitCode: 127,
         stdout,
         stderr: `${stderr}${cause.message}\n`,
+        spawnFailed: true,
       });
     });
     child.on("close", (code, signal) => {
@@ -82,6 +111,7 @@ function run(command: string[], cwd: string): Promise<CommandOutcome> {
         exitCode: code ?? (signal === null ? 1 : 128),
         stdout,
         stderr,
+        spawnFailed: false,
       });
     });
   });

@@ -72,6 +72,53 @@ export class FieldDefinitionsUnavailableError extends SyncError {
   }
 }
 
+export interface OrphanReport {
+  key: string;
+  ref: string;
+  url: string;
+  // Planned items with no link yet whose body matches the board item's.
+  candidates: string[];
+}
+
+// REQ-SYNC-015 — An undeclared orphan stops the command.
+//
+// Two possible states — the requirement died, or it was renamed — and the
+// difference is destructive in one direction. Closing a card discards the
+// comment, the attachment and the logged hours somebody left on it, none of
+// which the spec knows exist. P4: specd does not choose.
+//
+// The candidate is matched on the body, not on the whole projection. An item's
+// title is derived from its identifier, so renaming changes the title by
+// construction; comparing projections would never match in exactly the case
+// this error exists to catch. The body is what survives a rename.
+export class UndeclaredOrphanError extends SyncError {
+  readonly orphans: readonly OrphanReport[];
+
+  constructor(orphans: readonly OrphanReport[]) {
+    super(
+      `${orphans.length} board link${orphans.length === 1 ? "" : "s"} no longer ` +
+        `${orphans.length === 1 ? "has a" : "have"} requirement in the spec, and ${orphans.length === 1 ? "its identifier is" : "their identifiers are"} not listed as retired.\n` +
+        orphans.map(describeOrphan).join("\n") +
+        `\nspecd will not close a board item it was not told to close. Either:\n` +
+        `  - rename the key under \`board:\` in the capability frontmatter, if the requirement was renamed\n` +
+        `  - or add the identifier to \`retired\` in that frontmatter, if it really is gone\n` +
+        `Nothing was written, to either side.`,
+    );
+    this.name = "UndeclaredOrphanError";
+    this.orphans = [...orphans];
+  }
+}
+
+function describeOrphan(orphan: OrphanReport): string {
+  const head = `  ${orphan.key} -> ${orphan.url} (ref ${orphan.ref})`;
+  if (orphan.candidates.length === 0) return head;
+  return (
+    `${head}\n` +
+    `      same body as ${orphan.candidates.join(", ")} — probably a rename, ` +
+    `but specd does not decide that`
+  );
+}
+
 function quoteServer(body: string): string {
   const trimmed = body.trim();
   if (trimmed.length === 0) return "  (empty body)";

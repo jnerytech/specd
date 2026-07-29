@@ -4,7 +4,9 @@
 
 CLI de spec-driven development cujo diferencial é **detecção de drift por âncoras**: cada requisito declara onde é realizado no código, e o gate reprova quando a âncora deixa de resolver.
 
-Pacote npm `specd`, binário `specd`, TypeScript, sem instalação (`npx specd`). Repositório público em `github.com/jnerytech/specd`.
+Pacote npm `specd`, binário `specd`, TypeScript. Repositório público em `github.com/jnerytech/specd`.
+
+**Ainda não publicado no registry**, então `npx specd` responde 404. Até a primeira publicação, roda-se do clone: `npm install && npm run build`, depois `node dist/cli.js <comando>` — ou `npm link` uma vez, e aí `specd` funciona como nos exemplos. Está no README, e há teste amarrando o caminho citado ao `bin` do `package.json`.
 
 > Existe um projeto não relacionado chamado SpecD em `@specd/cli` (`specd-sdd/SpecD`). Não há afiliação. O único ponto de contato técnico é o nome do binário — se ambos estiverem instalados globalmente, um sombreia o outro.
 
@@ -49,6 +51,21 @@ O modo de falha é sempre o mesmo — silêncio apresentado como aprovação —
 
 Nenhuma das quatro foi descoberta por teste unitário. As quatro foram descobertas rodando a ferramenta contra algo que ela não tinha visto antes — a quarta contra um servidor de verdade, num teste de integração que falhou pelo motivo errado, e cuja hipótese óbvia estava errada também.
 
+**P9 — Operação que custa alguma coisa não acontece em silêncio.**
+Custo aqui é o que o autor gostaria de ter decidido: escrita destrutiva, escrita fora do repositório, qualquer coisa que editar um arquivo depois não desfaz. Toda operação dessa classe ou para e nomeia a escolha, ou deixa o resultado onde a revisão passa antes de virar história. Nenhuma decide sozinha por ser conveniente.
+
+O produto já era construído assim antes de a regra ter nome, e é por isso que ela é princípio e não preferência — três instâncias independentes chegaram na mesma forma sem se consultarem:
+
+- `archive` reescreve as capabilities e deixa tudo fora do índice, porque o que ele escreveu precisa ser lido antes de virar história.
+- `anchor fix` reescreve a âncora e não commita, pela mesma razão.
+- `sync` recusa quando os dois lados mudaram, em vez de escolher um.
+
+A quarta é o caso que deu nome à regra, e ainda não está construída: hoje `sync` fecha o card de qualquer ligação órfã, sem perguntar. Renomear requisito num delta — que a política chamava de grátis — fecha e recria card no board do cliente, descartando comentário e apontamento de hora que alguém deixou lá. É P9 sendo violado pelo próprio produto, e é o que a fatia corrente conserta.
+
+O modo de falha que P9 impede é vizinho do de P8 e não é o mesmo. P8 é silêncio apresentado como aprovação: a ferramenta não conseguiu verificar e diz que está tudo bem. P9 é ação apresentada como nada: a ferramenta fez algo que custa, e não contou. O primeiro engana sobre o estado; o segundo engana sobre o que acabou de acontecer — e é pior de investigar, porque não deixa nem a pergunta.
+
+Daí a formulação que vale para além de qualquer caso particular: **o custo de uma operação é visível no momento em que é pago.** Barato não é a propriedade que interessa; visível é. Uma operação cara e declarada é sã; uma operação barata e silenciosa é como se perde confiança na ferramenta uma vez só.
+
 ## Contrato de exit code
 
 | Código | Significado                                          |
@@ -71,7 +88,7 @@ CI precisa distinguir "spec reprovou" de "ferramenta quebrou".
 
 Daí a política de âncora graduar por origem — pendurada em `specs/` é erro, pendurada em delta é warning — e não por consulta a "change ativa".
 
-**Requisito é maleável em voo e congela ao ser realizado.** Dividir, renomear ou reescrever requisito que está num delta não custa nada: ainda não há task citando o ID, nem âncora com histórico, nem código apontando. O mesmo em `.specd/specs/` custa churn de ID e rastro de âncora. Refatoração de requisito acontece antes do archive, não depois — e é por isso que revisar o delta com cuidado é mais barato que revisar a capability.
+**Requisito é maleável em voo e congela ao ser realizado.** Dividir, renomear ou reescrever requisito que está num delta é barato, e o preço é cobrado na hora (P9): renomear exige atualizar o `req` de toda task que cita o identificador, e `coverage` reprova até que esteja feito; com board configurado, exige também redeclarar a ligação, e `sync` recusa até que esteja feito. O mesmo em `.specd/specs/` custa churn de identificador e rastro de âncora, e ali nada cobra. Refatoração de requisito acontece antes do archive, não depois — e é por isso que revisar o delta com cuidado é mais barato que revisar a capability.
 
 ## Convenções
 

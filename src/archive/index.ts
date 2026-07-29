@@ -1,5 +1,12 @@
 import { requireProjectRoot } from "../core/root.js";
-import { existsSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { resolveAnchor } from "../anchors/resolve.js";
 import { resolveConfig } from "../config/resolve.js";
@@ -14,12 +21,56 @@ import { effectiveSpecs } from "../verify/effective.js";
 import { coverageLayer } from "../verify/layers/coverage.js";
 import { evidenceLayer } from "../verify/layers/evidence.js";
 import type { VerifyLayerContext } from "../verify/layers/types.js";
+import type { Delta } from "../parser/delta.js";
+import { readBoardLinks } from "../sync/link.js";
+import { sync, type SyncReport } from "../sync/index.js";
 import { planApplication, type ApplicationPlan } from "./apply.js";
 
+// REQ-ARC-011 — Archive syncs only when asked.
+//
+// REQ-SYNC-001 says the board is written only when a person invokes it
+// directly. `archive` reconciling on its own would break that; `archive --sync`
+// does not, because it is still somebody typing, and the external write stays
+// declared (P9).
+//
+// There is no `--no-sync`. With `sync` opt-in the absence of the flag already
+// is the no, and two flags for one boolean is a button without two real clients
+// diverging (P5).
 export interface ArchiveOptions {
   cwd?: string;
   config?: SpecdConfig;
   globalPath?: string;
+  // Reconcile the board after the capabilities have been written.
+  sync?: boolean;
+}
+
+// REQ-ARC-012 — A failed sync never undoes the archive.
+//
+// The order is capabilities first, board second, and it is chosen rather than
+// incidental: the spec ahead of the board is recoverable by one idempotent
+// command, while the board ahead of the spec leaves cards for requirements the
+// repository does not recognise.
+//
+// Undoing the archive would be worse than either. What it wrote is correct and
+// sits outside the git index, within reach of review — undoing destroys good
+// work because of a network failure, which is exactly the silent decision P9
+// forbids.
+export class ArchiveSyncError extends Error {
+  readonly exitCode = 2;
+  readonly result: ArchiveResult;
+
+  constructor(result: ArchiveResult, cause: unknown) {
+    super(
+      `Archived ${result.change} to ${result.destination}, and the board was not updated.\n` +
+        `${cause instanceof Error ? cause.message : String(cause)}\n\n` +
+        `The spec moved ahead of the board. Nothing was undone: the capabilities are ` +
+        `written and unstaged, and the change directory is archived.\n` +
+        `Run \`specd sync\` to catch the board up — it is idempotent, so the archive ` +
+        `is not repeated.`,
+    );
+    this.name = "ArchiveSyncError";
+    this.result = result;
+  }
 }
 
 export interface ArchiveResult {
@@ -30,6 +81,69 @@ export interface ArchiveResult {
   written: string[];
   // Requirements whose text was already present verbatim.
   alreadyApplied: string[];
+  // REQ-ARC-011: set when `--sync` ran the reconciliation.
+  synced?: SyncReport;
+  // REQ-ARC-013: what stayed out of sync, when a board is configured and
+  // `--sync` was not given. Absent when no board is configured.
+  unsynced?: UnsyncedCount;
+}
+
+export interface UnsyncedCount {
+  total: number;
+  // Archived identifiers the board has never seen.
+  missing: string[];
+  // Archived identifiers whose text this change rewrote, and whose card still
+  // holds the old text.
+  stale: string[];
+}
+
+// REQ-ARC-013 — Archive without the flag reports what stayed out of sync.
+//
+// Computed from the applied delta and the recorded links, without a single
+// request. `archive` without `--sync` is a local operation, and a local
+// operation that needs the network is one more place the tool stops working for
+// a reason that is not its own — on a plane, in CI without egress, behind a
+// client's proxy. Whoever does not need the network does not ask for it; P3 is
+// the strong instance of that rule, not the whole of it.
+//
+// The price is declared: this sees a link that is absent and a requirement this
+// change rewrote. It does not see a card deleted on the board. Less precise on
+// purpose.
+export function countUnsyncedItems(
+  delta: Delta,
+  linkedKeys: ReadonlySet<string>,
+): UnsyncedCount {
+  const missing: string[] = [];
+  const stale: string[] = [];
+
+  const capabilities = new Set<string>();
+  for (const entry of [...delta.added, ...delta.modified]) {
+    if (entry.capability !== undefined) capabilities.add(entry.capability);
+    const id = entry.requirement.id;
+    if (!linkedKeys.has(id)) missing.push(id);
+    else if (entry.section === "MODIFIED") stale.push(id);
+  }
+  for (const capability of capabilities) {
+    if (!linkedKeys.has(capability)) missing.push(capability);
+  }
+
+  return { total: missing.length + stale.length, missing, stale };
+}
+
+// Every key recorded under `board:` across the capability files on disk.
+export function recordedLinkKeys(root: string): Set<string> {
+  const specsDir = join(root, ".specd", "specs");
+  const keys = new Set<string>();
+  if (!existsSync(specsDir)) return keys;
+  for (const name of readdirSync(specsDir).filter((f) => f.endsWith(".md"))) {
+    const file = join(specsDir, name);
+    for (const key of Object.keys(
+      readBoardLinks(readFileSync(file, "utf8"), file),
+    )) {
+      keys.add(key);
+    }
+  }
+  return keys;
 }
 
 // REQ-ARC-001 — Change is named explicitly.
@@ -52,6 +166,17 @@ export async function archive(
         ? {}
         : { globalPath: options.globalPath }),
     });
+
+  // REQ-ARC-011: `--sync` without a board is checked here, before anything is
+  // applied. Failing on a misconfiguration that was knowable up front would
+  // spend REQ-ARC-012's case — "the spec moved and the board did not" — on
+  // something that never had to happen.
+  if (options.sync === true && config.board.provider === undefined) {
+    throw new OperationalError(
+      "`specd archive --sync` needs a board, and [board] provider is not set. " +
+        "Configure the board, or archive without --sync.",
+    );
+  }
 
   const open = readOpenChanges(root);
   if (name === undefined || name.length === 0) {
@@ -111,12 +236,32 @@ export async function archive(
   // whole directory. Ephemeral by P6 means non-authoritative, not destroyed.
   renameSync(change.directory, destinationDir);
 
-  return {
+  const result: ArchiveResult = {
     change: change.name,
     destination: relativeTo(root, destinationDir),
     written,
     alreadyApplied: plan.alreadyApplied,
   };
+
+  const boardConfigured = config.board.provider !== undefined;
+
+  // REQ-ARC-011: opt-in, and only after the capabilities are on disk.
+  if (options.sync === true) {
+    try {
+      result.synced = await sync({ cwd: root, config });
+    } catch (cause) {
+      // REQ-ARC-012: nothing is undone. The archive is correct and unstaged.
+      throw new ArchiveSyncError(result, cause);
+    }
+    return result;
+  }
+
+  // REQ-ARC-013: no board, nothing to report; a board, always a number, zero
+  // included.
+  if (boardConfigured) {
+    result.unsynced = countUnsyncedItems(change.delta, recordedLinkKeys(root));
+  }
+  return result;
 }
 
 // REQ-ARC-006 — Archive destination preserves the change name.

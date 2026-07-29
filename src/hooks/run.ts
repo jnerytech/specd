@@ -54,6 +54,16 @@ export async function runHook(
     return allow(`specd verify passed (${where} hook, ${tally}).`);
   }
 
+  // REQ-VER-013: a blocked layer still blocks the host — P8, the third outcome
+  // is never green — but the reason is not "the spec and the code disagree".
+  if (report.blocked !== undefined) {
+    return block(
+      `specd could not run the "${report.blocked}" layer (${where} hook), so the gate reached no verdict.\n\n` +
+        `${formatReport(report)}\n\n` +
+        "This is not an approval — nothing was judged past that layer.",
+    );
+  }
+
   return block(
     `specd verify failed (${where} hook). The spec and the code disagree.\n\n` +
       `${formatReport(report)}\n\n` +

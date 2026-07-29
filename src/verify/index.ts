@@ -85,11 +85,19 @@ export async function verify(
   const layers: LayerReport[] = [];
   const violations: Violation[] = [];
   let stoppedAt: VerifyLevel | undefined;
+  let blocked: VerifyLevel | undefined;
 
   for (const layer of enabled) {
     const result = await layer.run(ctx);
     layers.push({ layer: layer.name, ...result });
     violations.push(...result.violations);
+    // REQ-VER-013: a layer that could not run stops the pipeline like a failure
+    // does, and is reported as a third thing — the gate reached no verdict.
+    if (result.status === "blocked") {
+      stoppedAt = layer.name;
+      blocked = layer.name;
+      break;
+    }
     // REQ-VER-001: stop at the first failing layer.
     if (result.status === "failed") {
       stoppedAt = layer.name;
@@ -101,6 +109,7 @@ export async function verify(
     ok: stoppedAt === undefined,
     layers,
     ...(stoppedAt === undefined ? {} : { stoppedAt }),
+    ...(blocked === undefined ? {} : { blocked }),
     violations,
     disabled: LAYER_ORDER.filter(
       (level) => !config.verify.levels.includes(level),

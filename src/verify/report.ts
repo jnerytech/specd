@@ -5,7 +5,10 @@ import type { Diagnostic } from "../parser/diagnostics.js";
 // violation from an advisory one without re-deriving it (REQ-VER-008).
 export type Violation = Diagnostic;
 
-export type LayerStatus = "passed" | "failed" | "skipped";
+// REQ-VER-013: `blocked` is the layer that could not run at all, as opposed to
+// the one that ran and disapproved. P8 in the report itself — "I could not
+// check" is a third answer and it is never folded into either of the other two.
+export type LayerStatus = "passed" | "failed" | "skipped" | "blocked";
 
 export interface LayerReport {
   layer: VerifyLevel;
@@ -29,6 +32,9 @@ export interface VerifyReport {
   layers: LayerReport[];
   // REQ-VER-001: the layer execution stopped at, absent when every layer ran.
   stoppedAt?: VerifyLevel;
+  // REQ-VER-013: the layer that could not run. Present means the gate reached
+  // no verdict, and the caller exits 2 rather than 1.
+  blocked?: VerifyLevel;
   // Every violation of every executed layer, in layer order.
   violations: Violation[];
   // Layers configured off in `verify.levels`; they neither run nor appear
@@ -55,7 +61,9 @@ export function formatReport(report: VerifyReport): string {
     const summary =
       layer.status === "skipped"
         ? "skipped"
-        : `${layer.status} (${errors} error${errors === 1 ? "" : "s"}, ${warnings} warning${warnings === 1 ? "" : "s"})`;
+        : layer.status === "blocked"
+          ? "could not run"
+          : `${layer.status} (${errors} error${errors === 1 ? "" : "s"}, ${warnings} warning${warnings === 1 ? "" : "s"})`;
     lines.push(`${symbolFor(layer.status)} ${layer.layer}: ${summary}`);
     for (const violation of layer.violations) {
       const where = `${violation.file}:${violation.line}`;
@@ -86,6 +94,7 @@ export function formatReport(report: VerifyReport): string {
 function symbolFor(status: LayerStatus): string {
   if (status === "passed") return "  ok  ";
   if (status === "failed") return " fail ";
+  if (status === "blocked") return " ???? ";
   return " skip ";
 }
 

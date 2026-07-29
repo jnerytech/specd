@@ -37,6 +37,33 @@ language = "en"
 # url_template = "https://acme.atlassian.net/rest/api/3/issue/{card}"
 # Name of the environment variable holding the token. Never the token itself.
 # token_env = "SPECD_BOARD_TOKEN"
+# Base URL of the board API. This is what \`specd sync\` talks to.
+# url = "https://acme.atlassian.net"
+
+# How \`specd sync\` projects the spec onto the board.
+# A level that is neither mapped nor collapsed is an error, not a default.
+# [board.mapping]
+# capability = "Epic"
+# requirement = "Story"
+# task = "Task"
+# Levels that do not become their own item; their content folds into the
+# nearest mapped ancestor.
+# collapse = ["task"]
+# Status name \`close\` moves an item to, when a requirement leaves the spec.
+# closed_status = "Closed"
+
+# Board fields \`specd sync\` writes. Identify a field by id, by name, or by
+# both — if the two disagree, sync refuses rather than guessing.
+# \`constant\` writes a fixed value; \`from\` takes one from the spec
+# (capability | requirement_id | title | level).
+# [[board.fields]]
+# name = "Cliente"
+# id = 1
+# constant = "ACME"
+
+# [[board.fields]]
+# name = "Origem"
+# from = "capability"
 
 # Sources collected by \`specd explore\`, in order. Repeat the block per source.
 # A source marked required that fails blocks the bundle.
@@ -50,6 +77,13 @@ language = "en"
 # name = "recent-log"
 # type = "git"
 # args = ["log", "--oneline", "-20"]
+
+# [[explore.sources]]
+# name = "adr-search"
+# type = "mcp"
+# url = "https://mcp.internal/sse"
+# tool = "search_documents"
+# arguments = { query = "authentication", limit = 5 }
 
 [verify]
 # Layers that run, in the fixed order provenance, schema, coverage, anchors,

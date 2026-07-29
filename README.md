@@ -13,6 +13,36 @@ REQ-AUTH-003: âncora pendurada
 
 > **Status:** Fatias 1 a 6 entregues. As specs em `.specd/specs/` são o contrato, e o `specd verify` que valida este repositório é o mesmo que você roda no seu.
 
+## Rodar
+
+`specd` ainda **não está publicado no npm**, então `npx specd` responde 404. Até
+a primeira publicação, o caminho é o clone:
+
+```bash
+git clone https://github.com/jnerytech/specd.git
+cd specd
+npm install
+npm run build
+node dist/cli.js --help
+```
+
+Para usar contra outro repositório, chame o caminho absoluto de lá:
+
+```bash
+cd /caminho/do/seu/projeto
+node /caminho/do/specd/dist/cli.js init
+```
+
+Ou registre o binário no PATH uma vez, e aí `specd` funciona como nos exemplos
+deste README:
+
+```bash
+cd /caminho/do/specd && npm link
+```
+
+Depois de publicado, `npx specd <comando>` passa a ser o caminho de quem instala
+e nada mais nesta página muda.
+
 ## Primeiros passos
 
 ### 1. Reservar o nome no npm

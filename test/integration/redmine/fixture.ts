@@ -233,3 +233,38 @@ export const REQUIREMENTS: RequirementSpec[] = [
     acceptance: ["segundo critério"],
   },
 ];
+
+// Declares a requirement dead the way `archive` does: the block goes, and the
+// identifier joins `retired` in the frontmatter.
+export function retire(root: string, capability: string, id: string): void {
+  dropRequirement(root, capability, id);
+  const path = capabilityPath(root, capability);
+  const source = readFileSync(path, "utf8");
+  const match = /^retired: \[(.*)\]$/m.exec(source);
+  if (match === null) throw new Error(`no inline retired list in ${path}`);
+  const current = (match[1] as string)
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  writeFileSync(
+    path,
+    source.replace(match[0], `retired: [${[...current, id].join(", ")}]`),
+    "utf8",
+  );
+}
+
+// Renames a requirement everywhere the spec mentions it — heading and, if the
+// capability holds one, nothing else. The board link keeps the old key, which
+// is exactly the state REQ-SYNC-015 exists to catch.
+export function renameRequirement(
+  root: string,
+  capability: string,
+  from: string,
+  to: string,
+): void {
+  const path = capabilityPath(root, capability);
+  const source = readFileSync(path, "utf8");
+  const heading = new RegExp(`^### ${from} — `, "m");
+  if (!heading.test(source)) throw new Error(`no heading for ${from}`);
+  writeFileSync(path, source.replace(heading, `### ${to} — `), "utf8");
+}

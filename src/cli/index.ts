@@ -40,7 +40,7 @@ Commands:
   status                            Report drift and pending work, grouped by change
   explore <card> --change <name>    Collect the configured sources into a bundle
   sync                              Reconcile the spec with the configured board
-  archive <change>                  Apply a change's delta to the specs and file it away
+  archive <change> [--sync]         Apply a change's delta to the specs and file it away
   anchor suggest <capability>       Report anchor candidates for a capability
   anchor suggest --file <path>      List the declarations a file contains
   anchor fix <requirement>          Rewrite a dangling anchor to its suggested location
@@ -61,6 +61,9 @@ Options for status, sync and anchor suggest:
 
 Options for sync:
   --dry-run     Plan and report without writing to the board or the spec
+
+Options for archive:
+  --sync        Reconcile the board after the capabilities are written
 
 Options for hooks install:
   --full-on-stop        Write the Stop command without --fast
@@ -108,6 +111,9 @@ const verifyCommand: Command = {
       io.stdout(`${formatReport(report)}\n`);
     }
 
+    // REQ-VER-013: a layer that could not run is the tool failing, not the
+    // spec. CI has to keep telling those apart (REQ-CLI-004).
+    if (report.blocked !== undefined) return EXIT.OPERATIONAL_FAILURE;
     return report.ok ? EXIT.OK : EXIT.GATE_FAILURE;
   },
 };
@@ -222,20 +228,40 @@ const archiveCommand: Command = {
   name: "archive",
   summary: "Apply a change's delta to the specs and file it away",
   async run(argv, io): Promise<ExitCode> {
-    const positional = argv.filter((argument) => !argument.startsWith("-"));
+    const { positional, options } = parseArguments(argv, [], ["--sync"]);
     if (positional.length > 1) {
       throw new UsageError(
-        "Usage: specd archive <change> — exactly one change name.",
+        "Usage: specd archive <change> [--sync] — exactly one change name.",
       );
     }
 
-    const result = await archive(positional[0], { cwd: io.cwd });
+    const result = await archive(positional[0], {
+      cwd: io.cwd,
+      sync: options.has("--sync"),
+    });
     const lines = [
       `Archived ${result.change} to ${result.destination}.`,
       ...result.written.map((file) => `  wrote ${file}`),
       ...result.alreadyApplied.map((id) => `  already applied ${id}`),
-      "Nothing was staged or committed — review the diff before it becomes history.",
     ];
+
+    if (result.synced !== undefined) {
+      lines.push("", formatSyncReport(result.synced));
+    } else if (result.unsynced !== undefined) {
+      // REQ-ARC-013: zero is said out loud. "Nothing to report" and "nothing
+      // was counted" have to read differently.
+      lines.push(
+        result.unsynced.total === 0
+          ? "Board is up to date with what was archived."
+          : `${result.unsynced.total} archived item${result.unsynced.total === 1 ? "" : "s"} not on the board yet: ` +
+              `${[...result.unsynced.missing, ...result.unsynced.stale].join(", ")}. ` +
+              `Run \`specd sync\`, or archive with --sync next time.`,
+      );
+    }
+
+    lines.push(
+      "Nothing was staged or committed — review the diff before it becomes history.",
+    );
     io.stdout(`${lines.join("\n")}\n`);
     return EXIT.OK;
   },
