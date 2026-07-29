@@ -22,6 +22,13 @@ export type AnchorStrategy = (typeof ANCHOR_STRATEGIES)[number];
 export const SOURCE_TYPES = ["board", "git", "mcp", "http"] as const;
 export type SourceType = (typeof SOURCE_TYPES)[number];
 
+// REQ-CFG-012: whether a change has to declare the board card it was born
+// from. Read from the configuration, never inferred from the repository — a
+// skill concluding "this one looks like it has a board" would be deciding the
+// cycle by resemblance, which is what no-guessing-on-conflict forbids.
+export const BOARD_CARD_MODES = ["required", "optional"] as const;
+export type BoardCardMode = (typeof BOARD_CARD_MODES)[number];
+
 // REQ-SYNC-006: the spec levels a board mapping can name. A level outside this
 // list is a configuration error, not an ignored entry.
 export const SPEC_LEVELS = ["capability", "requirement", "task"] as const;
@@ -81,6 +88,9 @@ export interface SpecdConfig {
     // Names the adapter `sync` uses, and labels the card provider for
     // `explore`. One board, one name.
     provider?: string;
+    // REQ-CFG-012. Absent means the built-in default, which only applies where
+    // a board is configured at all.
+    card?: BoardCardMode;
     project?: string;
     token_env?: string;
     // Template for a card endpoint, with {project} and {card} placeholders.
@@ -143,6 +153,14 @@ export const DEFAULT_CONFIG: SpecdConfig = {
   memory: { enabled: true, change_limit_lines: 150, task_limit_lines: 200 },
 };
 
+// REQ-CFG-012. `undefined` is "no board here, so the question does not arise" —
+// a third answer, kept apart from "optional" on purpose: a repository without a
+// board never starts demanding cards because a default said so.
+export function boardCardMode(config: SpecdConfig): BoardCardMode | undefined {
+  if (config.board.provider === undefined) return undefined;
+  return config.board.card ?? "required";
+}
+
 export type FieldSpec =
   | { kind: "string"; envName?: boolean }
   | { kind: "boolean" }
@@ -180,6 +198,7 @@ export const ConfigSchema: Record<string, FieldSpec> = {
   }),
   board: section({
     provider: { kind: "string" },
+    card: { kind: "enum", values: BOARD_CARD_MODES },
     project: { kind: "string" },
     token_env: { kind: "string", envName: true },
     url_template: { kind: "string" },

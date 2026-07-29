@@ -39,6 +39,10 @@ language = "en"
 # token_env = "SPECD_BOARD_TOKEN"
 # Base URL of the board API. This is what \`specd sync\` talks to.
 # url = "https://acme.atlassian.net"
+# Whether every change has to declare the card it was born from. Defaults to
+# "required" wherever a board is configured; a repository without one is never
+# asked. Read, never inferred.
+# card = "required"
 
 # How \`specd sync\` projects the spec onto the board.
 # A level that is neither mapped nor collapsed is an error, not a default.

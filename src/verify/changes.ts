@@ -1,5 +1,6 @@
 import { existsSync, readdirSync } from "node:fs";
 import { join, relative, sep } from "node:path";
+import { loadChangeFrontmatter, type ChangeCard } from "../parser/change.js";
 import { parseDeltaFile, type Delta } from "../parser/delta.js";
 import type { Diagnostic } from "../parser/diagnostics.js";
 import { loadTasks, type Task } from "../parser/task.js";
@@ -16,6 +17,10 @@ export interface OpenChange {
   display: string;
   // Absent when `delta.md` is missing or unparseable.
   delta?: Delta;
+  // REQ-FMT-011: the board card the change declares, absent when it declares
+  // none. Whether that absence is legal is the configuration's call, not this
+  // reader's.
+  card?: ChangeCard;
   tasks: Task[];
   diagnostics: Diagnostic[];
   // Identifiers the change declares under ADDED or MODIFIED.
@@ -60,6 +65,9 @@ export function readChange(
     delta = parsed.delta;
   }
 
+  const proposal = loadChangeFrontmatter(directory, display);
+  diagnostics.push(...proposal.diagnostics);
+
   const loaded = loadTasks(directory, display);
   diagnostics.push(...loaded.diagnostics);
 
@@ -73,6 +81,9 @@ export function readChange(
     directory,
     display,
     ...(delta === undefined ? {} : { delta }),
+    ...(proposal.frontmatter?.card === undefined
+      ? {}
+      : { card: proposal.frontmatter.card }),
     tasks: loaded.tasks,
     diagnostics,
     inFlight,

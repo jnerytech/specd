@@ -15,8 +15,10 @@ export interface WorkspaceSpec {
   specs?: Record<string, string>;
   // Any other file, keyed by path relative to the root.
   files?: Record<string, string>;
-  // `delta.md` of an open change, keyed by change name.
-  change?: { name: string; delta: string };
+  // `delta.md` of an open change, keyed by change name. The `proposal.md`
+  // REQ-FMT-011 requires is written alongside it unless `proposal` overrides
+  // it — every workspace with a change would otherwise have to spell one out.
+  change?: { name: string; delta: string; proposal?: string };
   // Skip the default capability, leaving the project without `.specd/specs/`.
   emptyProject?: boolean;
 }
@@ -52,6 +54,11 @@ export function makeWorkspace(spec: WorkspaceSpec): Workspace {
       `.specd/changes/${spec.change.name}/delta.md`,
       spec.change.delta,
     );
+    write(
+      root,
+      `.specd/changes/${spec.change.name}/proposal.md`,
+      spec.change.proposal ?? proposal({ change: spec.change.name }),
+    );
   }
 
   const workspace = {
@@ -84,6 +91,23 @@ export function capability(options: {
     `### ${options.id} — Example\n\n` +
     `**Statement.** ${options.statement ?? "The specd verifier SHALL do the thing."}\n\n` +
     `**Acceptance.**\n- it works\n${anchors}`
+  );
+}
+
+// The `proposal.md` of a change: frontmatter first, since that is the part
+// REQ-FMT-011 reads, and a card only when the caller wants one.
+export function proposal(options: {
+  change: string;
+  status?: string;
+  card?: { ref: string; url: string };
+}): string {
+  const card =
+    options.card === undefined
+      ? ""
+      : `card:\n  ref: "${options.card.ref}"\n  url: "${options.card.url}"\n`;
+  return (
+    `---\nchange: ${options.change}\nstatus: ${options.status ?? "active"}\n${card}---\n\n` +
+    `# ${options.change}\n\nBecause the tests need a reason too.\n`
   );
 }
 

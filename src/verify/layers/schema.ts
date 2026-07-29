@@ -1,4 +1,6 @@
+import { boardCardMode } from "../../config/schema.js";
 import { error, type Diagnostic } from "../../parser/diagnostics.js";
+import { ChangeFrontmatterSchema } from "../../parser/change.js";
 import {
   resultFrom,
   type VerifyLayer,
@@ -17,9 +19,38 @@ export const schemaLayer: VerifyLayer = {
   run(ctx) {
     const violations: Diagnostic[] = [...ctx.effective.diagnostics];
     violations.push(...checkRetiredReuse(ctx));
+    violations.push(...checkDeclaredCard(ctx));
     return Promise.resolve(resultFrom(violations));
   },
 };
+
+// REQ-FMT-011 / REQ-CFG-012 — a change declares the card it was born from,
+// wherever the configuration says a card is required.
+//
+// The structural half of REQ-FMT-011 lives in the parser, which is where a
+// missing `proposal.md` or a half-written `card` is caught. This half needs the
+// configuration, and the configuration is the only thing allowed to answer it:
+// a repository without a board is never asked for a card, and one that declares
+// `card = "optional"` has answered for all of its changes at once.
+export function checkDeclaredCard(ctx: VerifyLayerContext): Diagnostic[] {
+  if (boardCardMode(ctx.config) !== "required") return [];
+
+  const findings: Diagnostic[] = [];
+  for (const change of ctx.effective.changes) {
+    if (change.card !== undefined) continue;
+    findings.push(
+      error({
+        file: `${change.display}/${ChangeFrontmatterSchema.file}`,
+        line: 1,
+        message:
+          `Change "${change.name}" declares no board card, and [board] card = "required". ` +
+          `Declare "card" with ${ChangeFrontmatterSchema.cardFields.join(" and ")} in the frontmatter, ` +
+          `or set [board] card = "optional" for this repository.`,
+      }),
+    );
+  }
+  return findings;
+}
 
 // REQ-FMT-004 — Retired identifiers are never reused.
 //
