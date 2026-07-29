@@ -23,7 +23,7 @@ export interface RunHookOptions {
 //   verified and failed     -> BLOCK, with the report as the reason
 //   could not verify at all -> BLOCK, with the reason named
 //
-// P8: the third is never green. A hook that allows when it breaks is
+// absence-is-not-compliance: the third is never green. A hook that allows when it breaks is
 // indistinguishable from a hook nobody installed, and silence is the failure
 // mode nobody investigates.
 export async function runHook(
@@ -54,7 +54,7 @@ export async function runHook(
     return allow(`specd verify passed (${where} hook, ${tally}).`);
   }
 
-  // REQ-VER-013: a blocked layer still blocks the host — P8, the third outcome
+  // REQ-VER-013: a blocked layer still blocks the host — absence-is-not-compliance, the third outcome
   // is never green — but the reason is not "the spec and the code disagree".
   if (report.blocked !== undefined) {
     return block(

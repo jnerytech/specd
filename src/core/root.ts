@@ -27,7 +27,7 @@ export function findProjectRoot(from: string): string | undefined {
 
 // Same lookup, but refusing to continue when there is no project.
 //
-// P8: "I am not in a specd project" is a third outcome, not a pass. Exit 2 —
+// absence-is-not-compliance: "I am not in a specd project" is a third outcome, not a pass. Exit 2 —
 // nothing was judged (REQ-CLI-004).
 export function requireProjectRoot(from: string): string {
   const root = findProjectRoot(from);

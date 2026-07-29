@@ -18,7 +18,7 @@ function tree(): SpecNode[] {
           capability: "sync",
           children: [
             {
-              key: "2026-07-fatia-6/006-sync-command",
+              key: "2026-07-28-board-sync-redmine/006-sync-command",
               level: "task",
               title: "006-sync-command",
               body: "",
@@ -75,14 +75,14 @@ describe("planBoardItems", () => {
     });
     expect(planned.map((item) => item.key)).toEqual([
       "sync",
-      "2026-07-fatia-6/006-sync-command",
+      "2026-07-28-board-sync-redmine/006-sync-command",
     ]);
     expect(planned[1]?.parentKey).toBe("sync");
     // The collapsed requirement folded into the capability rather than vanishing.
     expect(planned[0]?.body).toContain("REQ-SYNC-001");
   });
 
-  // Absence of a rule is not a rule (P8).
+  // Absence of a rule is not a rule (absence-is-not-compliance).
   it("refuses a level that is neither mapped nor collapsed, naming it", () => {
     expect(() =>
       planBoardItems(tree(), { capability: "Epic", collapse: ["task"] }),

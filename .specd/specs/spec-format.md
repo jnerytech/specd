@@ -14,7 +14,7 @@ para ele. O mesmo em `.specd/specs/` custa churn de ID e perda de rastro de
 âncora. Logo refatoração de requisito acontece antes do archive, não depois.
 
 Isto é disciplina e não requisito porque não é checável por máquina — decidir se
-uma reescrita melhorou o requisito é julgamento semântico, que P1 mantém fora do
+uma reescrita melhorou o requisito é julgamento semântico, que no-llm-in-decision-path mantém fora do
 caminho de decisão. O que a máquina checa é a consequência: sob o Modelo B, o
 texto só entra em `specs/` pelo `archive`, e o `archive` só roda com âncora
 resolvendo.
@@ -149,7 +149,7 @@ A distinção entre seção legitimamente vazia e seção que o parser não ente
 o requisito inteiro. Uma change sem remoções escreve `REMOVED` vazio e isso é
 verdade; uma change cujo `ADDED` lista quarenta identificadores em bullets tem
 conteúdo que o parser lê como nada, e ler nada como conformidade é o modo de
-falha que a Fatia 2 expôs ao arquivar a Fatia 1 sem verificar coisa alguma.
+falha que a change `archive-cycle-and-effective-specs` expôs ao arquivar a change `verify-gate-and-anchor-ladder` sem verificar coisa alguma.
 
 Mesma família da passagem vazia: ausência de dados apresentada como aprovação.
 

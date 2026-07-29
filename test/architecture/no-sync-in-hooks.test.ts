@@ -19,8 +19,8 @@ const VERIFY_ENTRY = join(SRC, "verify", "index.ts");
 // overwritten. The rule is stated in the spec; this is what makes it hold when
 // somebody later reaches for a convenient import.
 //
-// The same rule covers `verify` for two separate reasons: P3, because the
-// adapter opens sockets, and P1's sibling — the gate stays a pure read.
+// The same rule covers `verify` for two separate reasons: gate-no-network, because the
+// adapter opens sockets, and no-llm-in-decision-path's sibling — the gate stays a pure read.
 const FORBIDDEN: ForbiddenRule[] = [
   { pattern: /(^|\/)sync(\/|$)/, reason: "sync module" },
   { pattern: /\/sync\/index\.js$/, reason: "sync entry point" },

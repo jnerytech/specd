@@ -11,7 +11,7 @@ REQ-AUTH-003: âncora pendurada
   → specd anchor fix REQ-AUTH-003
 ```
 
-> **Status:** Fatias 1 a 6 entregues. As specs em `.specd/specs/` são o contrato, e o `specd verify` que valida este repositório é o mesmo que você roda no seu.
+> **Status:** ciclo `explore → verify → archive`, `sync` e hooks entregues. As specs em `.specd/specs/` são o contrato, e o `specd verify` que valida este repositório é o mesmo que você roda no seu.
 
 ## Rodar
 
@@ -66,12 +66,12 @@ documento aqui nomeia o pacote escopado, e há teste amarrando o nome citado ao
 
 Qual nome alcança este pacote no registry não é critério de aceite de
 REQ-CLI-006, e nem poderia ser: é fato de registry, não propriedade do código, e
-o gate é offline por P3. O que os testes cobrem, offline, é o tarball instalar e
+o gate é offline por gate-no-network. O que os testes cobrem, offline, é o tarball instalar e
 expor um binário `specd` funcional.
 
-### 2. Implementar a Fatia 1
+### 2. Implementar a change `verify-gate-and-anchor-ladder`
 
-O escopo está em `.specd/changes/2026-07-fatia-1/`. Comece pela tarefa `002-config-resolver` — o resolver de configuração é dependência de quase tudo e é onde se descobre mais rápido se a spec tem detalhe suficiente para o agente trabalhar sem inventar.
+O escopo está em `.specd/changes/archive/2026-07-28-verify-gate-and-anchor-ladder/`. Comece pela tarefa `002-config-resolver` — o resolver de configuração é dependência de quase tudo e é onde se descobre mais rápido se a spec tem detalhe suficiente para o agente trabalhar sem inventar.
 
 ```
 Leia AGENTS.md e .specd/. Implemente a tarefa 002-config-resolver
@@ -107,14 +107,14 @@ Isso transforma a spec de documentação opcional em artefato load-bearing — a
 
 | | |
 |---|---|
-| **P1** | A CLI nunca chama LLM no caminho de decisão |
-| **P2** | Um único gate: só `specd verify` reprova |
-| **P3** | O gate nunca acessa a rede |
-| **P4** | Nunca adivinhar em conflito — erro e diagnóstico, jamais auto-resolução |
-| **P5** | Botão de configuração só existe se dois clientes reais divergirem |
-| **P6** | Memória é efêmera; verdade durável vai para spec ou ADR |
+| **no-llm-in-decision-path** | A CLI nunca chama LLM no caminho de decisão |
+| **single-gate** | Um único gate: só `specd verify` reprova |
+| **gate-no-network** | O gate nunca acessa a rede |
+| **no-guessing-on-conflict** | Nunca adivinhar em conflito — erro e diagnóstico, jamais auto-resolução |
+| **config-only-on-divergence** | Botão de configuração só existe se dois clientes reais divergirem |
+| **memory-is-ephemeral** | Memória é efêmera; verdade durável vai para spec ou ADR |
 
-P1 e P3 têm testes de arquitetura que quebram o CI se violados.
+no-llm-in-decision-path e gate-no-network têm testes de arquitetura que quebram o CI se violados.
 
 ## Ciclo
 
@@ -235,17 +235,17 @@ O primeiro repositório que o `verify` valida é este, a cada commit e a cada `S
 
 ## Roadmap
 
-| Fatia | Escopo                                                        | Status           |
-| ----- | ------------------------------------------------------------- | ---------------- |
-| 1     | `init` · `explore` · `verify` · `status` · `anchor suggest`   | Entregue         |
-| 2     | `archive` · `anchor fix` · camadas coverage e evidence        | Entregue         |
-| 3     | camada provenance · transporte MCP                            | Entregue         |
-| 4     | raiz do projeto · listagem com fallback · `detect-stack` .NET | Entregue         |
-| 5     | hooks · `anchor suggest --file`                               | Entregue         |
-| 6     | `sync` · adaptador Redmine                                    | Entregue         |
-| 7     | `propose` · `apply` · memória                                 | Não especificada |
+| Change                              | Escopo                                                        | Status           |
+| ----------------------------------- | ------------------------------------------------------------- | ---------------- |
+| `verify-gate-and-anchor-ladder`     | `init` · `explore` · `verify` · `status` · `anchor suggest`   | Entregue         |
+| `archive-cycle-and-effective-specs` | `archive` · `anchor fix` · camadas coverage e evidence        | Entregue         |
+| `provenance-and-mcp-transport`      | camada provenance · transporte MCP                            | Entregue         |
+| `project-root-and-file-visibility`  | raiz do projeto · listagem com fallback · `detect-stack` .NET | Entregue         |
+| `hooks-enforce-the-gate`            | hooks · `anchor suggest --file`                               | Entregue         |
+| `board-sync-redmine`                | `sync` · adaptador Redmine                                    | Entregue         |
+| —                                   | `propose` · `apply` · memória                                 | Não especificada |
 
-A Fatia 2 fechou o ciclo `change → verify → archive`: uma change do specd passa a poder ser encerrada pela própria ferramenta, que aplica o delta às capabilities e arquiva o diretório.
+A change `archive-cycle-and-effective-specs` fechou o ciclo `change → verify → archive`: uma change do specd passa a poder ser encerrada pela própria ferramenta, que aplica o delta às capabilities e arquiva o diretório.
 
 ## Documento de proposta original
 

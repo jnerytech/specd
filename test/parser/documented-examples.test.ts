@@ -42,7 +42,7 @@ describe("documented examples parse", () => {
 
   it("finds the three examples the page publishes", () => {
     // A zero here would make every assertion below vacuous — the same failure
-    // mode P8 names.
+    // mode absence-is-not-compliance names.
     expect(examples).toHaveLength(3);
   });
 

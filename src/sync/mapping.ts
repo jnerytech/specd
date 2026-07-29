@@ -33,14 +33,14 @@ export type LevelMapping = SpecdConfig["board"]["mapping"];
 // REQ-SYNC-006 — Spec level maps to item type, with an explicit collapse rule.
 //
 // Collapse is the difference between a readable board and three hundred
-// one-line cards. That it is configurable is P5 met for real rather than by
+// one-line cards. That it is configurable is config-only-on-divergence met for real rather than by
 // assertion: two actual clients diverge because one plans by capability and the
 // other by requirement.
 //
 // A level that is neither mapped nor collapsed is an error, not a default. The
 // silent alternatives are both wrong — dropping the level loses work, and
 // inventing a type writes something nobody asked for. Absence of a rule is not
-// a rule (P8).
+// a rule (absence-is-not-compliance).
 export function planBoardItems(
   roots: readonly SpecNode[],
   mapping: LevelMapping,

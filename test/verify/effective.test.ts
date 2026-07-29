@@ -103,7 +103,7 @@ describe("effective specs", () => {
     );
   });
 
-  // P4: two changes editing the same requirement is a conflict, and specd
+  // no-guessing-on-conflict: two changes editing the same requirement is a conflict, and specd
   // reports it rather than letting whichever parsed last win.
   it("rejects two open changes claiming the same requirement", () => {
     const result = build({

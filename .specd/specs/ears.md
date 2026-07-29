@@ -48,7 +48,7 @@ Validação sintática dos requisitos segundo os cinco padrões EARS.
 - `SHALL` entre crases é menção da keyword, não cláusula, e não conta
 - A checagem conta cláusulas `SHALL` e nada mais
 
-**O que esta checagem não prova.** Ela é sintática. Statement de cláusula única pode descrever mais de um comportamento e passar — basta coordenar o segundo comportamento numa oração subordinada. O parser não detecta isso, e nenhuma checagem determinística detectaria sem julgamento semântico, que P1 mantém fora do caminho de decisão.
+**O que esta checagem não prova.** Ela é sintática. Statement de cláusula única pode descrever mais de um comportamento e passar — basta coordenar o segundo comportamento numa oração subordinada. O parser não detecta isso, e nenhuma checagem determinística detectaria sem julgamento semântico, que no-llm-in-decision-path mantém fora do caminho de decisão.
 
 O sinal humano é a razão entre critérios de aceite e cláusulas do statement: critério que não se apoia em nenhuma cláusula é comportamento que o requisito não reivindica. Vale revisão, não reprovação automática.
 

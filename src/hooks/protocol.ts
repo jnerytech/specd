@@ -43,7 +43,7 @@ export function isHookEvent(value: string): value is HookEvent {
 // The JSON the host reads on stdout. It enriches the message; it never decides.
 //
 // A hook that exits 0 and relies on this payload to block fails open the moment
-// the host ignores it or changes its shape — which is P8 exactly, and which is
+// the host ignores it or changes its shape — which is absence-is-not-compliance exactly, and which is
 // why the exit code carries the decision instead.
 export interface HookPayload {
   decision?: "block";

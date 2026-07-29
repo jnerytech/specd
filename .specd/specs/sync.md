@@ -30,7 +30,7 @@ depois. O gate é obrigatório porque é leitura; `sync` é manual porque é esc
 **Acceptance.**
 
 - A interface declara `create`, `update`, `link` e `close` como escritas
-- A interface declara `read` e `describeFields` como leituras, porque merge e P8 não existem sem elas
+- A interface declara `read` e `describeFields` como leituras, porque merge e absence-is-not-compliance não existem sem elas
 - Nenhum módulo fora de `src/sync/adapters/` cita Redmine, endpoint ou verbo HTTP
 - Trocar de adaptador não toca merge, hash, mapeamento nem ligação
 
@@ -39,7 +39,7 @@ Redmine é `parent_issue_id` num `update`, que é uma delegação de três linha
 no Azure DevOps é recurso próprio. A generalidade fica do lado certo.
 
 As duas leituras são a falta que o desenho de quatro não cobria, e não há como
-contorná-la: merge de três vias precisa do estado remoto, e recusar por P8
+contorná-la: merge de três vias precisa do estado remoto, e recusar por absence-is-not-compliance
 precisa da definição do campo.
 
 ```yaml anchors
@@ -65,7 +65,7 @@ trabalhando.
 
 A releitura no `close` não é zelo: um tracker do Redmine sem linha de workflow
 aceita `status_id`, responde **204** e não aplica nada. Medido. Escrita que
-reporta sucesso sem ter acontecido é o P8 chegando pelo lado do board, então a
+reporta sucesso sem ter acontecido é o absence-is-not-compliance chegando pelo lado do board, então a
 única escrita de situação que o specd faz é também a única que ele confere.
 
 ```yaml anchors
@@ -106,7 +106,7 @@ ferramenta.
 - Os dois lados alterados de formas diferentes saem 2, listam item, campo e os dois valores
 - Nada é escrito no board nem na spec quando há conflito, nem para os itens sem conflito
 
-P4 na forma mais literal que o produto tem. Um sync que escolhe por você é um
+no-guessing-on-conflict na forma mais literal que o produto tem. Um sync que escolhe por você é um
 sync cujo resultado verde não significa nada — e board é onde o custo de estar
 errado é mais alto, porque outra pessoa já agiu sobre o que estava lá.
 
@@ -131,7 +131,7 @@ foi.
 - Hierarquia entre itens criados usa `link`, não recriação
 
 Colapso é a diferença entre um board legível e um board com trezentos cards de
-uma linha. Que ele seja configurável é P5 atendido de verdade: dois clientes
+uma linha. Que ele seja configurável é config-only-on-divergence atendido de verdade: dois clientes
 reais divergem porque um planeja por capability e outro por requisito.
 
 ```yaml anchors
@@ -154,7 +154,7 @@ A ligação mora junto do que ela liga. Arquivo à parte se perde, diverge, e
 transforma "este requisito está no board?" numa consulta a um segundo lugar que
 ninguém lembra de versionar.
 
-`synced_hash` ausente e `synced_hash` igual são resultados diferentes — P8
+`synced_hash` ausente e `synced_hash` igual são resultados diferentes — absence-is-not-compliance
 outra vez, agora no formato de arquivo.
 
 ```yaml anchors
@@ -195,7 +195,7 @@ vazar num arquivo versionado é ele nunca ter estado lá.
 `id` é estável e ilegível; `name` é legível e sobrevive à recriação do board.
 Aceitar os dois é o que permite revisar a configuração sem consultar o banco.
 Divergência entre eles são dois estados possíveis sem base para escolher, que é
-P4 — e adivinhar aqui escreve num campo errado do cliente.
+no-guessing-on-conflict — e adivinhar aqui escreve num campo errado do cliente.
 
 ```yaml anchors
 - file: src/sync/fields.ts
@@ -218,7 +218,7 @@ vazio** para membro comum de projeto, enquanto `/trackers.json` e
 `/issue_statuses.json` respondem 200 para o mesmo token. Um adaptador com token
 de cliente real lê a issue e não lê o que os campos significam.
 
-P8 inteiro: não conseguir verificar é o terceiro resultado, e ele nunca é
+absence-is-not-compliance inteiro: não conseguir verificar é o terceiro resultado, e ele nunca é
 verde. O modo de falha alternativo — assumir `string` — grava valor errado em
 campo obrigatório do cliente e ninguém investiga, porque a operação reportou
 sucesso.
@@ -315,13 +315,13 @@ identificador sob REMOVED, então morte declarada é um fato registrado no
 arquivo. Comparar chave ligada contra chave planejada e chamar toda diferença
 de morte foi a ferramenta ignorando o próprio modelo.
 
-A segunda condição é a correção desta fatia. Renomear requisito já realizado se
+A segunda condição é a correção desta change. Renomear requisito já realizado se
 escreve `REMOVED: REQ-002` mais `ADDED: REQ-009` com o mesmo corpo, porque o
 delta não tem vocabulário para renomear — e isso satisfazia a primeira condição
 sozinha, fechando o card em silêncio. O autor declarou uma morte na única
 vocabulário disponível para dizer outra coisa.
 
-Pela letra de P9 havia declaração; pelo teste de P9 não havia, porque escrever
+Pela letra de costly-ops-are-not-silent havia declaração; pelo teste de costly-ops-are-not-silent não havia, porque escrever
 um identificador numa lista não exibe o preço. Declaração que não mostra o custo
 não é declaração — é a mesma frase com aparência melhor.
 
@@ -333,7 +333,7 @@ para evitar, no caso que ele não alcança.
 
 Não é descuido nem coisa a consertar depois: é o preço de detectar por conteúdo
 em vez de exigir declaração, e a alternativa que fecharia o buraco — vocabulário
-de transição no delta — é a que P1 estendido rejeita, porque poria escrita
+de transição no delta — é a que no-llm-in-decision-path estendido rejeita, porque poria escrita
 destrutiva em board de cliente sob decisão de quem escreve o delta. Rede com
 buraco conhecido e medido vale mais que rede que se supõe inteira; o caso está
 no teste de integração, contra o servidor, para que o buraco tenha tamanho.
@@ -361,12 +361,12 @@ existem.
 - A mensagem diz as saídas disponíveis para o caso: trocar a chave da ligação, ou declarar o identificador em `retired`
 - Nada é escrito no board nem na spec, nem para os itens sem problema
 
-P4 na forma que interessa: há dois estados possíveis — o requisito morreu ou
+no-guessing-on-conflict na forma que interessa: há dois estados possíveis — o requisito morreu ou
 mudou de nome — e a diferença entre eles é destrutiva numa direção. O corpo
 idêntico é indício forte e não é prova, então ele informa e não decide.
 
 Corpo reaparecendo vence declaração, e essa precedência é a decisão desta
-fatia. Uma morte declarada cujo corpo aparece sob outro identificador é o par de
+change. Uma morte declarada cujo corpo aparece sob outro identificador é o par de
 estados mais ambíguo que existe no modelo, não o menos: o autor escreveu REMOVED
 porque não há vocabulário para renomear, então a declaração não distingue as
 duas leituras. Confiar nela ali é ler intenção onde só há vocabulário faltando.
@@ -378,7 +378,7 @@ no caso que este requisito existe para pegar. O corpo é o que sobrevive à
 renomeação, e é por isso que ele é o sinal.
 
 Renomear deixa de ser grátis e passa a ser barato e recusado até ser declarado,
-que é P9 aplicado: o custo aparece no momento em que é pago, e não três semanas
+que é costly-ops-are-not-silent aplicado: o custo aparece no momento em que é pago, e não três semanas
 depois num card fechado que ninguém procurou.
 
 ```yaml anchors
@@ -403,7 +403,7 @@ diferentes. Fechar no proposto perderia o card de uma change abandonada; recusar
 no proposto trava `sync` durante toda uma change de remoção, que é o que o run
 007 §4 mediu.
 
-Silenciar seria a terceira saída errada, e é P8 pela definição: verificou,
+Silenciar seria a terceira saída errada, e é absence-is-not-compliance pela definição: verificou,
 encontrou algo, e não contou. Quem roda `sync` no meio de uma remoção precisa
 saber por que o card continua aberto sem deduzir do que não foi impresso.
 

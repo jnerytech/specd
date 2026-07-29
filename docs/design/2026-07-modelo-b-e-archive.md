@@ -9,7 +9,7 @@ Duas justificativas citadas na decisão — `REQ-SPEC-011` (archive substitui se
 e aposenta removidos) e `REQ-MEM-005` (memória é efêmera e vai junto para o
 archive) — não existem em `.specd/specs/` nem em qualquer arquivo deste
 repositório. São da proposta original do produto, documento externo, já
-registrada como spec-sombra no proposal de `corrections-fatia-1`.
+registrada como spec-sombra no proposal de `delta-format-and-package-identity`.
 
 Este desenho assume que os dois dizem o que a decisão afirma. Se o documento
 externo divergir, os pontos afetados são REQ-ARC-003/004/005 (aplicação por
@@ -107,7 +107,7 @@ readOpenChanges(root): Change[]     ← todas, excluindo archive/
   └─ anchors:   união de todas. um requisito em qualquer delta é warning.
   └─ coverage:  por change, independente.
   └─ evidence:  por change, independente.
-  └─ archive:   change nomeada por argumento explícito. P4.
+  └─ archive:   change nomeada por argumento explícito. no-guessing-on-conflict.
   └─ status:    agrupa por change.
 ```
 
@@ -139,41 +139,41 @@ Medido com `specd verify --fast` neste repositório:
 
 Mas os 10 não são uma classe só, e tratar como classe só quebra o Modelo B:
 
-**Classe I — vão para o delta da Fatia 2** (8): ANC-007, ANC-008, VER-004,
-VER-005, FMT-004, FMT-005, FMT-006, FMT-007. Todos implementados pela Fatia 2.
+**Classe I — vão para o delta da change `archive-cycle-and-effective-specs`** (8): ANC-007, ANC-008, VER-004,
+VER-005, FMT-004, FMT-005, FMT-006, FMT-007. Todos implementados pela change `archive-cycle-and-effective-specs`.
 
 **Classe II — não têm change que os implemente** (1): VER-003. Provenance saiu
-do escopo da Fatia 2 porque, como está escrito, ele reprova qualquer change sem
-`explore/manifest.json` — e a Fatia 2 não é dirigida por card, logo reprovaria a
-si mesma. Ele espera a Fatia 3 junto com o transporte MCP.
+do escopo da change `archive-cycle-and-effective-specs` porque, como está escrito, ele reprova qualquer change sem
+`explore/manifest.json` — e a change `archive-cycle-and-effective-specs` não é dirigida por card, logo reprovaria a
+si mesma. Ele espera a change `provenance-and-mcp-transport` junto com o transporte MCP.
 
 **Classe III — não é falta de implementação** (1): EXP-007. O requisito é
 negativo — _"SHALL NOT validate the content of `draft.md`"_ — e está satisfeito
 hoje, vacuamente, porque nada valida draft. A âncora aponta para
 `src/verify/layers/provenance.ts`, que não existe. Isto é âncora errada, não
-comportamento ausente. P7 em forma pura: a âncora não sabe responder "onde" para
+comportamento ausente. anchor-necessary-not-sufficient em forma pura: a âncora não sabe responder "onde" para
 um requisito cujo conteúdo é "em lugar nenhum".
 
 ### O problema que a Classe II abre
 
 Sob Modelo B, `specs/` só contém realizado. VER-003 não é realizado e nenhuma
-change da Fatia 2 o reivindica. Ele não tem casa. Quatro saídas:
+change da change `archive-cycle-and-effective-specs` o reivindica. Ele não tem casa. Quatro saídas:
 
-| saída                                                 | resultado                                                       |
-| ----------------------------------------------------- | --------------------------------------------------------------- |
-| fica em `specs/`                                      | erro incondicional. Fatia 2 nunca fica verde.                   |
-| entra no delta da Fatia 2                             | Fatia 2 não pode arquivar: REQ-ANC-007 exige âncora resolvendo. |
-| REMOVED + reintroduzido depois                        | REQ-FMT-004 proíbe reuso de ID aposentado. Fatal.               |
-| **entra no delta da Fatia 3, aberta e não arquivada** | funciona                                                        |
+| saída                                                                               | resultado                                                                                          |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| fica em `specs/`                                                                    | erro incondicional. change `archive-cycle-and-effective-specs` nunca fica verde.                   |
+| entra no delta da change `archive-cycle-and-effective-specs`                        | change `archive-cycle-and-effective-specs` não pode arquivar: REQ-ANC-007 exige âncora resolvendo. |
+| REMOVED + reintroduzido depois                                                      | REQ-FMT-004 proíbe reuso de ID aposentado. Fatal.                                                  |
+| **entra no delta da change `provenance-and-mcp-transport`, aberta e não arquivada** | funciona                                                                                           |
 
 A quarta funciona porque REQ-ANC-007 fala em _"any anchor of any affected
 requirement"_ — afetado pela change que está sendo arquivada. As âncoras
-penduradas da Fatia 3 não bloqueiam o archive da Fatia 2, e são warnings pela
+penduradas da change `provenance-and-mcp-transport` não bloqueiam o archive da change `archive-cycle-and-effective-specs`, e são warnings pela
 regra de origem.
 
 **Consequência de projeto, não detalhe:** o Modelo B exige changes abertas
-concorrentes. A Fatia 3 tem que existir como diretório com `delta.md` antes de a
-Fatia 2 fechar. Não é dívida — é o que 1.4 já assumiu.
+concorrentes. A change `provenance-and-mcp-transport` tem que existir como diretório com `delta.md` antes de a
+change `archive-cycle-and-effective-specs` fechar. Não é dívida — é o que 1.4 já assumiu.
 
 EXP-007 (Classe III) não migra. Corrige-se a âncora dele: aponta para
 `src/verify/index.ts:LAYER_ORDER`, o lugar onde a ausência de uma camada que
@@ -184,7 +184,7 @@ validaria draft é observável, ou perde a âncora. Decisão em aberto, item 17.
 Você listou REQ-FMT-005 e REQ-ANC-006. Faltam cinco.
 
 **REQ-FMT-005 — MODIFIED.** ADDED e MODIFIED passam a carregar texto completo;
-REMOVED continua só identificadores. Ganha também o que hoje o delta da fatia-1
+REMOVED continua só identificadores. Ganha também o que hoje o delta da `verify-gate-and-anchor-ladder`
 faz sem requisito: subseções por capability dentro de ADDED e MODIFIED. São
 necessárias porque REQ-FMT-002 permite prefixo divergente do nome da capability
 — `REQ-FMT-*` mora em `spec-format.md` — logo o ID não determina o destino, e
@@ -202,7 +202,7 @@ a referência a "the active change delta".
 
 **REQ-CLI-001 — MODIFIED.** Não listado por você e é o mais delicado. `archive`
 vai recusar operação quando `coverage` ou `evidence` reprovarem. Isso é juízo de
-qualidade, e P2 reserva o exit 1 ao `verify`. Regra que resolve os dois casos —
+qualidade, e single-gate reserva o exit 1 ao `verify`. Regra que resolve os dois casos —
 `anchor fix` e `archive` — com uma frase:
 
 > **Exit 1 é veredito. Exit 2 é recusa de agir.**
@@ -266,7 +266,7 @@ archive as an explicit argument.
 - Nome inexistente sai com código 2
 - Nenhuma inferência a partir de data, ordem ou quantidade de changes abertas
 
-Com changes concorrentes (1.4), inferir é adivinhar. P4.
+Com changes concorrentes (1.4), inferir é adivinhar. no-guessing-on-conflict.
 
 ```yaml anchors
 - file: src/archive/index.ts
@@ -304,7 +304,7 @@ subsection.
 
 - Seção aparece no arquivo da capability indicada pela subseção do delta
 - Texto inserido é idêntico ao do delta, incluindo bloco de âncoras
-- ID já presente como seção ativa aborta (REQ-FMT-004 e P4)
+- ID já presente como seção ativa aborta (REQ-FMT-004 e no-guessing-on-conflict)
 
 ```yaml anchors
 - file: src/archive/apply.ts
@@ -355,12 +355,12 @@ seria exatamente o caso que aquele requisito admite não detectar.
 
 **Acceptance.**
 
-- `2026-07-fatia-1` vira `.specd/changes/archive/2026-07-fatia-1`
+- `2026-07-28-verify-gate-and-anchor-ladder` vira `.specd/changes/archive/2026-07-28-verify-gate-and-anchor-ladder`
 - Nenhum prefixo de data é acrescentado
 - Destino já existente aborta sem mover nada
 
 Sem prefixo de data porque os nomes de change do specd já carregam data;
-prefixar produziria `2026-07-28-2026-07-fatia-1`. Divergência consciente do
+prefixar produziria `2026-07-28-2026-07-28-verify-gate-and-anchor-ladder`. Divergência consciente do
 OpenSpec, cujos nomes não carregam.
 
 ```yaml anchors
@@ -379,7 +379,7 @@ moves unstaged.
 - Nenhum `git add` é executado
 - Saída instrui revisar o diff antes de commitar
 
-Simétrico com REQ-ANC-008. `archive` reescreve a spec; a spec é o contrato; P4
+Simétrico com REQ-ANC-008. `archive` reescreve a spec; a spec é o contrato; no-guessing-on-conflict
 exige revisão humana entre a máquina propor e o repositório aceitar.
 
 ```yaml anchors
@@ -399,10 +399,10 @@ capability files.
 - Nenhum conteúdo de memória aparece em `.specd/specs/`
 - Ausência de `memory/` não é erro
 
-**Confirmo o comportamento reportado em REQ-MEM-005, com leitura de P6:**
+**Confirmo o comportamento reportado em REQ-MEM-005, com leitura de memory-is-ephemeral:**
 efêmera significa _não autoritativa_, não _destruída_. Apagar é irreversível e
 não compra nada — o git já guarda. Carregar preserva a trilha de auditoria a
-custo zero. O que P6 exige é que nada de `memory/` vire contrato, e é isso que o
+custo zero. O que memory-is-ephemeral exige é que nada de `memory/` vire contrato, e é isso que o
 segundo critério de aceite trava.
 
 ```yaml anchors
@@ -440,7 +440,7 @@ it as already applied instead of aborting.
 **Acceptance.**
 
 - Rerodada depois de falha no movimento do diretório conclui a operação
-- Texto divergente com o mesmo ID aborta como conflito (P4)
+- Texto divergente com o mesmo ID aborta como conflito (no-guessing-on-conflict)
 - Nenhuma seção é duplicada
 
 É o par de REQ-ARC-009: sem ele, uma falha depois de escrever as capabilities e
@@ -456,21 +456,21 @@ antes de mover o diretório deixa o operador sem caminho de volta que não seja
 
 # Parte 3 — Condição de saída do OpenSpec
 
-A Fatia 2 é a última change rastreada nos dois sistemas.
+A change `archive-cycle-and-effective-specs` é a última change rastreada nos dois sistemas.
 
 ```
-hoje            Fatia 2                  depois
+hoje            change `archive-cycle-and-effective-specs`                  depois
 ────            ───────                  ──────
 OpenSpec:       OpenSpec: rastreia       OpenSpec: nada.
   changes/        a implementação        arquivo histórico
   archive/                               em changes/archive/
                 .specd/changes/:
 .specd/changes/   delta real,            .specd/changes/:
-  fatia-1         arquivado por            único rastreador.
+  `verify-gate-and-anchor-ladder`         arquivado por            único rastreador.
   (sem archive)   specd archive            ciclo fechado.
 ```
 
-Condição concreta de saída, verificável: **`specd archive 2026-07-fatia-2` sai 0
+Condição concreta de saída, verificável: **`specd archive 2026-07-28-archive-cycle-and-effective-specs` sai 0
 e `specd verify` fica verde sem warning depois disso.** A partir daí abrir change
 em `openspec/changes/` é regressão, não conveniência.
 
@@ -489,7 +489,7 @@ Cinco, detalhados em 1.6:
 | requisito   | por quê                                                                      | gravidade             |
 | ----------- | ---------------------------------------------------------------------------- | --------------------- |
 | REQ-FMT-006 | "texto completo" só definido para MODIFIED                                   | bloqueia `parseDelta` |
-| REQ-CLI-001 | `archive` recusando por qualidade colide com P2                              | bloqueia REQ-ARC-002  |
+| REQ-CLI-001 | `archive` recusando por qualidade colide com single-gate                     | bloqueia REQ-ARC-002  |
 | REQ-ANC-008 | já na decisão 3, mas a regra geral é nova                                    | consistência          |
 | REQ-CFG-006 | endereço instável precisa de relatório                                       | usabilidade           |
 | REQ-EXP-007 | âncora aponta para arquivo inexistente; sob Modelo B vira erro incondicional | bloqueia gate verde   |
@@ -511,26 +511,26 @@ Nem se deve inventar uma quarta seção: você acabou de gastar uma change intei
 removendo uma.
 
 Logo a migração é edição manual fora da gramática do delta, documentada em
-proposal — mesma classe de `corrections-fatia-1`. E isso dá o corte natural:
+proposal — mesma classe de `delta-format-and-package-identity`. E isso dá o corte natural:
 
 ```
-CHANGE A — "migracao-modelo-b"          CHANGE B — "fatia-2"
+CHANGE A — "migracao-modelo-b"          CHANGE B — "`archive-cycle-and-effective-specs`"
 zero código                              todo o código
 ─────────────────────────                ────────────────────
 move os 8 da Classe I para o             implementa readOpenChanges,
-delta da Fatia 2                         exclusão de archive/, passagem
-abre Fatia 3 com VER-003                 vazia, parseDelta, parseTask,
+delta da change `archive-cycle-and-effective-specs`                         exclusão de archive/, passagem
+abre change `provenance-and-mcp-transport` com VER-003                 vazia, parseDelta, parseTask,
 corrige a âncora de EXP-007              coverage, evidence, archive,
 MODIFIED de FMT-005/006, ANC-006,        anchor fix
 ANC-008, CLI-001; ADDED CFG-007
-escreve .specd/specs/archive.md          critério: arquiva a fatia-1,
-como texto do delta da Fatia 2           depois se arquiva, depois
+escreve .specd/specs/archive.md          critério: arquiva a `verify-gate-and-anchor-ladder`,
+como texto do delta da change `archive-cycle-and-effective-specs`           depois se arquiva, depois
                                          verify verde sem warning
 gate verde ao fim: os 10 saíram
 de specs/
 ```
 
-A Change A **é** o `propose` da Fatia 2, feito à mão porque `propose` não
+A Change A **é** o `propose` da change `archive-cycle-and-effective-specs`, feito à mão porque `propose` não
 existe. A Change B é o `apply`. O delta que a B implementa já foi revisado
 quando a A foi revisada — que é exatamente o ciclo que o produto vende.
 
@@ -567,14 +567,14 @@ Ambas rastreadas no OpenSpec — a A porque não há `archive`, a B porque é a
 
 **Abertas novas que este desenho cria (6):**
 
-| #   | item                                     | proposta minha                                                                         |
-| --- | ---------------------------------------- | -------------------------------------------------------------------------------------- |
-| 13  | onde ADDED insere na capability          | acrescenta ao fim. determinístico. arquivos saem da ordem de ID, e `verify.md` já está |
-| 14  | subseções por capability no delta        | obrigatórias em ADDED e MODIFIED; o prefixo do ID não determina destino                |
-| 15  | o que a camada `schema` lê               | spec efetiva inteira, `specs/` e deltas                                                |
-| 16  | exit code de `archive` por precondição   | 2, com REQ-CLI-001 revisado                                                            |
-| 17  | âncora de EXP-007                        | `src/verify/index.ts:LAYER_ORDER`, ou requisito negativo sem âncora                    |
-| 18  | Fatia 3 aberta antes de a Fatia 2 fechar | sim, é o que dá casa a VER-003                                                         |
+| #   | item                                                                                                      | proposta minha                                                                         |
+| --- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| 13  | onde ADDED insere na capability                                                                           | acrescenta ao fim. determinístico. arquivos saem da ordem de ID, e `verify.md` já está |
+| 14  | subseções por capability no delta                                                                         | obrigatórias em ADDED e MODIFIED; o prefixo do ID não determina destino                |
+| 15  | o que a camada `schema` lê                                                                                | spec efetiva inteira, `specs/` e deltas                                                |
+| 16  | exit code de `archive` por precondição                                                                    | 2, com REQ-CLI-001 revisado                                                            |
+| 17  | âncora de EXP-007                                                                                         | `src/verify/index.ts:LAYER_ORDER`, ou requisito negativo sem âncora                    |
+| 18  | change `provenance-and-mcp-transport` aberta antes de a change `archive-cycle-and-effective-specs` fechar | sim, é o que dá casa a VER-003                                                         |
 
 Saldo: 12 → 11. Praticamente estável em número, mas as que restam são todas
 locais — nenhuma trava `parseDelta` nem `archive`. As duas que travavam
@@ -583,6 +583,6 @@ fecharam.
 O maior risco remanescente é o item 9. `archive` passa a exigir `evidence`
 verde, `evidence` exige SHA vivo, e squash merge mata SHA. Se algum cliente real
 usar squash, `archive` fica inutilizável para ele — e isso é descoberto tarde,
-depois da Fatia 2 pronta. Vale um spike de meia hora antes da Change A: decidir
+depois da change `archive-cycle-and-effective-specs` pronta. Vale um spike de meia hora antes da Change A: decidir
 se `evidence` valida SHA contra o histórico ou contra alguma coisa que sobreviva
 ao merge.

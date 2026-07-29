@@ -184,7 +184,7 @@ function extensionOf(path: string): string {
 }
 
 export function formatFileSuggestReport(report: FileSuggestReport): string {
-  // P8: "I know this language and it declares nothing" and "I do not know this
+  // absence-is-not-compliance: "I know this language and it declares nothing" and "I do not know this
   // language" are different answers, and only the first is safe to act on.
   if (report.language === undefined) {
     return [

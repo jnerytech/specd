@@ -74,7 +74,7 @@ describe("mergeThreeWay", () => {
     ]);
   });
 
-  // P4: an item on the board with no recorded hash is two states with no basis
+  // no-guessing-on-conflict: an item on the board with no recorded hash is two states with no basis
   // for choosing between them.
   it("conflicts when the item exists remotely with no recorded base", () => {
     expect(

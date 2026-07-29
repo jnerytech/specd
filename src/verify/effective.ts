@@ -80,7 +80,7 @@ export function effectiveSpecs(
   }
 
   // Which change last touched an identifier, so a second change touching it is
-  // reported as a conflict instead of silently winning (P4).
+  // reported as a conflict instead of silently winning (no-guessing-on-conflict).
   const claimedBy = new Map<string, string>();
 
   for (const change of changes) {

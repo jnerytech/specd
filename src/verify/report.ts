@@ -6,7 +6,7 @@ import type { Diagnostic } from "../parser/diagnostics.js";
 export type Violation = Diagnostic;
 
 // REQ-VER-013: `blocked` is the layer that could not run at all, as opposed to
-// the one that ran and disapproved. P8 in the report itself — "I could not
+// the one that ran and disapproved. absence-is-not-compliance in the report itself — "I could not
 // check" is a third answer and it is never folded into either of the other two.
 export type LayerStatus = "passed" | "failed" | "skipped" | "blocked";
 

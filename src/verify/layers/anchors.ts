@@ -22,7 +22,7 @@ export interface AnchorPolicyContext {
 // delta holds work in flight, so the same anchor is pending work.
 //
 // This used to ask whether the identifier appeared in "the active change"
-// delta, which meant picking one change out of several — guessing, by P4 — and
+// delta, which meant picking one change out of several — guessing, by no-guessing-on-conflict — and
 // silently downgraded real drift for every identifier a stale delta listed.
 export function applyAnchorPolicy(
   resolution: AnchorResolution,
@@ -49,7 +49,7 @@ export const anchorsLayer: VerifyLayer = {
   run(ctx) {
     const violations: Diagnostic[] = [];
 
-    // REQ-VER-012 / P8. A green anchors layer used to mean two different
+    // REQ-VER-012 / absence-is-not-compliance. A green anchors layer used to mean two different
     // things: "every anchor resolves" and "every anchor resolves, and if one
     // broke I would know where to look". They are not the same state, and the
     // second is false wherever the listing sees nothing.

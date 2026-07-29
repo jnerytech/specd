@@ -28,7 +28,7 @@ import type { LayerReport, VerifyReport, Violation } from "./report.js";
 // held a third that had already drifted.
 export const LAYER_ORDER: readonly VerifyLevel[] = VERIFY_LEVELS;
 
-// Every layer of LAYER_ORDER is implemented as of Fatia 3. The map stays, and
+// Every layer of LAYER_ORDER is implemented as of change `provenance-and-mcp-transport`. The map stays, and
 // so does the check below: a layer named in the configuration but absent here
 // must be a configuration error, never a silent pass — a gate that quietly
 // skips a layer the project asked for is reporting a check it never ran.
@@ -52,7 +52,7 @@ export interface VerifyOptions {
 
 // REQ-CLI-001: the only command whose result is a quality gate.
 //
-// P1/P3: nothing reachable from here touches a language model or the network.
+// no-llm-in-decision-path/gate-no-network: nothing reachable from here touches a language model or the network.
 // Enforced by the architecture tests in test/architecture/.
 export async function verify(
   options: VerifyOptions = {},

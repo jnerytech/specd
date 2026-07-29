@@ -174,7 +174,7 @@ describe("reinstall", () => {
     const root = project();
     installHooks({ cwd: root, executable: "node dist/cli.js" });
     // Not two hooks: the same hook, invoked differently. Two possible states,
-    // no basis for choosing — P4.
+    // no basis for choosing — no-guessing-on-conflict.
     expect(() => installHooks({ cwd: root })).toThrow(OperationalError);
     expect(commands(root, "Stop")).toEqual([
       "node dist/cli.js hooks run stop --fast",

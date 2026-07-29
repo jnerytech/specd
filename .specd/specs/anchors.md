@@ -207,7 +207,7 @@ O extrator de termos falha porque o requisito descreve comportamento em prosa e 
 símbolo tem outro nome — `Suspended` contra `SuspendedState`. Inverter a pergunta
 elimina o palpite: em vez de adivinhar o símbolo a partir do requisito, lista-se o
 que o arquivo declara e o autor escolhe. Compor `SuspendedState` a partir de
-palavras adjacentes seria inventar nome, e P4 proíbe.
+palavras adjacentes seria inventar nome, e no-guessing-on-conflict proíbe.
 
 ```yaml anchors
 - file: src/anchors/declarations.ts

@@ -184,7 +184,7 @@ describe("orphaned links against a live Redmine", () => {
     expect((await redmineApi(env).issue(survivor))["updated_on"]).toBe(before);
   });
 
-  // The Fatia 8 correction, in the state `archive` leaves behind: the
+  // The change `declared-orphan-and-pending-retirement` correction, in the state `archive` leaves behind: the
   // identifier is in `retired` and the same body is now under another one.
   // Before this, the declared path skipped the body check entirely and the card
   // closed without a word.

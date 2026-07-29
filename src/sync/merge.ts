@@ -58,7 +58,7 @@ export interface MergeResult {
 //
 // `restore` earns its own name instead of being reported as an update. Someone
 // edited a spec-owned field on the board. Ownership decides, so it is not
-// ambiguous and not P4 — but it is a destructive write, and a destructive write
+// ambiguous and not no-guessing-on-conflict — but it is a destructive write, and a destructive write
 // that reads as "updated" in the report is one nobody notices.
 export function mergeThreeWay(input: MergeInput): MergeResult {
   const oursHash = syncedHash(input.ours);
@@ -71,7 +71,7 @@ export function mergeThreeWay(input: MergeInput): MergeResult {
   const base = input.base;
 
   // No recorded base but the item exists remotely: two states and nothing to
-  // choose between them. P4 — refuse rather than pick.
+  // choose between them. no-guessing-on-conflict — refuse rather than pick.
   if (base === undefined) {
     if (oursHash === theirsHash) {
       return {

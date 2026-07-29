@@ -85,7 +85,7 @@ export function readSettings(path: string): Settings {
 
 // The `hooks` key is the only part specd navigates, so it is the only part whose
 // shape has to be checked. An unexpected shape is a refusal, never a repair: a
-// tool that "fixes" a structure it did not understand is guessing (P4).
+// tool that "fixes" a structure it did not understand is guessing (no-guessing-on-conflict).
 function assertHooksShape(raw: SettingsObject, path: string): void {
   const hooks = raw["hooks"];
   if (hooks === undefined) return;
@@ -153,7 +153,7 @@ export interface MergeOptions {
 //
 // REQ-HOOK-002 — "idempotent or abort" is a false dichotomy. An identical entry
 // is a no-op because there is nothing to decide; a divergent entry is two
-// possible states with no basis for choosing between them, which is P4.
+// possible states with no basis for choosing between them, which is no-guessing-on-conflict.
 export function mergeHookEntries(
   raw: SettingsObject,
   desired: readonly DesiredEntry[],

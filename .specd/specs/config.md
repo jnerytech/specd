@@ -164,7 +164,7 @@ dívida juntas tornam o encalhe visível sem que a ferramenta julgue.
 
 Havia duas definições concorrentes de raiz dentro do mesmo comando: o passo 3 da
 escada resolvia caminho a partir do `cwd` e o passo 5 listava arquivos a partir
-do toplevel do git. Elas divergem exatamente no caso que motivou esta fatia — um
+do toplevel do git. Elas divergem exatamente no caso que motivou esta change — um
 projeto specd dentro de uma árvore ignorada pelo repositório pai. Projeto specd é
 definido por ter `.specd/`, e nada mais.
 
@@ -186,10 +186,10 @@ definido por ter `.specd/`, e nada mais.
 
 O template abre afirmando que toda seção suportada está ali, e no run 006 seis
 chaves faltavam — quatro do `sync` e duas do transporte MCP, estas desde antes
-da Fatia 6. Ninguém percebeu por três fatias, porque afirmação em prosa não
+da change `board-sync-redmine`. Ninguém percebeu por três changes, porque afirmação em prosa não
 falha.
 
-Mesma família da lista de camadas que a Fatia 4 tornou derivada de
+Mesma família da lista de camadas que a change `project-root-and-file-visibility` tornou derivada de
 `VERIFY_LEVELS`. Aquela correção resolveu um caso e o padrão voltou em cinco
 lugares novos; este é o segundo a ganhar contrato.
 

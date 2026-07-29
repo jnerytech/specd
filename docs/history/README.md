@@ -14,7 +14,7 @@ correspondem** aos de `.specd/specs/`. Ela usa `REQ-SPEC-*`, `REQ-BOARD-*`,
 `REQ-CLI-*`, `REQ-EARS-*`, `REQ-EXP-*`, `REQ-FMT-*`, `REQ-VER-*` e `REQ-ARC-*`.
 
 A colisão de prefixo já produziu quatro citações de requisitos inexistentes
-durante o desenvolvimento da Fatia 1 e do Modelo B. Versionar o documento aqui,
+durante o desenvolvimento da change `verify-gate-and-anchor-ladder` e do Modelo B. Versionar o documento aqui,
 marcado, é mais barato que continuar descobrindo a divergência uma citação por
 vez.
 

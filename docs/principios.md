@@ -1,10 +1,10 @@
-# Princípios P1–P9 — o registro completo
+# Princípios — o registro completo
 
 O `CLAUDE.md` enuncia os nove princípios em forma de regra. Este documento
 guarda o porquê: a assimetria que originou cada um, as instâncias reais que os
 tornaram necessários e o modo de falha que cada um impede.
 
-A separação é P6 aplicado ao próprio repositório. A regra precisa ser lida em
+A separação é memory-is-ephemeral aplicado ao próprio repositório. A regra precisa ser lida em
 toda sessão; a justificativa precisa existir, ser encontrável e não ocupar
 contexto até que alguém pergunte "por quê" ou queira mudar a regra. **Mudar um
 princípio exige ler este documento antes.**
@@ -13,7 +13,7 @@ Nada aqui é contrato — o contrato é `.specd/specs/` mais os deltas abertos.
 
 ---
 
-## P1 — A CLI nunca chama LLM no caminho de decisão
+## no-llm-in-decision-path — A CLI nunca chama LLM no caminho de decisão
 
 **Regra.** Se um exit code depender de um modelo, ele deixa de ser
 determinístico. Nenhum módulo alcançável a partir de `verify()` pode importar
@@ -37,10 +37,10 @@ transições — `RENAMED`, `SPLIT` — colocaria a decisão de fechar o card de
 cliente na saída de quem escreve o delta, e o escritor confiável desse campo
 seria `propose`. Ali o specd não estaria adivinhando: estaria obedecendo a um
 palpite, o que é pior, porque parece declarado. Daí a preferência por identidade
-que não precisa ser declarada — detectada e recusada (P4) em vez de declarada e
+que não precisa ser declarada — detectada e recusada (no-guessing-on-conflict) em vez de declarada e
 obedecida.
 
-## P2 — Um único gate
+## single-gate — Um único gate
 
 Só `specd verify` retorna 1 por reprovação de qualidade. Outros comandos
 retornam não-zero apenas por falha operacional.
@@ -49,28 +49,28 @@ CI precisa distinguir "spec reprovou" de "ferramenta quebrou". Um segundo
 comando com direito a reprovar torna o exit code 1 ambíguo, e a resposta de
 quem mantém o pipeline é parar de olhar para ele.
 
-## P3 — O gate nunca acessa a rede
+## gate-no-network — O gate nunca acessa a rede
 
 `explore` e `sync` acessam rede; `verify` não. Há teste de arquitetura para
 isso.
 
 Consequência de segunda ordem, aprendida em REQ-CLI-007: pergunta que só a rede
 responde não é do gate — e teste que não pode conferir uma afirmação não deve
-fixá-la. Ver P8, quinta instância.
+fixá-la. Ver absence-is-not-compliance, quinta instância.
 
-## P4 — Nunca adivinhar em conflito
+## no-guessing-on-conflict — Nunca adivinhar em conflito
 
 Âncora ambígua, conflito de merge e estado inconsistente saem com erro e
 diagnóstico. Jamais auto-resolução.
 
-## P5 — Botão de configuração só existe se dois clientes reais divergirem
+## config-only-on-divergence — Botão de configuração só existe se dois clientes reais divergirem
 
 Opção adicionada por hipótese vira superfície que nunca se tira, e cada uma
 multiplica os estados que o gate precisa cobrir.
 
-## P6 — Memória é efêmera; verdade durável vai para spec ou ADR
+## memory-is-ephemeral — Memória é efêmera; verdade durável vai para spec ou ADR
 
-## P7 — Âncora é necessária, nunca suficiente
+## anchor-necessary-not-sufficient — Âncora é necessária, nunca suficiente
 
 **Regra.** Âncora que resolve prova que existe código no caminho declarado. Não
 prova que o código satisfaz o requisito. Âncora responde onde, não se nem
@@ -82,10 +82,10 @@ sinal verdadeiro de trabalho pendente por um falso de trabalho pronto, e o gate
 perde o direito de ser acreditado.
 
 Isto é princípio e não requisito porque não é checável por máquina. Decidir se o
-código satisfaz o requisito é julgamento semântico, e P1 mantém julgamento
+código satisfaz o requisito é julgamento semântico, e no-llm-in-decision-path mantém julgamento
 semântico fora do caminho de decisão — não só na v1, sempre.
 
-## P8 — Ausência de dado não é conformidade
+## absence-is-not-compliance — Ausência de dado não é conformidade
 
 **Regra.** Toda capacidade que lê estado externo distingue três resultados:
 verificou e está certo, verificou e está errado, não conseguiu verificar. O
@@ -105,22 +105,22 @@ pareça abstrata:
 - **Diretório sem `.specd/specs/` passava no gate.** `verify` saía 0 num
   diretório onde não havia nada para checar, então "verde" e "não achei spec"
   eram indistinguíveis, e rodar do diretório errado virava aprovação. Corrigido
-  na Fatia 2 com exit 2.
-- **Delta ilegível era lido como delta vazio.** O `delta.md` da Fatia 1 está no
+  na change `archive-cycle-and-effective-specs` com exit 2.
+- **Delta ilegível era lido como delta vazio.** O `delta.md` da change `verify-gate-and-anchor-ladder` está no
   formato antigo; o parser novo lia zero blocos de requisito nele e `archive`
-  saía 0 tendo verificado coisa nenhuma. Corrigido na Fatia 3 por REQ-FMT-009.
+  saía 0 tendo verificado coisa nenhuma. Corrigido na change `provenance-and-mcp-transport` por REQ-FMT-009.
 - **A busca de âncora enxergava zero arquivos.** Em diretório ignorado pelo
   repositório pai, `git ls-files` sucede e devolve vazio; o passo 5 da escada
   morria, `anchor suggest` emudecia, e o gate ficava verde sem dizer que a rede
-  de segurança não existia. Corrigido na Fatia 4.
+  de segurança não existia. Corrigido na change `project-root-and-file-visibility`.
 - **O Redmine respondeu 204 e não aplicou nada.** `PUT` com `status_id` num item
   cujo tracker não tem linha de workflow é aceito, devolve 204 e descarta o
   campo em silêncio; o mesmo `PUT` num tracker com workflow aplica. Esta é a
-  instância que originou a regra de escrita. Corrigido na Fatia 6: `close` relê
+  instância que originou a regra de escrita. Corrigido na change `board-sync-redmine`: `close` relê
   e falha quando a situação não mudou.
 - **Teste verde respondendo a pergunta que expirou.** `readme.test.ts` cobrava
   a frase "não publicado" no README sem poder conferir se ela era verdade —
-  estado de registry é rede, e `verify` é offline por P3. O que parecia rede era
+  estado de registry é rede, e `verify` é offline por gate-no-network. O que parecia rede era
   fecho: manteve a frase no lugar exatamente enquanto ela deixava de ser
   verdade. Não é silêncio apresentado como aprovação; é o terceiro resultado
   disfarçado do primeiro. Corrigido em REQ-CLI-007, com a regra generalizada:
@@ -131,7 +131,7 @@ descobertas rodando a ferramenta contra algo que ela não tinha visto antes — 
 quarta contra um servidor de verdade, num teste de integração que falhou pelo
 motivo errado, e cuja hipótese óbvia estava errada também.
 
-## P9 — Operação que custa alguma coisa não acontece em silêncio
+## costly-ops-are-not-silent — Operação que custa alguma coisa não acontece em silêncio
 
 **Regra.** Custo aqui é o que o autor gostaria de ter decidido: escrita
 destrutiva, escrita fora do repositório, qualquer coisa que editar um arquivo
@@ -151,12 +151,12 @@ mesma forma sem se consultarem:
 A quarta é o caso que deu nome à regra, e ainda não está construída: hoje `sync`
 fecha o card de qualquer ligação órfã, sem perguntar. Renomear requisito num
 delta — que a política chamava de grátis — fecha e recria card no board do
-cliente, descartando comentário e apontamento de hora que alguém deixou lá. É P9
-sendo violado pelo próprio produto, e é o que a fatia corrente conserta.
+cliente, descartando comentário e apontamento de hora que alguém deixou lá. É costly-ops-are-not-silent
+sendo violado pelo próprio produto, e é o que a change corrente conserta.
 
-O modo de falha que P9 impede é vizinho do de P8 e não é o mesmo. P8 é silêncio
+O modo de falha que costly-ops-are-not-silent impede é vizinho do de absence-is-not-compliance e não é o mesmo. absence-is-not-compliance é silêncio
 apresentado como aprovação: a ferramenta não conseguiu verificar e diz que está
-tudo bem. P9 é ação apresentada como nada: a ferramenta fez algo que custa, e
+tudo bem. costly-ops-are-not-silent é ação apresentada como nada: a ferramenta fez algo que custa, e
 não contou. O primeiro engana sobre o estado; o segundo engana sobre o que
 acabou de acontecer — e é pior de investigar, porque não deixa nem a pergunta.
 
@@ -174,7 +174,7 @@ barata e silenciosa é como se perde confiança na ferramenta uma vez só.
 amarrando o nome e o caminho citados na documentação ao `name` e ao `bin` do
 `package.json`.
 
-Nenhum teste afirma estado do registry. `verify` é offline por P3, então essa
+Nenhum teste afirma estado do registry. `verify` é offline por gate-no-network, então essa
 pergunta não é do gate — e a versão anterior desse parágrafo mostrou o preço: o
 teste que exigia a frase "ainda não publicado" a manteve no lugar exatamente
 enquanto ela deixava de ser verdade.
@@ -185,7 +185,7 @@ do binário — se ambos estiverem instalados globalmente, um sombreia o outro.
 
 **Modelo B, o preço da refatoração.** Requisito é maleável em voo e congela ao
 ser realizado. Dividir, renomear ou reescrever requisito que está num delta é
-barato, e o preço é cobrado na hora (P9): renomear exige atualizar o `req` de
+barato, e o preço é cobrado na hora (costly-ops-are-not-silent): renomear exige atualizar o `req` de
 toda task que cita o identificador, e `coverage` reprova até que esteja feito;
 com board configurado, exige também redeclarar a ligação, e `sync` recusa até
 que esteja feito. O mesmo em `.specd/specs/` custa churn de identificador e
@@ -199,7 +199,7 @@ change `migracao-modelo-b` corrigiu — âncora pendurada permanente em pasta qu
 promete código existente. Daí pendurada em `specs/` ser erro e pendurada em
 delta ser warning, e não haver consulta a "change ativa".
 
-**Herança da Fatia 6.** `archive` ainda não chama `sync`: fechar item de board
+**Herança da change `board-sync-redmine`.** `archive` ainda não chama `sync`: fechar item de board
 de requisito que saiu da spec funciona, mas quem decide que ele saiu é o autor
 editando o arquivo. E a interface de adaptador foi desenhada para dois
 fornecedores e tem um — qualquer argumento sobre o Azure DevOps neste

@@ -31,11 +31,11 @@ import { planApplication, type ApplicationPlan } from "./apply.js";
 // REQ-SYNC-001 says the board is written only when a person invokes it
 // directly. `archive` reconciling on its own would break that; `archive --sync`
 // does not, because it is still somebody typing, and the external write stays
-// declared (P9).
+// declared (costly-ops-are-not-silent).
 //
 // There is no `--no-sync`. With `sync` opt-in the absence of the flag already
 // is the no, and two flags for one boolean is a button without two real clients
-// diverging (P5).
+// diverging (config-only-on-divergence).
 export interface ArchiveOptions {
   cwd?: string;
   config?: SpecdConfig;
@@ -53,7 +53,7 @@ export interface ArchiveOptions {
 //
 // Undoing the archive would be worse than either. What it wrote is correct and
 // sits outside the git index, within reach of review — undoing destroys good
-// work because of a network failure, which is exactly the silent decision P9
+// work because of a network failure, which is exactly the silent decision costly-ops-are-not-silent
 // forbids.
 export class ArchiveSyncError extends Error {
   readonly exitCode = 2;
@@ -103,7 +103,7 @@ export interface UnsyncedCount {
 // request. `archive` without `--sync` is a local operation, and a local
 // operation that needs the network is one more place the tool stops working for
 // a reason that is not its own — on a plane, in CI without egress, behind a
-// client's proxy. Whoever does not need the network does not ask for it; P3 is
+// client's proxy. Whoever does not need the network does not ask for it; gate-no-network is
 // the strong instance of that rule, not the whole of it.
 //
 // The price is declared: this sees a link that is absent and a requirement this
@@ -149,7 +149,7 @@ export function recordedLinkKeys(root: string): Set<string> {
 // REQ-ARC-001 — Change is named explicitly.
 //
 // No inference from date, ordering or the number of open changes. With
-// concurrent open changes, picking one is guessing, and P4 forbids it: the
+// concurrent open changes, picking one is guessing, and no-guessing-on-conflict forbids it: the
 // operation rewrites the contract, so the caller says which contract.
 export async function archive(
   name: string | undefined,
@@ -233,7 +233,7 @@ export async function archive(
     recursive: true,
   });
   // REQ-ARC-008: `memory/` travels with the change, because the move takes the
-  // whole directory. Ephemeral by P6 means non-authoritative, not destroyed.
+  // whole directory. Ephemeral by memory-is-ephemeral means non-authoritative, not destroyed.
   renameSync(change.directory, destinationDir);
 
   const result: ArchiveResult = {
@@ -267,7 +267,7 @@ export async function archive(
 // REQ-ARC-006 — Archive destination preserves the change name.
 //
 // No date prefix: specd change names already carry one, and prefixing would
-// produce `2026-07-28-2026-07-fatia-1`.
+// produce `2026-07-28-2026-07-28-verify-gate-and-anchor-ladder`.
 export function archiveDestination(root: string, name: string): string {
   return join(root, ".specd", "changes", ARCHIVE_DIRECTORY, name);
 }

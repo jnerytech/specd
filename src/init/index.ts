@@ -43,7 +43,7 @@ export function init(options: InitOptions = {}): InitResult {
   const configPath = join(root, ".specd", "config.toml");
 
   if (existsSync(configPath) && options.force !== true) {
-    // P4: an existing configuration is the user's, not ours to replace.
+    // no-guessing-on-conflict: an existing configuration is the user's, not ours to replace.
     throw new ConfigError(
       `"${configPath}" already exists. Pass --force to overwrite it; specd will not replace a configuration you wrote.`,
     );

@@ -11,7 +11,7 @@
 //
 // The two reads are the gap the four did not cover, and there is no way around
 // them: a three-way merge needs the remote state, and refusing honestly under
-// P8 needs the field definitions. Neither is an operation on the board's state,
+// absence-is-not-compliance needs the field definitions. Neither is an operation on the board's state,
 // so neither belongs among the writes — but without them there is no merge and
 // no honest refusal.
 
@@ -86,6 +86,6 @@ export interface BoardAdapter {
   // unchanged, and the caller has to be able to tell.
   read(ref: BoardItemRef): Promise<BoardItemSnapshot | undefined>;
   // Throws FieldDefinitionsUnavailableError when it cannot answer. Returning an
-  // empty list would be the P8 failure this interface exists to prevent.
+  // empty list would be the absence-is-not-compliance failure this interface exists to prevent.
   describeFields(): Promise<BoardFieldDefinition[]>;
 }

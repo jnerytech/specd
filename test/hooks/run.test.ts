@@ -71,7 +71,7 @@ describe("hook adapter exit codes", () => {
   });
 });
 
-// REQ-HOOK-006 / P8 — three outcomes, and only the first allows.
+// REQ-HOOK-006 / absence-is-not-compliance — three outcomes, and only the first allows.
 describe("inability to verify blocks", () => {
   it("blocks in a directory that is not a specd project", async () => {
     const root = mkdtempSync(join(tmpdir(), "specd-hook-"));

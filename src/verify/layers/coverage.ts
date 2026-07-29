@@ -5,7 +5,7 @@ import { resultFrom, type VerifyLayer } from "./types.js";
 //
 // Every requirement a change declares under ADDED or MODIFIED must be claimed
 // by a task of that change. A delta entry nobody planned to build is a promise
-// with no owner, and it is how `2026-07-fatia-1` came to claim requirements it
+// with no owner, and it is how `2026-07-28-verify-gate-and-anchor-ladder` came to claim requirements it
 // never delivered.
 //
 // Four decisions the requirement's acceptance criteria pin down, because each

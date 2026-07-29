@@ -254,7 +254,7 @@ export function renderScopeHelp(scope: Scope): string {
 // REQ-CLI-010: checked before any option is validated, and before any work is
 // done. `sync` and `explore` open the network and `archive` rewrites the
 // capabilities — a help flag read too late would be the one way this surface
-// costs something (P9).
+// costs something (costly-ops-are-not-silent).
 export function helpRequested(argv: readonly string[]): boolean {
   return argv.includes("--help") || argv.includes("-h");
 }

@@ -101,7 +101,7 @@ describe("specd verifies this repository", () => {
     expect(report.layers.every((l) => l.status !== "failed")).toBe(true);
   });
 
-  // REQ-VER-012 / P8: green must not mean two things. The anchors layer says
+  // REQ-VER-012 / absence-is-not-compliance: green must not mean two things. The anchors layer says
   // how it listed the repository, so "every anchor resolves" is separable from
   // "every anchor resolves and a broken one would be locatable".
   it("says how it listed the repository", async () => {

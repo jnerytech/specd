@@ -127,7 +127,7 @@ describe("init", () => {
     });
     // REQ-CFG-004: every layer the pipeline knows runs on the first verify
     // after init. The template used to hand-maintain this list and offered
-    // three of six, so a project scaffolded after Fatia 2 started with half the
+    // three of six, so a project scaffolded after change `archive-cycle-and-effective-specs` started with half the
     // gate switched off and nothing said so. This assertion is what stops the
     // divergence from coming back.
     expect(report.layers.map((l) => l.layer)).toEqual([...LAYER_ORDER]);

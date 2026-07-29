@@ -74,7 +74,7 @@ describe("project root", () => {
     expect(findProjectRoot(tree({}))).toBeUndefined();
   });
 
-  // P8: "this is not a specd project" is a third outcome, never a pass.
+  // absence-is-not-compliance: "this is not a specd project" is a third outcome, never a pass.
   it("refuses with exit 2 rather than continuing", () => {
     const root = tree({});
     expect(() => requireProjectRoot(root)).toThrow(OperationalError);

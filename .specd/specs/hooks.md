@@ -34,7 +34,7 @@ ela sabe escrever é tudo o que existe ali.
 
 Idempotente-ou-aborta é dicotomia falsa. Entrada idêntica é no-op porque não há
 nada a decidir; entrada divergente é dois estados possíveis sem base para
-escolher, que é P4 canônico.
+escolher, que é no-guessing-on-conflict canônico.
 
 ```yaml anchors
 - file: src/hooks/install.ts
@@ -118,7 +118,7 @@ deixar um passar pelo outro seria acertar por coincidência.
 - Exceção inesperada bloqueia em vez de liberar
 - Nenhum desses caminhos sai com o código de liberação
 
-P8. O adaptador tem três resultados — verificou e passou, verificou e reprovou,
+absence-is-not-compliance. O adaptador tem três resultados — verificou e passou, verificou e reprovou,
 não conseguiu verificar — e só o primeiro libera. Um hook que libera quando quebra
 é indistinguível de um hook desinstalado, e ninguém investiga silêncio.
 

@@ -67,7 +67,7 @@ describe("board links in frontmatter", () => {
     expect(writeBoardLinks(once, { "REQ-SYNC-001": LINK })).toBe(once);
   });
 
-  // A half-written link is not a link. Reading it as "synced" would be the P8
+  // A half-written link is not a link. Reading it as "synced" would be the absence-is-not-compliance
   // failure in file-format shape.
   it("refuses a link missing one of its four fields", () => {
     const broken = `---

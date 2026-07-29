@@ -193,7 +193,7 @@ export function assertFullReplacement(
 // cannot read is the whole requirement. A change with no removals writes an
 // empty REMOVED and that is true; a change whose ADDED lists forty identifiers
 // as bullets has content the parser reads as nothing, and reading nothing as
-// conformance is how archiving Fatia 1 exited 0 having verified nothing.
+// conformance is how archiving change `verify-gate-and-anchor-ladder` exited 0 having verified nothing.
 //
 // Same family as the vacuous pass: absence of data presented as approval.
 export function assertSectionReadable(

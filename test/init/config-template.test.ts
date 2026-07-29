@@ -21,7 +21,7 @@ function schemaKeys(
 //
 // The template opens by claiming that every supported section is present. In
 // run 006 six keys were missing — four of `sync`, and two of the MCP transport
-// that had been absent since before Fatia 6. Nobody noticed for three slices,
+// that had been absent since before change `board-sync-redmine`. Nobody noticed for three slices,
 // because a claim written in prose does not fail.
 //
 // The check reads `ConfigSchema` rather than a second list written by hand. A

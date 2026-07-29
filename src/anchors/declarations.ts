@@ -9,7 +9,7 @@ export interface Declaration {
 
 export type DeclarationListing =
   | { known: true; language: string; declarations: Declaration[] }
-  // P8: an extension with no known pattern is a third outcome. Returning an
+  // absence-is-not-compliance: an extension with no known pattern is a third outcome. Returning an
   // empty list would make "this file declares nothing" and "I cannot read this
   // kind of file" the same answer, and only one of them is safe to act on.
   | { known: false; extension: string };
@@ -63,7 +63,7 @@ const LANGUAGES: readonly Language[] = [
 // the prose says "the tenant accessor is disposed" and the type is called
 // `TenantAccessor`, so the extracted term is `Tenant` and matches no
 // declaration. Composing `TenantAccessor` out of adjacent words would be
-// inventing a symbol name, which P4 forbids.
+// inventing a symbol name, which no-guessing-on-conflict forbids.
 //
 // Inverting the question removes the guess entirely: nothing here is composed,
 // every symbol reported is text that occurs in the file, and the author chooses.

@@ -186,7 +186,7 @@ describe("classifyOrphans", () => {
     }).not.toThrow();
   });
 
-  // The Fatia 8 correction. `REMOVED: REQ-D-002` plus `ADDED: REQ-D-003` with
+  // The change `declared-orphan-and-pending-retirement` correction. `REMOVED: REQ-D-002` plus `ADDED: REQ-D-003` with
   // the same body is how a rename of an already realized requirement is
   // written, because the delta has no other vocabulary for it — so the
   // declaration does not distinguish a death from a rename, and the body does.

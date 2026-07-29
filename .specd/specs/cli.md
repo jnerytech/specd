@@ -119,12 +119,12 @@ verde.
 **O achado é o teste, não a documentação.** `readme.test.ts` cobrava
 `/não está publicado|não publicado/` no README. Ele não conferia se a afirmação
 era verdadeira — nada nele podia, porque estado do registry é rede e `verify` é
-offline por P3. O que parecia rede era fecho: manteve a frase no lugar
+offline por gate-no-network. O que parecia rede era fecho: manteve a frase no lugar
 exatamente enquanto ela deixava de ser verdade. E na mesma suíte,
 `package.test.ts` já afirmava `name === "@jnerytech/specd"` enquanto o README
 dizia que `name` era `specd`.
 
-É P8 numa forma que não estava na lista das quatro. Aquelas são silêncio
+É absence-is-not-compliance numa forma que não estava na lista das quatro. Aquelas são silêncio
 apresentado como aprovação. Esta é verificação que roda, passa, e responde a uma
 pergunta que expirou — o terceiro resultado, não consegui verificar, disfarçado
 de primeiro.
@@ -166,11 +166,11 @@ CLAUDE.md nomeia ao proibir `/feature-dev` aqui. O caso é instrutivo porque o
 código não está errado: está certo e não-declarado, e portanto invisível para o
 gate que valida este próprio repositório.
 
-O critério de exit 0 é P2 escrito como obrigação e não como observação. Help é
+O critério de exit 0 é single-gate escrito como obrigação e não como observação. Help é
 onde alguém um dia acrescenta validação, e o único gate ganharia uma segunda
 porta sem que a mudança parecesse uma mudança.
 
-O critério de não tocar disco nem rede é P3 no mesmo espírito: `verify` não
+O critério de não tocar disco nem rede é gate-no-network no mesmo espírito: `verify` não
 acessa a rede porque é o gate, e help não acessa porque não precisa. Declarar
 custa uma linha e impede que o caminho mais rodado do produto adquira
 dependência que ninguém pediu.
@@ -247,7 +247,7 @@ do erro.
 
 O critério de não executar trabalho não é zelo. `sync` e `explore` tocam a rede
 e `archive` reescreve as capabilities; um `--help` avaliado tarde demais seria a
-única forma de essa fatia custar alguma coisa, e P9 diz que operação que custa
+única forma de essa change custar alguma coisa, e costly-ops-are-not-silent diz que operação que custa
 não acontece de passagem.
 
 ```yaml anchors
@@ -305,7 +305,7 @@ O critério sobre import não é redundante com o de manifesto. Ele é o que pro
 o padrão, e não só a linha: um dogfood que chamasse o specd publicado para
 validar o specd em desenvolvimento fixaria o gate na versão anterior à correção
 que está sendo escrita. Verde significaria "o specd de antes aprovou" e se leria
-como "o specd atual aprovou" — P8, e em círculo, porque publicar a correção do
+como "o specd atual aprovou" — absence-is-not-compliance, e em círculo, porque publicar a correção do
 gate exige o gate passar.
 
 Enquanto as duas cópias tiverem a mesma versão a divergência é invisível, que é

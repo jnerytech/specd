@@ -5,7 +5,7 @@ client = "jnerytech"
 language = "pt-BR"
 
 [verify]
-# As seis camadas. `provenance` voltou na Fatia 3, com a condição de guarda que
+# As seis camadas. `provenance` voltou na change `provenance-and-mcp-transport`, com a condição de guarda que
 # faltava: ele só exige bundle quando a configuração declara alguma fonte
 # `required`. Este repositório não declara nenhuma, então a camada roda e não
 # cobra nada — e volta a cobrar no dia em que uma fonte obrigatória aparecer.

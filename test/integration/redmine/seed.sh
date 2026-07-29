@@ -239,7 +239,7 @@ log "epic=${EPIC_ID} children=${CHILD_A},${CHILD_B} flat=${FLAT_ID}"
 #
 # `/custom_fields.json` is admin-only: a non-admin gets 403 with an EMPTY body,
 # while `/trackers.json` and `/issue_statuses.json` are readable by an ordinary
-# project member. That asymmetry is the P8 case — an adapter holding a real
+# project member. That asymmetry is the absence-is-not-compliance case — an adapter holding a real
 # client's token can read issues but cannot read what the fields mean, and must
 # say so instead of assuming a format. The fixture ships the token that
 # reproduces it.
@@ -292,7 +292,7 @@ REDMINE_PROJECT=${PROJECT_IDENTIFIER}
 REDMINE_ADMIN_USER=admin
 REDMINE_ADMIN_PASSWORD=admin
 # Ordinary project member, not an admin. Reads issues; gets 403 with an empty
-# body from /custom_fields.json. This is the token the P8 test uses.
+# body from /custom_fields.json. This is the token the absence-is-not-compliance test uses.
 REDMINE_MEMBER_API_KEY=${BOT_KEY}
 CF_CLIENTE_ID=${CF_CLIENTE_ID}
 CF_SPRINT_ID=${CF_SPRINT_ID}

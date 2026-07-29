@@ -128,7 +128,7 @@ Seis camadas ordenadas. As cinco primeiras são offline e agnósticas de stack; 
 - Squash, rebase e clone raso não reprovam o gate
 
 Âncora prova que existe código agora; evidência prova que houve trabalho então.
-São eixos diferentes, por P7. Um SHA que o histórico não alcança mais é sinal
+São eixos diferentes, por anchor-necessary-not-sufficient. Um SHA que o histórico não alcança mais é sinal
 degradado, não fraude: o fluxo de merge do projeto pode tê-lo reescrito. O que
 permanece antifraude é `evidence.commits` vazio, que é declaração de trabalho
 sem qualquer lastro, e esse continua reprovando por REQ-VER-005.
@@ -184,7 +184,7 @@ projeto que não declarou fonte obrigatória não pediu procedência nenhuma.
 - Zero arquivos enxergados produz warning, mesmo com toda âncora resolvendo
 - A mensagem diz que o passo 5 não pode sugerir nada nesse estado
 
-P8. Verde não pode significar duas coisas diferentes: "toda âncora resolve" e
+absence-is-not-compliance. Verde não pode significar duas coisas diferentes: "toda âncora resolve" e
 "toda âncora resolve, e se uma quebrasse eu saberia onde procurar" são estados
 distintos, e o relatório não os separava.
 
@@ -210,7 +210,7 @@ distintos, e o relatório não os separava.
 README vende exatamente a distinção que isso quebra: CI precisa separar "spec
 reprovou" de "ferramenta quebrou".
 
-É a forma do P8 uma casa acima. Não é verde onde deveria ser vermelho — é
+É a forma do absence-is-not-compliance uma casa acima. Não é verde onde deveria ser vermelho — é
 vermelho do tipo errado, e quem confia na distinção age errado com a mesma
 confiança de sempre. O `init` propõe o comando sozinho, então a pessoa nem
 escolheu rodar `dotnet test`.

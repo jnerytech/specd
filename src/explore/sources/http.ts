@@ -13,7 +13,7 @@ export interface HttpPayload {
   body: unknown;
 }
 
-// Explore is allowed to reach the network — the gate is not (P3). Nothing in
+// Explore is allowed to reach the network — the gate is not (gate-no-network). Nothing in
 // this module is reachable from `verify()`; the architecture tests enforce it.
 export const httpCollector: Collector = {
   type: "http",

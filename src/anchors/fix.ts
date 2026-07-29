@@ -29,11 +29,11 @@ export interface FixResult {
 //
 // Rewrites the anchor to the location the resolver suggested, and stops there:
 // the file is modified on disk and left unstaged, so a person reads the diff
-// before it becomes history. P4 — specd proposes, the repository accepts.
+// before it becomes history. no-guessing-on-conflict — specd proposes, the repository accepts.
 //
 // Exit 2 and not 1 when there is no suggestion. "I have nothing to apply" is a
 // refusal to act, not a verdict on quality, and exit 1 belongs to
-// `specd verify` alone (REQ-CLI-001, P2).
+// `specd verify` alone (REQ-CLI-001, single-gate).
 export async function fixAnchor(
   requirementId: string | undefined,
   options: FixOptions = {},

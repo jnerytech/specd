@@ -17,7 +17,7 @@ const VERIFY_ENTRY = join(
   "index.ts",
 );
 
-// P1 / REQ-CLI-002 — no language model in the decision path.
+// no-llm-in-decision-path / REQ-CLI-002 — no language model in the decision path.
 //
 // An exit code that depends on a model stops being reproducible, which is the
 // one property the whole product is sold on. The list is explicit so that

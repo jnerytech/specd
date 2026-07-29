@@ -116,7 +116,7 @@ describe("declaration listing", () => {
     expect(go.declarations.map((d) => d.symbol)).toEqual(["type A", "func B"]);
   });
 
-  // P8: not knowing how to read a file is a third outcome, not an empty list.
+  // absence-is-not-compliance: not knowing how to read a file is a third outcome, not an empty list.
   it("says it cannot read an unknown extension", () => {
     const listing = listDeclarations("whatever\n", "a.zig");
     expect(listing.known).toBe(false);

@@ -31,7 +31,7 @@ export interface FieldValueContext {
 // `id` is stable and unreadable; `name` is readable and survives the board
 // being recreated. Accepting both is what lets the configuration be reviewed
 // without opening the board's database. When the two disagree there are two
-// possible fields and no basis to choose — P4, and guessing here writes into
+// possible fields and no basis to choose — no-guessing-on-conflict, and guessing here writes into
 // the wrong field of a client's board.
 export function bindFields(
   configured: readonly BoardFieldConfig[],
@@ -109,7 +109,7 @@ export function bindFields(
 // them.
 //
 // A configuration that declares no field has no dependency to verify, so it is
-// never blocked by an endpoint it does not need. That is the other half of P8:
+// never blocked by an endpoint it does not need. That is the other half of absence-is-not-compliance:
 // refusing when the answer matters, and not inventing a reason to refuse when
 // it does not.
 export async function loadFieldBindings(

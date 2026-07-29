@@ -2,7 +2,7 @@ import { EXIT } from "../cli/exit-codes.js";
 
 // REQ-CLI-003 — Never guess on conflict.
 //
-// P4: an ambiguous or conflicting state exits non-zero with the conflict spelled
+// no-guessing-on-conflict: an ambiguous or conflicting state exits non-zero with the conflict spelled
 // out. It is never resolved automatically — a tool that picks for you is a tool
 // whose green result means nothing.
 //

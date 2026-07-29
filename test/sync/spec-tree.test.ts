@@ -52,7 +52,7 @@ describe("buildSpecTree retiring", () => {
 
   // `effectiveSpecs` already reports "REMOVED but exists nowhere" as an error.
   // A second, quieter opinion here would be the tool arguing with itself, and
-  // guessing an owner would be P4 broken for no gain.
+  // guessing an owner would be no-guessing-on-conflict broken for no gain.
   it("skips an identifier no capability claims", () => {
     const { root } = makeWorkspace({
       specs: { demo: DEMO },

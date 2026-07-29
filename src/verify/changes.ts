@@ -25,7 +25,7 @@ export interface OpenChange {
 // Every unarchived change, in stable name order.
 //
 // Plural on purpose. The graduated anchor policy used to ask which single
-// change was "active", and picking one from several was guessing (P4). Under
+// change was "active", and picking one from several was guessing (no-guessing-on-conflict). Under
 // Modelo B severity comes from where a requirement is written, so no consumer
 // has to choose: `anchors` unions every open change, `coverage` and `evidence`
 // iterate per change, and `archive` takes the change as an explicit argument.

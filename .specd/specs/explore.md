@@ -116,7 +116,7 @@ A CLI busca as fontes configuradas e grava um bundle auditável. A síntese em d
 valide `draft.md`. Não existe caminho de código onde essa ausência seja
 realizada, e âncora que apontasse para o verificador resolveria sem provar
 coisa alguma — âncora decorativa é pior que âncora ausente, porque troca um
-silêncio honesto por um sinal falso de cobertura. P7. REQ-ANC-001 já torna a
+silêncio honesto por um sinal falso de cobertura. anchor-necessary-not-sufficient. REQ-ANC-001 já torna a
 âncora opcional.
 
 ### REQ-EXP-009 — MCP collector reads the JSON response mode
@@ -132,7 +132,7 @@ silêncio honesto por um sinal falso de cobertura. P7. REQ-ANC-001 já torna a
 **SSE está fora de escopo, e este requisito é o registro disso.** Ler um stream
 exigiria decidir quando ele terminou e o que fazer com resposta parcial — duas
 decisões que valem uma change própria. Meia-implementação gravaria um payload
-em que ninguém pode confiar, e P7 diz que o pior sinal é o falso positivo de
+em que ninguém pode confiar, e anchor-necessary-not-sufficient diz que o pior sinal é o falso positivo de
 trabalho pronto.
 
 ```yaml anchors

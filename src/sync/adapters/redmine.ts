@@ -214,7 +214,7 @@ export function createRedmineAdapter(options: RedmineOptions): BoardAdapter {
 
     // Reads back on purpose. Measured: a Redmine tracker with no workflow rows
     // accepts `status_id`, answers 204, and does not apply it. A write that
-    // reports success without happening is P8 arriving from the board's side —
+    // reports success without happening is absence-is-not-compliance arriving from the board's side —
     // silence presented as approval — so the one status write specd makes is
     // also the one it confirms.
     async close(ref: BoardItemRef, reason: string): Promise<void> {
@@ -259,7 +259,7 @@ export function createRedmineAdapter(options: RedmineOptions): BoardAdapter {
     // member gets 403 with an EMPTY body, while `/trackers.json` and
     // `/issue_statuses.json` answer 200 to the same token — measured in run
     // 004, not read in the documentation. Returning [] here would be the exact
-    // P8 failure: "I could not check" presented as "there is nothing".
+    // absence-is-not-compliance failure: "I could not check" presented as "there is nothing".
     async describeFields(): Promise<BoardFieldDefinition[]> {
       let text: string;
       try {

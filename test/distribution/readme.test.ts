@@ -27,7 +27,7 @@ function binPath(): string {
 //
 // The previous version of this suite asserted that the README kept saying the
 // package was unpublished. Nothing here could check whether that was true —
-// registry state is network and `verify` is offline (P3) — so what looked like
+// registry state is network and `verify` is offline (gate-no-network) — so what looked like
 // a check was a lock, holding the sentence in place exactly while it stopped
 // being true. Meanwhile package.test.ts already asserted the name was
 // "@jnerytech/specd" and the README said it was "specd".

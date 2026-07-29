@@ -145,7 +145,7 @@ describe("packaged distribution", () => {
   // `dependencies` carried "@jnerytech/specd": "^0.0.2", resolved from the
   // registry, and nothing imported it: a second copy of the product on disk
   // that nothing called. It was the residue of a correct instinct — a publish
-  // is only proved by reading it back (P8), and installing the package and
+  // is only proved by reading it back (absence-is-not-compliance), and installing the package and
   // running its binary is a real read-back. The mistake was leaving the proof
   // installed inside the thing it proved.
   //

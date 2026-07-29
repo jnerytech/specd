@@ -9,10 +9,10 @@ is the reasoning; this one records what was decided and what stayed open.
 | --- | --- | --- |
 | 1 | Modelo B: the delta is the writing surface, `specs/` holds realized truth, `archive` applies and moves | `parseDelta` and `archive` become writable |
 | 3 | `anchor fix` without a suggestion exits 2, not 1 | generalized to "exit 1 is a verdict, exit 2 is a refusal to act" |
-| 6 | `archive` gets a capability of its own, REQ-ARC-001..010 | the largest spec gap in Fatia 2's scope closes |
+| 6 | `archive` gets a capability of its own, REQ-ARC-001..010 | the largest spec gap in change `archive-cycle-and-effective-specs`'s scope closes |
 | 9 | evidence grades in three tiers instead of validating one way | survives squash, rebase and shallow clone |
-| 17 | REQ-EXP-007 loses its anchor rather than gaining a plausible one | P7: decorative anchor is worse than absent anchor |
-| 18 | Fatia 3 opens before Fatia 2 closes | REQ-VER-003 gets a home; concurrent open changes become legitimate |
+| 17 | REQ-EXP-007 loses its anchor rather than gaining a plausible one | anchor-necessary-not-sufficient: decorative anchor is worse than absent anchor |
+| 18 | change `provenance-and-mcp-transport` opens before change `archive-cycle-and-effective-specs` closes | REQ-VER-003 gets a home; concurrent open changes become legitimate |
 
 ## The overlay formulation
 
@@ -52,7 +52,7 @@ disappears.
 
 **This demotes the `readActiveChange` defect.** It was called the worst of the
 four recorded bugs because a closed delta silenced 44 requirements; that failure
-mode dies with Modelo A. The bug remains and stays first in Fatia 2's order —
+mode dies with Modelo A. The bug remains and stays first in change `archive-cycle-and-effective-specs`'s order —
 `coverage`, `evidence`, `archive` and `status` still need to know which change
 they are talking about — but the "corrupts the differentiator" argument expired.
 Recorded because the ordering decision was taken while it was still on the table.
@@ -62,33 +62,33 @@ Recorded because the ordering decision was taken while it was still on the table
 Moving REQ-VER-004 from `specs/` to a delta is not ADDED (it exists), not
 MODIFIED (the text does not change) and not REMOVED (it is not leaving the
 product). The delta grammar has no word for it, and inventing a fourth section is
-exactly what `corrections-fatia-1` spent a change removing.
+exactly what `delta-format-and-package-identity` spent a change removing.
 
 It does not need one. The ten were never realized, so they were never entitled to
 be in `specs/` — this is a correction of illegal state, performed once. After
-Fatia 2, `archive` is the only way into `specs/` and it refuses to run while any
+change `archive-cycle-and-effective-specs`, `archive` is the only way into `specs/` and it refuses to run while any
 affected anchor dangles, so the state stops being reachable.
 
 ## Where the change cuts
 
-This change is the `propose` of Fatia 2, done by hand because `propose` does not
-exist. Fatia 2 is the `apply`. The delta Fatia 2 implements is reviewed here,
+This change is the `propose` of change `archive-cycle-and-effective-specs`, done by hand because `propose` does not
+exist. change `archive-cycle-and-effective-specs` is the `apply`. The delta change `archive-cycle-and-effective-specs` implements is reviewed here,
 before any code is written — which is the cycle the product sells.
 
-Fatia 2's `tasks/` are deliberately not written here. Task decomposition belongs
+change `archive-cycle-and-effective-specs`'s `tasks/` are deliberately not written here. Task decomposition belongs
 to the change that executes it, and REQ-VER-004 will require every ADDED
-requirement to carry a task before Fatia 2 can archive.
+requirement to carry a task before change `archive-cycle-and-effective-specs` can archive.
 
 ## OpenSpec exit condition
 
-Fatia 2 is the last change tracked in both systems. Concretely: once
-`specd archive 2026-07-fatia-2` exits 0 and `specd verify` is green with no
+change `archive-cycle-and-effective-specs` is the last change tracked in both systems. Concretely: once
+`specd archive 2026-07-28-archive-cycle-and-effective-specs` exits 0 and `specd verify` is green with no
 warning, opening a change under `openspec/changes/` is a regression. Dual
 tracking existed only while a `.specd` change could not be closed.
 
 ## Still open after this change
 
-Carried into Fatia 2, none of them blocking `parseDelta` or `archive`:
+Carried into change `archive-cycle-and-effective-specs`, none of them blocking `parseDelta` or `archive`:
 
 | item | proposal |
 | --- | --- |

@@ -58,7 +58,7 @@ export interface SyncItemState {
 //
 // REQ-SYNC-016: `retiring` is not a write at all. It is the report of an item
 // deliberately left alone, and it exists because staying silent about it would
-// be P8 by the definition — checked, found something, said nothing.
+// be absence-is-not-compliance by the definition — checked, found something, said nothing.
 export type SyncOutcome = MergeOutcome | "closed" | "retiring";
 
 export interface SyncAction {
@@ -107,7 +107,7 @@ export interface OrphanedLink {
 // death was declared.
 //
 // The earlier version of this function returned every orphan and the caller
-// closed all of them. That was P9 violated by the product itself: a mistyped
+// closed all of them. That was costly-ops-are-not-silent violated by the product itself: a mistyped
 // identifier closed a client's card, and the card carried a comment, an
 // attachment and somebody's logged hours that the spec has no idea exist.
 //
@@ -210,7 +210,7 @@ export function planActions(
 // it writes.
 //
 // Nothing here is reachable from `src/hooks/run.ts` — there is an architecture
-// test for it, in the same family as the ones guarding P1 and P3.
+// test for it, in the same family as the ones guarding no-llm-in-decision-path and gate-no-network.
 export async function sync(options: SyncOptions = {}): Promise<SyncReport> {
   const root = requireProjectRoot(options.cwd ?? process.cwd());
   const config =
@@ -348,7 +348,7 @@ export async function classifyOrphans(
     // Exact equality of the normalized body, and it has to stay exact. A looser
     // comparison — fuzzy, prefix, similarity above some threshold — would turn
     // this from evidence into a judgement, and the branch it feeds decides
-    // whether somebody's card closes. P1: where the write cannot be undone, the
+    // whether somebody's card closes. no-llm-in-decision-path: where the write cannot be undone, the
     // tool detects and refuses; it does not estimate.
     const candidates =
       remoteBody === undefined

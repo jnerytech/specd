@@ -91,7 +91,7 @@ Environment variables read by both files:
   (exercises the collapse rule) and one parentless `Task` for contrast
 - A non-admin project member, `specd-bot`, whose API key is emitted as
   `REDMINE_MEMBER_API_KEY`. It reads issues and gets 403 from
-  `/custom_fields.json` — the token that reproduces the P8 case
+  `/custom_fields.json` — the token that reproduces the absence-is-not-compliance case
 
 The seed is idempotent — every object is looked up before it is created.
 Running it twice changes nothing.
@@ -114,7 +114,7 @@ answers **204** and does not apply it. The trackers this seed creates start
 that way; `Bug`/`Feature`/`Support` do not, because the default data ships
 their workflows. The seed now copies `Bug`'s transitions onto the new trackers,
 and the adapter's `close` reads the item back rather than trusting the 204 —
-a write that reports success without happening is the P8 failure arriving from
+a write that reports success without happening is the absence-is-not-compliance failure arriving from
 the board's side.
 
 **`REDMINE_SECRET_KEY_BASE` does not reach `docker compose exec`.** The

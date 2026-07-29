@@ -2,7 +2,7 @@ import { EXIT } from "../cli/exit-codes.js";
 
 // Every failure of `sync` is operational (exit 2), never a gate verdict.
 //
-// P2 / REQ-CLI-004: only `verify` returns 1. A conflict between the spec and
+// single-gate / REQ-CLI-004: only `verify` returns 1. A conflict between the spec and
 // the board is content, but `sync` being unable to proceed is still the tool
 // stopping, not the gate reproving — and CI has to keep telling those apart.
 export class SyncError extends Error {
@@ -44,7 +44,7 @@ export class BoardRefusedError extends SyncError {
 
 // REQ-SYNC-010 — Unreadable field definitions refuse, never assume.
 //
-// P8 in its exact shape: "I could not check" is a third outcome, and it is
+// absence-is-not-compliance in its exact shape: "I could not check" is a third outcome, and it is
 // never green. Measured, not assumed — Redmine's `/custom_fields.json` answers
 // 403 with an empty body to an ordinary project member while `/trackers.json`
 // answers 200 to the same token, so an adapter holding a real client's token
@@ -90,14 +90,14 @@ export interface OrphanReport {
 // Two possible states — the requirement died, or it was renamed — and the
 // difference is destructive in one direction. Closing a card discards the
 // comment, the attachment and the logged hours somebody left on it, none of
-// which the spec knows exist. P4: specd does not choose.
+// which the spec knows exist. no-guessing-on-conflict: specd does not choose.
 //
 // The candidate is matched on the body, not on the whole projection. An item's
 // title is derived from its identifier, so renaming changes the title by
 // construction; comparing projections would never match in exactly the case
 // this error exists to catch. The body is what survives a rename.
 //
-// The declared case reaches here too, and that is the Fatia 8 correction. A
+// The declared case reaches here too, and that is the change `declared-orphan-and-pending-retirement` correction. A
 // rename of an already realized requirement is written `REMOVED: REQ-002` plus
 // `ADDED: REQ-009`, because the delta has no vocabulary for renaming — so the
 // declaration does not distinguish the two readings, and trusting it there is

@@ -67,7 +67,7 @@ describe("anchor fix", () => {
   });
 
   // The exit code REQ-ANC-008 used to get wrong. "Nothing to apply" is a
-  // refusal to act; only `specd verify` returns a verdict (REQ-CLI-001, P2).
+  // refusal to act; only `specd verify` returns a verdict (REQ-CLI-001, single-gate).
   it("exits 2, not 1, when no anchor carries a suggestion", async () => {
     const root = makeWorkspace({
       config: "",

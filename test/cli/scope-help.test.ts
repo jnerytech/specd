@@ -96,7 +96,7 @@ describe("scope help", () => {
     expect(run.stdout).toBe(renderScopeHelp("verify"));
   });
 
-  // P9: `sync` and `explore` open the network, `archive` rewrites capabilities.
+  // costly-ops-are-not-silent: `sync` and `explore` open the network, `archive` rewrites capabilities.
   // A help flag read too late would be the one way this surface costs anything.
   it("does no work and writes nothing", async () => {
     const cwd = bareDirectory();

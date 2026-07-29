@@ -57,7 +57,7 @@ export function assertEvidenceDeclared(task: Task): Diagnostic | undefined {
 // REQ-VER-010 — a SHA the history no longer reaches.
 //
 // A warning, not a failure. Anchors prove code exists now; evidence proves work
-// happened then — different axes, P7. A rewritten history is the project's
+// happened then — different axes, anchor-necessary-not-sufficient. A rewritten history is the project's
 // merge workflow, not fraud: squash and rebase both destroy the recorded SHA,
 // and a shallow clone never had it. Failing here would make the gate unusable
 // for anyone who squashes, and the property worth protecting — a claim with no

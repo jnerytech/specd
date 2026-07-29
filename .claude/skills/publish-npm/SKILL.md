@@ -10,7 +10,7 @@ operação mais irreversível que este repositório executa: **nome mais versão
 publicados nunca voltam a ficar livres.** `npm unpublish` só vale nas
 primeiras 72 horas, e mesmo assim queima o par para sempre.
 
-Por isso a skill segue P9 e P8 do `CLAUDE.md` ao pé da letra: para e nomeia a
+Por isso a skill segue costly-ops-are-not-silent e absence-is-not-compliance do `CLAUDE.md` ao pé da letra: para e nomeia a
 escolha antes de pagar o custo, e trata a resposta de sucesso do npm como
 promessa, não como prova.
 
@@ -149,7 +149,7 @@ Erros que têm tratamento próprio:
 - `E403` — nome ocupado por outro autor, ou conta sem direito sobre o pacote.
   Pare: isso não se resolve com flag.
 
-### 7. Prova (P8)
+### 7. Prova (absence-is-not-compliance)
 
 O `+<pacote>@<versão>` impresso pelo publish é a resposta de quem recebeu o
 pedido. A releitura é a primeira prova:
@@ -192,7 +192,7 @@ Nada disto é automático — são escritas no repositório, e a decisão é do 
   Confira pelo documento cru, e não pelo seletor de campo: `npm view <pacote>@<versão> deprecated`
   imprime **vazio mesmo quando a versão está depreciada**, e vazio se lê como
   "não pegou". O que responde é `npm view <pacote>@<versão> --json` ou
-  `curl -s https://registry.npmjs.org/<pacote com / escapado como %2F>`. É P8 na
+  `curl -s https://registry.npmjs.org/<pacote com / escapado como %2F>`. É absence-is-not-compliance na
   ferramenta de checagem: o comando que parecia conferir devolve silêncio,
   indistinguível do estado que ele deveria detectar.
 
@@ -211,4 +211,4 @@ dele, com as consequências à vista.
 
 Não decide o nome do pacote. Escopado e não escopado são dois produtos
 diferentes para o registry, e escolher por conveniência é a decisão cara e
-silenciosa que P9 proíbe.
+silenciosa que costly-ops-are-not-silent proíbe.

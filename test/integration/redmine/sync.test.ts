@@ -14,7 +14,7 @@ import {
 } from "./fixture.js";
 import { readBoardLinks } from "../../../src/sync/link.js";
 
-// The acceptance criteria of Fatia 6, measured against the Redmine the seed
+// The acceptance criteria of change `board-sync-redmine`, measured against the Redmine the seed
 // built — not against a double. A double would agree with whatever the adapter
 // believes, which is exactly the belief under test.
 
@@ -233,7 +233,7 @@ describe("sync against a live Redmine", () => {
   //
   // Reachable rather than decorative: an operation nothing invokes is a
   // requirement that passes vacuously.
-  // Fatia 7 narrowed this: removing the block is no longer enough. The death
+  // change `orphan-guard-and-documented-formats` narrowed this: removing the block is no longer enough. The death
   // has to be declared in `retired`, which is what `archive` writes — otherwise
   // a typo would close a client's card (REQ-SYNC-014).
   it("closes the board item of a requirement declared retired, and confirms it landed", async () => {

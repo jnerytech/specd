@@ -101,7 +101,7 @@ describe("configured levels", () => {
     ).rejects.toThrow(ConfigError);
   });
 
-  // Every layer of LAYER_ORDER is implemented as of Fatia 3, so the
+  // Every layer of LAYER_ORDER is implemented as of change `provenance-and-mcp-transport`, so the
   // configuration can no longer name one that is missing. The guard that used
   // to be exercised by configuring `provenance` is now this invariant: adding a
   // layer to the order without writing it must fail here rather than silently

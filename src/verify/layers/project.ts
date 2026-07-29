@@ -67,7 +67,7 @@ export const projectLayer: VerifyLayer = {
 // second one, and `init` proposes the command by itself, so nobody even chose
 // to run `dotnet test`.
 //
-// It is P8 one storey up. Not green where it should be red — red of the wrong
+// It is absence-is-not-compliance one storey up. Not green where it should be red — red of the wrong
 // kind, which whoever trusts the distinction acts on with the usual confidence.
 export type CommandFailureKind = "unrunnable" | "verdict";
 

@@ -8,7 +8,7 @@ import { SyncError } from "./errors.js";
 // place nobody remembers to version.
 //
 // A missing link means never synced. That is a different answer from "synced
-// and unchanged", and the two are never collapsed into one — P8 again, this
+// and unchanged", and the two are never collapsed into one — absence-is-not-compliance again, this
 // time in the file format.
 export interface BoardLink {
   // Board identifier, as a string. Board ids are opaque, not arithmetic.

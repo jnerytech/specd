@@ -27,7 +27,7 @@ describe("delta sections", () => {
   });
 
   it("rejects a section outside the three", () => {
-    // The section `corrections-fatia-1` deleted, rejected by the parser this
+    // The section `delta-format-and-package-identity` deleted, rejected by the parser this
     // time instead of by a person reading the file.
     expect(messages(`${HEAD}## DEFERRED\n\n- REQ-DEMO-001\n`)[0]).toContain(
       "is not one of ADDED, MODIFIED, REMOVED",
@@ -112,7 +112,7 @@ describe("full text", () => {
 // REQ-FMT-009 — Unreadable delta content is rejected, never ignored
 describe("unreadable sections", () => {
   it("rejects a section with content but no requirement block", () => {
-    // The exact shape of `2026-07-fatia-1`'s delta: a manifest of identifiers.
+    // The exact shape of `2026-07-28-verify-gate-and-anchor-ladder`'s delta: a manifest of identifiers.
     // The parser read it as zero requirements, and `archive` exited 0 having
     // verified nothing.
     const found = messages(
@@ -144,7 +144,7 @@ describe("unreadable sections", () => {
   it("accepts prose before the first block", () => {
     expect(
       messages(
-        `${HEAD}## ADDED\n\nToda a fatia é greenfield.\n\n${BLOCK("REQ-DEMO-001")}`,
+        `${HEAD}## ADDED\n\nToda a change é greenfield.\n\n${BLOCK("REQ-DEMO-001")}`,
       ),
     ).toEqual([]);
   });

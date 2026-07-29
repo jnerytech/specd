@@ -17,7 +17,7 @@ const VERIFY_ENTRY = join(
   "index.ts",
 );
 
-// P3 / REQ-CLI-005 — the gate never touches the network.
+// gate-no-network / REQ-CLI-005 — the gate never touches the network.
 //
 // The list is explicit rather than a heuristic: a new transport has to be added
 // here consciously, and the reason is written down next to it.

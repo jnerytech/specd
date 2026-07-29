@@ -108,7 +108,7 @@ export function planApplication(
 // Without this, a failure between writing the capabilities and moving the
 // change directory would leave no way forward: the second run would abort on a
 // duplicate identifier. Identical text means the write already happened;
-// different text under the same identifier is a conflict and stays one (P4).
+// different text under the same identifier is a conflict and stays one (no-guessing-on-conflict).
 export function alreadyApplied(
   source: string,
   entry: DeltaRequirement,

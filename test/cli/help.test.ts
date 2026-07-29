@@ -13,7 +13,7 @@ const { version } = require("../../package.json") as { version: string };
 //
 // Every case runs against a directory with no `.specd/` in it. That is the
 // point rather than a convenience: a project without a spec tree makes
-// `verify` exit 2 (P8, first instance), so any help path that touched the spec
+// `verify` exit 2 (absence-is-not-compliance, first instance), so any help path that touched the spec
 // would fail here instead of quietly working.
 const bare: string[] = [];
 
