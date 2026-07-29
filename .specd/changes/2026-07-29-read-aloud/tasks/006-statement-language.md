@@ -2,9 +2,9 @@
 id: "006-statement-language"
 change: 2026-07-29-read-aloud
 req: [REQ-READ-007]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["1e768d65ed20731b623c33b9367f25ac2b749393"]
 ---
 
 ## Objetivo
