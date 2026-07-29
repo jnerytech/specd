@@ -2,9 +2,9 @@
 id: "001-claim-the-existing-surface"
 change: 2026-07-fatia-9
 req: [REQ-CLI-008]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["f2ecf8e"]
 ---
 
 ## Objetivo

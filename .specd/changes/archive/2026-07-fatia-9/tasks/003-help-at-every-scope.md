@@ -2,9 +2,9 @@
 id: "003-help-at-every-scope"
 change: 2026-07-fatia-9
 req: [REQ-CLI-010, REQ-CLI-011]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["f2ecf8e"]
 ---
 
 ## Objetivo
