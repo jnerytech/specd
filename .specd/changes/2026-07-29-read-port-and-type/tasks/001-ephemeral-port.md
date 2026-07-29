@@ -2,9 +2,9 @@
 id: "001-ephemeral-port"
 change: 2026-07-29-read-port-and-type
 req: [REQ-READ-009, REQ-READ-005]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["4ae82fd3738cff13f6784020f7e3d9520ab45a5b"]
 ---
 
 ## Objetivo

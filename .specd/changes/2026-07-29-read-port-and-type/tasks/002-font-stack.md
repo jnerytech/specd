@@ -2,9 +2,9 @@
 id: "002-font-stack"
 change: 2026-07-29-read-port-and-type
 req: [REQ-READ-010]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["4ae82fd3738cff13f6784020f7e3d9520ab45a5b"]
 ---
 
 ## Objetivo
