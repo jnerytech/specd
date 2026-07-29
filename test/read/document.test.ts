@@ -98,3 +98,48 @@ describe("buildDocument — REQ-READ-003", () => {
     expect(() => buildDocument(broken, READING)).toThrow(/docs\/gone\.md/);
   });
 });
+
+describe("themeControl — REQ-READ-008", () => {
+  it("offers auto, light and dark, with auto selected", () => {
+    const html = documentOf({ "docs/a.md": "# Alpha\n" }, ["docs"]);
+
+    expect(html).toContain(
+      '<input type="radio" name="theme" id="theme-auto" checked>',
+    );
+    expect(html).toContain(
+      '<input type="radio" name="theme" id="theme-light">',
+    );
+    expect(html).toContain('<input type="radio" name="theme" id="theme-dark">');
+  });
+
+  it("switches with CSS alone, and follows the system until asked otherwise", () => {
+    const html = documentOf({ "docs/a.md": "# Alpha\n" }, ["docs"]);
+
+    expect(html).not.toContain("<script");
+    expect(html).not.toContain("onclick");
+    expect(html).toContain("@media (prefers-color-scheme: dark)");
+    expect(html).toContain("body:has(#theme-light:checked)");
+    expect(html).toContain("body:has(#theme-dark:checked)");
+  });
+
+  // A theme picker between files would be spoken once per file, which is the
+  // failure REQ-READ-004 removes from anchor fences.
+  it("appears once, in the header, outside every section", () => {
+    const html = documentOf(
+      { "docs/a.md": "# Alpha\n", "docs/b.md": "# Beta\n" },
+      ["docs"],
+    );
+
+    expect(html.match(/<fieldset class="theme">/g)).toHaveLength(1);
+    const control = html.indexOf('<fieldset class="theme">');
+    expect(control).toBeLessThan(html.indexOf("<section id="));
+    expect(control).toBeGreaterThan(html.indexOf("<header>"));
+    expect(control).toBeLessThan(html.indexOf("</header>"));
+  });
+
+  it("adds nothing to the word count, which covers the content only", () => {
+    const withTheme = documentOf({ "docs/a.md": "one two three\n" }, ["docs"]);
+
+    expect(withTheme).toMatch(/1 file, 3 words/);
+  });
+});

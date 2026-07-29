@@ -220,9 +220,49 @@ seria reivindicar um comportamento que este repositório não pode verificar. O
 leitor que ignora não perde nada, e é isso que torna a marcação segura de
 escrever sem a medição.
 
+**Medido em 2026-07-29: o leitor testado ignora o atributo.** A voz não mudou
+no statement. A marcação fica, e fica exatamente pelo motivo que este parágrafo
+já dava antes de haver medição: ela não acrescenta nada audível, então o custo
+de manter é zero e o benefício aparece em qualquer leitor que a honre. O que a
+medição mostra não é que o requisito estava errado — é que o requisito estava
+escrito no escopo certo. Um critério de aceite sobre troca de voz teria acabado
+de reprovar por comportamento de terceiro.
+
 ```yaml anchors
 - file: src/read/render.ts
   symbol: "markStatementLanguage"
+```
+
+### REQ-READ-008 — The reader chooses light or dark, without scripting
+
+**Capability.** read
+
+**Statement.** The specd read command SHALL render a theme control that switches the document between light and dark without any scripting.
+
+**Acceptance.**
+
+- O documento abre no tema declarado pelo sistema
+- O controle troca para claro e para escuro sem recarregar a página
+- Nenhum JavaScript é usado para a troca
+- O controle aparece uma vez, no cabeçalho, antes do conteúdo
+- Trocar o tema não acrescenta nem remove nada do texto que será lido
+
+Seguir o sistema sozinho não é ajustável: quem lê de noite num sistema claro, ou
+de dia num sistema escuro, não tem como pedir o contrário — e ler texto longo é
+exatamente onde essa preferência deixa de ser estética.
+
+Sem JavaScript pelo mesmo motivo de REQ-READ-003: o leitor de tela opera sobre o
+DOM entregue, e página que muda de estado por script é página cuja leitura
+depende de o script ter rodado. A troca sai de estado de formulário e seletor
+CSS, que o navegador resolve antes de entregar.
+
+O controle acrescentar zero ao texto lido é critério e não detalhe: um seletor
+de tema no meio do conteúdo seria lido em voz alta a cada arquivo, que é a mesma
+falha que REQ-READ-004 corrige nos blocos de âncora.
+
+```yaml anchors
+- file: src/read/document.ts
+  symbol: "themeControl"
 ```
 
 ## MODIFIED

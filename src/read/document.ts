@@ -46,6 +46,7 @@ export function buildDocument(
     "<header>",
     "<h1>specd — reading view</h1>",
     `<p class="summary">${plural(files.length, "file")}, ${plural(words, "word")}</p>`,
+    themeControl(),
     "</header>",
     contents(sections),
     ...sections.map(
@@ -57,6 +58,38 @@ export function buildDocument(
     "</body>",
     "</html>",
     "",
+  ].join("\n");
+}
+
+// REQ-READ-008 — The reader chooses light or dark, without scripting.
+//
+// Following the system alone is not adjustable: reading at night on a light
+// system, or in daylight on a dark one, leaves no way to ask for the opposite —
+// and long-form reading is exactly where that stops being a matter of taste.
+//
+// No JavaScript, for REQ-READ-003's reason: a screen reader works over the DOM
+// it is handed, and a page whose state depends on a script having run is a page
+// whose reading depends on it too. This is form state plus a CSS selector, both
+// settled before the document is handed over.
+//
+// It lives in the header, outside every `section`: a theme picker between files
+// would be read aloud once per file, which is the failure REQ-READ-004 removes
+// from anchor fences.
+export function themeControl(): string {
+  const choices = [
+    { id: "theme-auto", label: "Auto", checked: true },
+    { id: "theme-light", label: "Light", checked: false },
+    { id: "theme-dark", label: "Dark", checked: false },
+  ];
+  return [
+    '<fieldset class="theme">',
+    "<legend>Theme</legend>",
+    ...choices.map(
+      (choice) =>
+        `<input type="radio" name="theme" id="${choice.id}"${choice.checked ? " checked" : ""}>` +
+        `<label for="${choice.id}">${choice.label}</label>`,
+    ),
+    "</fieldset>",
   ].join("\n");
 }
 
@@ -119,7 +152,28 @@ function escape(text: string): string {
 // No JavaScript, on purpose: a screen reader works over the DOM it is handed,
 // and a page that assembles its content afterwards is a page it reads half of.
 const STYLE = `
-:root { color-scheme: light dark; }
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --fg: #1f2328;
+  --rule: #d0d7de;
+}
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; --bg: #14171a; --fg: #e8e6e3; --rule: #333a41; }
+}
+/* An explicit choice wins over the system, and only then. */
+body:has(#theme-light:checked) {
+  color-scheme: light;
+  --bg: #ffffff;
+  --fg: #1f2328;
+  --rule: #d0d7de;
+}
+body:has(#theme-dark:checked) {
+  color-scheme: dark;
+  --bg: #14171a;
+  --fg: #e8e6e3;
+  --rule: #333a41;
+}
 body {
   margin: 0 auto;
   max-width: 42rem;
@@ -127,13 +181,28 @@ body {
   font-family: Georgia, "Iowan Old Style", serif;
   font-size: 1.125rem;
   line-height: 1.7;
+  background: var(--bg);
+  color: var(--fg);
 }
-header { border-bottom: 1px solid currentColor; margin-bottom: 2rem; }
+fieldset.theme {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: system-ui, sans-serif;
+  font-size: 0.85rem;
+}
+fieldset.theme legend { float: left; padding: 0 0.5rem 0 0; opacity: 0.7; }
+fieldset.theme input { margin: 0 0.15rem 0 0.5rem; }
+fieldset.theme label { opacity: 0.8; }
+header { border-bottom: 1px solid var(--rule); margin-bottom: 2rem; }
 h1, h2, h3, h4 { font-family: system-ui, sans-serif; line-height: 1.3; }
 h2.file {
   margin-top: 3.5rem;
   padding-top: 1rem;
-  border-top: 1px solid currentColor;
+  border-top: 1px solid var(--rule);
   font-size: 1rem;
   opacity: 0.7;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
