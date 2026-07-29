@@ -12,6 +12,7 @@ import { isHookEvent } from "../hooks/protocol.js";
 import { runHook } from "../hooks/run.js";
 import { formatUninstallResult, uninstallHooks } from "../hooks/uninstall.js";
 import { formatInitResult, init } from "../init/index.js";
+import { DEFAULT_PORT, openInBrowser, read } from "../read/index.js";
 import { formatStatus, status } from "../status/index.js";
 import { formatSyncReport, sync } from "../sync/index.js";
 import { verify } from "../verify/index.js";
@@ -44,6 +45,7 @@ export function registerCommands(): Map<string, Command> {
     initCommand,
     verifyCommand,
     statusCommand,
+    readCommand,
     exploreCommand,
     syncCommand,
     archiveCommand,
@@ -109,6 +111,79 @@ const statusCommand: Command = {
     return EXIT.OK;
   },
 };
+
+// REQ-CLI-001: `read` exits 0 or 2 and never 1. It renders prose; it does not
+// resolve an anchor, does not consult the repository state, and has no verdict
+// to deliver about anything.
+const readCommand: Command = {
+  name: "read",
+  summary: "Serve the Markdown as one page, for reading aloud",
+  async run(argv, io): Promise<ExitCode> {
+    if (helpRequested(argv)) return help("read", io);
+    const { positional, options } = parseArguments(
+      argv,
+      ["--port"],
+      ["--all", "--full", "--open"],
+      "read",
+    );
+
+    const session = await read({
+      cwd: io.cwd,
+      paths: positional,
+      all: options.has("--all"),
+      full: options.has("--full"),
+      port: parsePort(options.get("--port")),
+    });
+
+    // REQ-READ-006: printed before anything is launched, and printed whether
+    // or not it is. The URL is the deliverable; the browser is a convenience.
+    io.stdout(
+      `Serving ${session.files} file${session.files === 1 ? "" : "s"} at ${session.url}\n` +
+        `Press Ctrl-C to stop.\n`,
+    );
+
+    if (options.has("--open")) {
+      io.stdout(`Opening ${session.url} in the system browser.\n`);
+      try {
+        await openInBrowser(session.url);
+      } catch (cause) {
+        // The document is served and the URL is on screen. Giving that up
+        // because the system opener is missing would destroy the work that
+        // succeeded over the part that was convenience (REQ-ARC-012's shape).
+        io.stderr(
+          `Could not launch a browser: ${cause instanceof Error ? cause.message : String(cause)}\n` +
+            `The document is still served at ${session.url}.\n`,
+        );
+      }
+    }
+
+    await untilInterrupted();
+    await session.close();
+    return EXIT.OK;
+  },
+};
+
+function parsePort(value: string | undefined): number {
+  if (value === undefined) return DEFAULT_PORT;
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 0 || port > 65535) {
+    throw new UsageError(
+      `Option "--port" takes a port number between 0 and 65535, not "${value}".`,
+      "read",
+    );
+  }
+  return port;
+}
+
+function untilInterrupted(): Promise<void> {
+  return new Promise((resolve) => {
+    process.once("SIGINT", () => {
+      // A newline so the shell prompt does not land beside the ^C.
+      process.stdout.write("\n");
+      resolve();
+    });
+  });
+}
 
 // REQ-CLI-001: `explore` reaches the network and may fail, but only ever
 // operationally — a failed required source is exit 2, not a gate verdict.

@@ -17,6 +17,7 @@
 // are judgement rather than enumeration, and no metadata would produce them.
 
 import { HOOK_EVENTS } from "../hooks/protocol.js";
+import { DEFAULT_PORT } from "../read/server.js";
 
 export interface CommandSummary {
   name: string;
@@ -79,6 +80,29 @@ export const SCOPE_USAGE = {
     summary: "Report drift and pending work, grouped by change.",
     options: [JSON_OPTION],
     note: "Informs; never judges. Always exits 0.",
+  },
+
+  read: {
+    signature: [
+      "specd read [path...] [--all] [--full] [--port <number>] [--open]",
+    ],
+    summary: "Serve the Markdown as one page, for reading aloud.",
+    options: [
+      {
+        flags: "--all",
+        summary: "Include archived changes in the default selection",
+      },
+      { flags: "--full", summary: "Omit nothing: render the Markdown whole" },
+      {
+        flags: "--port <number>",
+        summary: `Port to serve on (default ${DEFAULT_PORT})`,
+      },
+      { flags: "--open", summary: "Launch the system browser on the URL" },
+    ],
+    note:
+      "With no path, reads .specd/specs/ and the open changes; archived changes\n" +
+      "need --all. Binds 127.0.0.1 only and serves from memory, so nothing leaves\n" +
+      "the machine and no route reads the filesystem. Holds until Ctrl-C.",
   },
 
   explore: {
