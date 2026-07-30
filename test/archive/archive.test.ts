@@ -60,7 +60,13 @@ function build(setup: Setup): string {
   });
   const tasksDir = join(workspace.root, ".specd/changes/2026-07-demo/tasks");
   mkdirSync(tasksDir, { recursive: true });
-  writeFileSync(join(tasksDir, "001.md"), task(setup.taskReq ?? []));
+  // A task with an empty `req` is malformed by REQ-FMT-007, and a change whose
+  // delta only removes needs no task at all. Writing one anyway made the
+  // fixture describe a state the schema layer rejects — invisible until
+  // REQ-ARC-002 started reading that layer.
+  if (setup.taskReq !== undefined && setup.taskReq.length > 0) {
+    writeFileSync(join(tasksDir, "001.md"), task(setup.taskReq));
+  }
   spawnSync("git", ["init", "-q"], { cwd: workspace.root, shell: false });
   return workspace.root;
 }

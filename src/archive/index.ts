@@ -7,21 +7,25 @@ import {
   renameSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { join, resolve, sep } from "node:path";
 import { resolveAnchor } from "../anchors/resolve.js";
 import { resolveConfig } from "../config/resolve.js";
-import type { SpecdConfig } from "../config/schema.js";
+import type { SpecdConfig, VerifyLevel } from "../config/schema.js";
 import { OperationalError } from "../core/operational.js";
 import {
   ARCHIVE_DIRECTORY,
   readOpenChanges,
   type OpenChange,
 } from "../verify/changes.js";
-import { effectiveSpecs } from "../verify/effective.js";
-import { coverageLayer } from "../verify/layers/coverage.js";
-import { evidenceLayer } from "../verify/layers/evidence.js";
-import type { VerifyLayerContext } from "../verify/layers/types.js";
+import { effectiveSpecs, type EffectiveSpecs } from "../verify/effective.js";
+import { IMPLEMENTED, LAYER_ORDER } from "../verify/index.js";
+
+import type {
+  VerifyLayer,
+  VerifyLayerContext,
+} from "../verify/layers/types.js";
 import type { Delta } from "../parser/delta.js";
+import type { Diagnostic } from "../parser/diagnostics.js";
 import type { BoardAdapter } from "../sync/adapter.js";
 import { createAdapter } from "../sync/adapters/index.js";
 import { readBoardLinks, type BoardLink } from "../sync/link.js";
@@ -251,13 +255,20 @@ export async function archive(
     pathsRelativeTo: root,
     changes: open,
   });
-  await assertArchivable(change, { root, config, fast: true, effective });
-
+  // REQ-ARC-009: the plan is computed before the preconditions and writes
+  // nothing. It has to come first because REQ-ARC-010's resumption is what
+  // tells the schema precondition which requirements are already applied.
   const specsDir = join(root, ".specd", "specs");
   const plan: ApplicationPlan = planApplication(
     change.delta,
     effective.capabilities,
     specsDir,
+  );
+
+  await assertArchivable(
+    change,
+    { root, config, fast: true, effective },
+    new Set(plan.alreadyApplied),
   );
 
   const destinationDir = archiveDestination(root, change.name);
@@ -357,6 +368,101 @@ export function archiveDestination(root: string, name: string): string {
   return join(root, ".specd", "changes", ARCHIVE_DIRECTORY, name);
 }
 
+// The layers `archive` may demand, in the fixed order of REQ-VER-001.
+//
+// `project` is absent by decision: it runs the project's own validation command,
+// which inside `archive` would duplicate the whole of `verify`, cost minutes on
+// an operation that is already expensive, and give the command its one way to
+// fail that is not about the spec.
+//
+// `anchors` is absent because REQ-ANC-007 is stricter than the layer. The layer
+// grades by origin and returns a warning for a requirement written in a delta,
+// which is every requirement of a change being archived; the archive's own check
+// rejects regardless of policy, and holds whether or not the layer is enabled.
+const PRECONDITION_LEVELS: readonly VerifyLevel[] = LAYER_ORDER.filter(
+  (level) => level !== "project" && level !== "anchors",
+);
+
+// REQ-ARC-002: the list comes from `verify.levels` rather than being written
+// here again. Two lists of the same layers are two chances to disagree, and
+// demanding a layer the project switched off would be a second gate coming in
+// through another door (single-gate).
+export function preconditionLayers(config: SpecdConfig): VerifyLayer[] {
+  return PRECONDITION_LEVELS.filter((level) =>
+    config.verify.levels.includes(level),
+  ).map((level) => IMPLEMENTED[level] as VerifyLayer);
+}
+
+// REQ-ARC-015 — The precondition reads this change and what it rewrites.
+//
+// `effective.diagnostics` carries what the parsers found everywhere: every
+// capability and every open change. Passed through as it is, a delta nobody is
+// archiving would block this archive — which is not rigour, it is coupling
+// between works that Modelo B keeps deliberately independent.
+//
+// The cut mirrors what the command does. It writes into the destination
+// capabilities and moves this change's directory, so it demands those files be
+// readable; it does not touch the other changes, so it does not judge them.
+export function scopedDiagnostics(
+  diagnostics: readonly Diagnostic[],
+  root: string,
+  change: OpenChange,
+  effective: EffectiveSpecs,
+  // REQ-ARC-010: identifiers a resumed run already applied verbatim. An
+  // interrupted archive leaves the change open with its requirement already in
+  // `.specd/specs/`, which the schema layer reads as "ADDED but already
+  // exists". Reading the layer without this exception would make every
+  // resumption impossible — one defect traded for a worse one.
+  alreadyApplied: ReadonlySet<string> = new Set(),
+): Diagnostic[] {
+  const directory = resolve(change.directory);
+  const targets = new Set(
+    targetCapabilities(change, effective).map((capability) =>
+      resolve(root, ".specd", "specs", `${capability}.md`),
+    ),
+  );
+
+  return diagnostics.filter((diagnostic) => {
+    if (
+      diagnostic.requirementId !== undefined &&
+      alreadyApplied.has(diagnostic.requirementId)
+    ) {
+      return false;
+    }
+    // `Diagnostic.file` is absolute or root-relative; resolving both sides is
+    // what keeps the cut from silently letting through what it should stop.
+    const file = resolve(root, diagnostic.file);
+    return (
+      file === directory ||
+      file.startsWith(`${directory}${sep}`) ||
+      targets.has(file)
+    );
+  });
+}
+
+// The capabilities this delta rewrites. An ADDED block declares its own; a
+// MODIFIED one inherits from wherever the identifier already lives.
+function targetCapabilities(
+  change: OpenChange,
+  effective: EffectiveSpecs,
+): string[] {
+  const capabilities = new Set<string>();
+  for (const entry of [
+    ...(change.delta?.added ?? []),
+    ...(change.delta?.modified ?? []),
+  ]) {
+    if (entry.capability !== undefined) {
+      capabilities.add(entry.capability);
+      continue;
+    }
+    const existing = effective.requirements.find(
+      (candidate) => candidate.requirement.id === entry.requirement.id,
+    );
+    if (existing !== undefined) capabilities.add(existing.capability);
+  }
+  return [...capabilities];
+}
+
 // REQ-ARC-002 — Preconditions gate the operation.
 //
 // Exit 2, not 1: `archive` refusing because the change is not ready is a
@@ -365,14 +471,25 @@ export function archiveDestination(root: string, name: string): string {
 export async function assertArchivable(
   change: OpenChange,
   ctx: VerifyLayerContext,
+  alreadyApplied: ReadonlySet<string> = new Set(),
 ): Promise<void> {
   const problems = assertAllAnchorsResolved(change, ctx);
 
   const scoped: VerifyLayerContext = {
     ...ctx,
-    effective: { ...ctx.effective, changes: [change] },
+    effective: {
+      ...ctx.effective,
+      changes: [change],
+      diagnostics: scopedDiagnostics(
+        ctx.effective.diagnostics,
+        ctx.root,
+        change,
+        ctx.effective,
+        alreadyApplied,
+      ),
+    },
   };
-  for (const layer of [coverageLayer, evidenceLayer]) {
+  for (const layer of preconditionLayers(ctx.config)) {
     const result = await layer.run(scoped);
     for (const violation of result.violations) {
       if (violation.severity !== "error") continue;

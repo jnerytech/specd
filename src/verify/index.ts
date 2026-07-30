@@ -32,7 +32,7 @@ export const LAYER_ORDER: readonly VerifyLevel[] = VERIFY_LEVELS;
 // so does the check below: a layer named in the configuration but absent here
 // must be a configuration error, never a silent pass — a gate that quietly
 // skips a layer the project asked for is reporting a check it never ran.
-const IMPLEMENTED: Readonly<Record<string, VerifyLayer>> = {
+export const IMPLEMENTED: Readonly<Record<string, VerifyLayer>> = {
   provenance: provenanceLayer,
   schema: schemaLayer,
   coverage: coverageLayer,
