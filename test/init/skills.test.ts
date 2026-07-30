@@ -54,6 +54,19 @@ describe("packaged skills — REQ-SKL-001", () => {
     expect(manifest.files).toContain("skills");
   });
 
+  it("references no path that climbs out of the package directory", () => {
+    for (const skill of SKILL_MANIFEST) {
+      // A skill travels inside the tarball; a relative path climbing out of it
+      // resolves to whatever happens to sit beside the install, which is not
+      // something the package can promise.
+      const lines = packaged(skill.name)
+        .split("\n")
+        .filter((line) => line.includes("../"));
+
+      expect(lines).toEqual([]);
+    }
+  });
+
   it("puts every skill inside the tarball, and nothing private with them", () => {
     const output = execFileSync(
       "npm",
