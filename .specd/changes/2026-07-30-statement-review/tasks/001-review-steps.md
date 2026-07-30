@@ -4,7 +4,9 @@ change: 2026-07-30-statement-review
 req: [REQ-SKL-007, REQ-SKL-008]
 status: done
 evidence:
-  commits: ["8a41a38c046f20746b712bb45ecd5a8f5fa92cf7"]
+  commits:
+    - "8a41a38c046f20746b712bb45ecd5a8f5fa92cf7"
+    - "e1c25a19cf7183e10daed34813455627782330ec"
 ---
 
 ## Objetivo
