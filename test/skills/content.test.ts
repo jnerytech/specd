@@ -101,6 +101,14 @@ describe("propose reviews the statements it writes — REQ-SKL-007", () => {
     expect(propose).toMatch(/Todo crit\u00e9rio tem teste poss\u00edvel\?/);
   });
 
+  it("declares how a requirement about skill behaviour satisfies that check", () => {
+    expect(propose).toContain("Requisito sobre comportamento de skill é a");
+    expect(propose).toContain("no-llm-in-decision-path");
+    expect(propose).toMatch(
+      /n\u00e3o reprove o\s+requisito por ser o que \u00e9/,
+    );
+  });
+
   it("sends what it cannot decide to the author, and rewrites nothing", () => {
     expect(propose).toContain("ferramenta de pergunta do host");
     expect(propose).toMatch(/n\u00e3o reescreve enunciado/);
@@ -124,6 +132,16 @@ describe("archive reviews what changed — REQ-SKL-008", () => {
 
   it("takes in a requirement rewritten during the apply", () => {
     expect(archive).toContain("reescrito durante o apply");
+  });
+
+  it("takes in a requirement that did not exist at proposal time", () => {
+    expect(archive).toContain("requisito que não existia no propose");
+  });
+
+  it("keeps one rule about an open task, and says the CLI does not enforce it", () => {
+    expect(archive).toContain("pré-condição dura, não pergunta");
+    expect(archive).not.toMatch(/task ficou `pending`/);
+    expect(archive).toContain("O CLI não impõe isso");
   });
 
   it("takes in an anchor that went from dangling to resolved", () => {

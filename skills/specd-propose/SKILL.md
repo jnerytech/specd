@@ -67,8 +67,6 @@ a próxima pessoa de desfazer a decisão sem saber que existiu.
 ```
 ````
 
-````
-
 Regras que o gate cobra:
 
 - **Um `SHALL` por statement.** Dois comportamentos são dois requisitos.
@@ -103,6 +101,14 @@ histórico. Depois do archive o mesmo conserto é change própria com `MODIFIED`
 3. **Todo critério tem teste possível?** Não o teste escrito — o teste que dá
    para escrever. Critério que ninguém consegue verificar é prosa com marcador.
 
+   Requisito sobre comportamento de skill é a exceção declarada: nenhuma
+   asserção verifica que uma skill _faz três perguntas_, porque quem executa é
+   um agente lendo markdown. Nesses, o teste possível é sobre o texto do
+   `SKILL.md` — verificação fraca e honesta. É a mesma razão que põe o
+   comportamento numa skill e não no CLI: julgamento no caminho de decisão é o
+   que `no-llm-in-decision-path` proíbe. Aponte a exceção; não reprove o
+   requisito por ser o que é.
+
 O que essas três não resolverem vai ao autor pela ferramenta de pergunta do
 host, com as opções concretas. A skill aponta; ela não reescreve enunciado por
 conta própria, e não decide sozinha o que é bom enunciado.
@@ -124,7 +130,7 @@ status: pending
 evidence:
   commits: []
 ---
-````
+```
 
 Todo requisito do delta precisa de pelo menos uma task que o cite, ou a camada
 `coverage` reprova.

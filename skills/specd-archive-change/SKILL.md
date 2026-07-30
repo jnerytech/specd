@@ -34,7 +34,14 @@ specd verify
 Verde, sem exceção. Gate vermelho volta para `specd-apply-change` — esta skill
 não conserta nada.
 
-Toda task da change precisa estar `done` com SHA em `evidence.commits`.
+Toda task da change precisa estar `done` com SHA em `evidence.commits`. É
+pré-condição dura, não pergunta: task aberta significa trabalho que a change
+declarou e não entregou, e arquivar promove o requisito dela a verdade
+realizada mesmo assim.
+
+O CLI não impõe isso — `archive` não olha o status das tasks. A regra vive aqui,
+o que quer dizer que ela pode ser esquecida; enquanto for assim, esta skill é o
+único lugar que a cobra.
 
 Não existe arquivamento provisório, nem arquivamento que deixa o board para
 depois.
@@ -47,6 +54,10 @@ statement afirma?**
 Entram na revisão:
 
 - requisito cujo texto foi reescrito durante o apply
+- **requisito que não existia no propose** — o passo 4 desta mesma família manda
+  escrever no delta o que a execução descobriu, e esse requisito não passou pela
+  revisão do propose; é o caminho mais provável de enunciado ruim, escrito sob
+  pressão de implementação
 - âncora que passou de pendurada a resolvida — mesmo com a declaração
   inalterada, porque o que mudou foi o símbolo passar a existir
 
@@ -123,7 +134,6 @@ Nada foi commitado nem staged: o diff é para ser lido antes de virar história.
 
 Use a ferramenta de pergunta do host, com opções, sempre que:
 
-- o gate está verde mas alguma task ficou `pending` ou `blocked`
 - o delta contradiz o que está em `.specd/specs/`
 - o board está configurado e inalcançável — **pare**; não arquive "só
   localmente por enquanto" sem que isso seja uma decisão declarada do autor

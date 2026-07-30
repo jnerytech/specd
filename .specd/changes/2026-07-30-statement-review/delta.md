@@ -21,6 +21,7 @@ estreita antes de congelar.
 - Statement com mais de um `SHALL`, ou com critério que descreve comportamento fora do assunto do statement, é apontado
 - Statement que quantifica sobre um conjunto que as âncoras declaradas não alcançam é apontado
 - Critério de aceite que nenhum teste conseguiria verificar é apontado
+- Requisito sobre comportamento de skill satisfaz o critério de teste por asserção sobre o texto do `SKILL.md`, e a revisão diz isso em vez de reprovar
 - O que a skill não consegue decidir vira pergunta ao autor, por REQ-SKL-005
 - A skill não reescreve enunciado por conta própria
 
@@ -30,7 +31,16 @@ própria com MODIFIED, e trocar âncora vira churn de identificador.
 
 A revisão é mecânica de propósito. Contar `SHALL`, comparar o que o statement
 quantifica com o que as âncoras alcançam, e perguntar de cada critério se existe
-teste que o verifique — três perguntas com resposta observável. O que sobra vai
+teste que o verifique — três perguntas com resposta observável.
+
+A terceira tem um limite, e ele vai escrito porque senão volta como defeito. Não
+existe teste que verifique que uma skill *faz três perguntas*: comportamento de
+skill é executado por um agente lendo markdown, e nenhuma asserção alcança isso.
+O que alcança é o texto — se a instrução está lá, verificável por asserção sobre
+o `SKILL.md`. É verificação fraca e é honesta, e é a mesma razão que põe esse
+comportamento numa skill e não no CLI: julgamento no caminho de decisão é o que
+`no-llm-in-decision-path` proíbe. Um requisito sobre comportamento de skill que
+fosse reprovado por "não tem teste" reprovaria por ser o que é. O que sobra vai
 ao autor em vez de virar juízo da skill, que é REQ-SKL-005 fazendo o trabalho que
 já era dele.
 
@@ -42,11 +52,12 @@ já era dele.
 
 **Capability.** skills
 
-**Statement.** WHEN the specd archive skill runs, the skill SHALL ask of every requirement whose text or anchor resolution changed since the proposal whether its anchors realize the behaviour the statement describes.
+**Statement.** WHEN the specd archive skill runs, the skill SHALL ask of every requirement that did not exist at proposal time, or whose text or anchor resolution changed since it, whether its anchors realize the behaviour the statement describes.
 
 **Acceptance.**
 
 - Requisito reescrito durante o apply entra na revisão
+- Requisito que não existia no propose entra na revisão
 - Âncora que passou de pendurada a resolvida entra na revisão, mesmo com a declaração inalterada
 - Requisito inalterado e com âncora já resolvida no propose fica fora
 - Âncora que resolve para símbolo que não realiza o comportamento enunciado vira pergunta ao autor, e o arquivamento espera
@@ -56,6 +67,15 @@ No propose essa pergunta não tem resposta: o requisito é `origin: delta` e o
 símbolo pode não existir, então "a âncora realiza o comportamento?" só produziria
 resposta inventada. No archive ela tem — o apply escreveu o código, e a âncora
 que estava pendurada agora resolve.
+
+Requisito que nasce durante o apply é a terceira entrada, e ele escapava das duas
+janelas pela letra: não passou pelo propose, seu texto nunca foi *reescrito*, e a
+âncora que ele declara aponta para código que já existe naquele instante, então
+nunca esteve *pendurada*. É também o caminho mais provável de enunciado ruim —
+escrito sob pressão de implementação, sem a cerimônia do propose. O passo de
+`specd-apply-change` que manda escrever no delta o que a execução descobriu é a
+razão de o delta ser a superfície de escrita, e era a porta por onde requisito
+entrava sem ninguém ler.
 
 O critério sobre requisito reescrito durante o apply não é exercitado por
 nenhum dos quatro enunciados fracos, e fica assim mesmo, com a instância real
