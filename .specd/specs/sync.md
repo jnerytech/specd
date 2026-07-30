@@ -415,3 +415,30 @@ as tasks e não olhava `delta.removed` — mesma forma da correção anterior, e
 - file: src/sync/index.ts
   symbol: "export function findOrphanedLinks"
 ```
+
+### REQ-SYNC-017 — An archival transition is declared and proved
+
+**Statement.** WHERE `board.mapping.archived_status` is configured, the specd board adapter SHALL move the item to that status and re-read the item to prove the transition was applied.
+
+**Acceptance.**
+
+- O alvo vem do nome configurado; nome que o board não tem sai 2 listando os status existentes
+- Resposta de sucesso sem a transição aplicada sai 2 citando o status atual
+- Sem `archived_status` configurado, nenhuma transição é tentada
+- A transição não fecha o item; fechar continua sendo REQ-SYNC-014
+
+O adaptador só sabia matar. Board com `Em homologação` e `Aguardando Deploy`
+entre `Em curso` e `Fechada` não tem onde receber "pronto para homologar", e a
+alternativa era fechar cedo — o que apaga do board o trabalho que ainda tem
+etapa pela frente.
+
+A releitura é a mesma de REQ-SYNC-014, pela mesma razão medida: o Redmine
+aceita `status_id`, responde 204 e não aplica. Resposta de sucesso não é prova
+de que a escrita aconteceu; quem confirma é a releitura.
+
+```yaml anchors
+- file: src/sync/adapters/redmine.ts
+  symbol: "async transition"
+- file: src/sync/adapter.ts
+  symbol: "export interface BoardAdapter"
+```

@@ -197,3 +197,27 @@ lugares novos; este é o segundo a ganhar contrato.
 - file: test/init/config-template.test.ts
   symbol: "covers every ConfigSchema key"
 ```
+
+### REQ-CFG-012 — The board declares whether a card is required
+
+**Statement.** The specd configuration SHALL accept `board.card` with the values `required` and `optional`, defaulting to `required` when a board is configured.
+
+**Acceptance.**
+
+- Valor fora do conjunto é erro de configuração
+- Sem `[board]` configurado, a chave não é exigida e não tem efeito
+- O default só se aplica quando há board; repositório sem board não passa a exigir card
+- A chave aparece no template do `init`, por REQ-CFG-011
+
+O modo é lido, nunca inferido. Uma skill que olha o repositório e conclui
+"parece que aqui tem board" está tomando decisão de ciclo por semelhança, que é
+o que no-guessing-on-conflict proíbe.
+
+O default é `required` porque board configurado e change sem card é a situação
+que produz trabalho invisível para quem acompanha pelo board — e ausência de
+dado não é conformidade.
+
+```yaml anchors
+- file: src/config/schema.ts
+  symbol: "BOARD_CARD_MODES"
+```

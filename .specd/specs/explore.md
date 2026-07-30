@@ -139,3 +139,46 @@ trabalho pronto.
 - file: src/explore/sources/mcp.ts
   symbol: "export const mcpCollector"
 ```
+
+### REQ-EXP-010 — The exploration notes sit beside the bundle and are never validated
+
+**Statement.** The specd explore command SHALL leave `explore/notes.md` untouched whenever it writes or rewrites a bundle.
+
+**Acceptance.**
+
+- Duas execuções seguidas não apagam nem reescrevem `notes.md`
+- `notes.md` não entra no manifest
+- Nenhuma camada do gate lê `notes.md`
+
+A prosa da exploração e o bundle de máquina dividem o diretório porque são a
+mesma exploração vista de dois lados. Dividir por diretório separaria coisas que
+se leem juntas; dividir por dono deixa claro quem escreve o quê.
+
+Não validar é escolha, e é a mesma de REQ-EXP-007: rascunho que precisa passar
+por schema deixa de ser rascunho, e a exploração perde o único momento do ciclo
+em que se pode escrever errado de propósito.
+
+```yaml anchors
+- file: src/explore/paths.ts
+  symbol: "NOTES_FILE"
+```
+
+### REQ-EXP-011 — A card that contradicts the change stops the run
+
+**Statement.** IF the change declares a `card` and the argument of the specd explore command names a different card, THEN specd SHALL exit 2 naming both.
+
+**Acceptance.**
+
+- Card igual ao declarado prossegue
+- Card diferente sai 2 citando o declarado e o recebido
+- Change sem `card` declarado prossegue, e o comando não grava card por conta própria
+
+Coletar contexto de um card e guardá-lo na change de outro é a forma mais barata
+de produzir bundle que justifica trabalho que ninguém pediu. O comando não
+escolhe qual dos dois vale, e não corrige a frontmatter: os dois lados foram
+escritos por gente, e adivinhar qual está certo é adivinhar.
+
+```yaml anchors
+- file: src/explore/card-ref.ts
+  symbol: "assertCardMatchesChange"
+```

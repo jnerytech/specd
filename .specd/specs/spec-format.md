@@ -182,3 +182,24 @@ envelhecer em silêncio.
 - file: test/parser/documented-examples.test.ts
   symbol: "documented examples parse"
 ```
+
+### REQ-FMT-011 — Change frontmatter declares its board card
+
+**Statement.** The specd parser SHALL require every change to declare `change` and `status` in the frontmatter of `proposal.md`, and to declare `card` with a board reference and a URL wherever `board.card` is `required`.
+
+**Acceptance.**
+
+- `proposal.md` ausente, ou sem `change`, reprova
+- `card` com `ref` e sem `url`, ou o contrário, reprova
+- `board.card = "optional"` aceita change sem `card`
+- `card` declarado é aceito em qualquer modo
+
+A ligação com o board vive na frontmatter da spec, por REQ-SYNC-007, e é por
+item — capability, requisito ou task. Nada dizia de qual card a change nasceu.
+Sem esse campo, a identidade externa da change existe só no manifest do bundle,
+que é registro de coleta e não declaração de quem a change serve.
+
+```yaml anchors
+- file: src/parser/change.ts
+  symbol: "ChangeFrontmatterSchema"
+```
