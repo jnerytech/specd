@@ -80,3 +80,63 @@ describe("an unreachable board stops the skill — REQ-SKL-006", () => {
     expect(skill("specd-explore")).toMatch(/nunca da aparência|nunca conclua/i);
   });
 });
+
+// REQ-SKL-007 — the proposing skill reviews every statement it writes.
+describe("propose reviews the statements it writes — REQ-SKL-007", () => {
+  const propose = skill("specd-propose");
+
+  it("checks that a statement carries one subject", () => {
+    expect(propose).toMatch(/Um assunto\?/);
+    expect(propose).toMatch(/Um `SHALL` por statement/);
+  });
+
+  it("checks the quantification against the reach of the anchors", () => {
+    expect(propose).toMatch(
+      /quantifica\u00e7\u00e3o cabe no alcance da \u00e2ncora/i,
+    );
+    expect(propose).toContain("afirma quatro coisas e verifica uma");
+  });
+
+  it("checks that every acceptance criterion could be tested", () => {
+    expect(propose).toMatch(/Todo crit\u00e9rio tem teste poss\u00edvel\?/);
+  });
+
+  it("sends what it cannot decide to the author, and rewrites nothing", () => {
+    expect(propose).toContain("ferramenta de pergunta do host");
+    expect(propose).toMatch(/n\u00e3o reescreve enunciado/);
+  });
+
+  it("keeps the anchor question out of the proposal, where it has no answer", () => {
+    expect(propose).toContain("o símbolo pode não existir");
+    expect(propose).toContain("specd-archive-change");
+  });
+});
+
+// REQ-SKL-008 — the archiving skill reviews what changed since the proposal.
+describe("archive reviews what changed — REQ-SKL-008", () => {
+  const archive = skill("specd-archive-change");
+
+  it("asks whether the anchor realizes what the statement affirms", () => {
+    expect(archive).toMatch(
+      /a \u00e2ncora realiza o que o\s+statement afirma/i,
+    );
+  });
+
+  it("takes in a requirement rewritten during the apply", () => {
+    expect(archive).toContain("reescrito durante o apply");
+  });
+
+  it("takes in an anchor that went from dangling to resolved", () => {
+    expect(archive).toContain("passou de pendurada a resolvida");
+    expect(archive).toContain("declaração\n  inalterada");
+  });
+
+  it("leaves out what did not change", () => {
+    expect(archive).toMatch(/Fica de fora o requisito que n\u00e3o mudou/);
+  });
+
+  it("stops the archive and asks, instead of rewriting the anchor", () => {
+    expect(archive).toContain("para o arquivamento");
+    expect(archive).toMatch(/n\u00e3o reescreve \u00e2ncora/);
+  });
+});

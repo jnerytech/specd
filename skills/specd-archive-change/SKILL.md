@@ -39,6 +39,32 @@ Toda task da change precisa estar `done` com SHA em `evidence.commits`.
 Não existe arquivamento provisório, nem arquivamento que deixa o board para
 depois.
 
+### Rever o que mudou desde o propose
+
+Uma pergunta só, e sobre um recorte estreito: **a âncora realiza o que o
+statement afirma?**
+
+Entram na revisão:
+
+- requisito cujo texto foi reescrito durante o apply
+- âncora que passou de pendurada a resolvida — mesmo com a declaração
+  inalterada, porque o que mudou foi o símbolo passar a existir
+
+Fica de fora o requisito que não mudou e cuja âncora já resolvia no propose.
+Reler o delta inteiro aqui é revisão que alguém pula, e revisão pulada é pior
+que revisão ausente: parece existir.
+
+Âncora que resolve para símbolo que **não** realiza o comportamento enunciado é
+o achado que esta revisão existe para pegar. Ela resolve para sempre, o gate
+nunca reclama, e o requisito passa a afirmar verificação que ninguém faz —
+pior que âncora ausente, que ao menos aparece no `coverage` e no
+`anchor suggest`.
+
+Achado aqui **para o arquivamento** e vira pergunta ao autor pela ferramenta do
+host. A skill não reescreve âncora por conta própria. Trocar âncora depois do
+archive é churn de identificador em requisito promovido; trocar antes custa uma
+linha de delta.
+
 ## 2. Anunciar antes de escrever
 
 Diga, antes de rodar qualquer coisa:

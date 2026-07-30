@@ -86,6 +86,31 @@ Regras que o gate cobra:
 Âncora pode apontar para símbolo que ainda não existe. Com `origin: delta` isso
 é warning, e é esse afrouxamento que torna possível propor antes de implementar.
 
+### Revisar cada statement antes de seguir
+
+Três perguntas mecânicas, por requisito escrito. Corrigir aqui é gratuito: o
+requisito ainda é `origin: delta`, nenhuma task o cita, nenhuma âncora tem
+histórico. Depois do archive o mesmo conserto é change própria com `MODIFIED`.
+
+1. **Um assunto?** Um `SHALL` por statement — o gate já cobra isso. E nenhum
+   critério de aceite descrevendo comportamento que o statement não menciona:
+   "sai 0 sempre que consegue ler" com um critério sobre requisição de rede são
+   dois requisitos escritos como um.
+2. **A quantificação cabe no alcance da âncora?** Statement que diz "toda skill"
+   com âncora num arquivo de skill afirma quatro coisas e verifica uma — apagar
+   as outras três não move o gate. Ou a âncora cobre o que o statement
+   quantifica, ou o statement fala do que a âncora alcança.
+3. **Todo critério tem teste possível?** Não o teste escrito — o teste que dá
+   para escrever. Critério que ninguém consegue verificar é prosa com marcador.
+
+O que essas três não resolverem vai ao autor pela ferramenta de pergunta do
+host, com as opções concretas. A skill aponta; ela não reescreve enunciado por
+conta própria, e não decide sozinha o que é bom enunciado.
+
+Uma pergunta que **não** cabe aqui: "a âncora realiza o comportamento?". No
+propose o símbolo pode não existir, e perguntar produziria resposta inventada.
+Ela é da `specd-archive-change`.
+
 ## 4. Escrever as tasks
 
 `tasks/NNN-nome.md`, uma por unidade de trabalho:
