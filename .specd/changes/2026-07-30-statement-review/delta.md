@@ -21,7 +21,7 @@ estreita antes de congelar.
 - Statement com mais de um `SHALL`, ou com critério que descreve comportamento fora do assunto do statement, é apontado
 - Statement que quantifica sobre um conjunto que as âncoras declaradas não alcançam é apontado
 - Critério de aceite que nenhum teste conseguiria verificar é apontado
-- Requisito sobre comportamento de skill satisfaz o critério de teste por asserção sobre o texto do `SKILL.md`, e a revisão diz isso em vez de reprovar
+- Critério que proíbe uma ação futura do agente é isento do teste, e a revisão o nomeia como não-testável por construção em vez de deixá-lo passar calado
 - O que a skill não consegue decidir vira pergunta ao autor, por REQ-SKL-005
 - A skill não reescreve enunciado por conta própria
 
@@ -33,14 +33,21 @@ A revisão é mecânica de propósito. Contar `SHALL`, comparar o que o statemen
 quantifica com o que as âncoras alcançam, e perguntar de cada critério se existe
 teste que o verifique — três perguntas com resposta observável.
 
-A terceira tem um limite, e ele vai escrito porque senão volta como defeito. Não
-existe teste que verifique que uma skill *faz três perguntas*: comportamento de
-skill é executado por um agente lendo markdown, e nenhuma asserção alcança isso.
-O que alcança é o texto — se a instrução está lá, verificável por asserção sobre
-o `SKILL.md`. É verificação fraca e é honesta, e é a mesma razão que põe esse
-comportamento numa skill e não no CLI: julgamento no caminho de decisão é o que
-`no-llm-in-decision-path` proíbe. Um requisito sobre comportamento de skill que
-fosse reprovado por "não tem teste" reprovaria por ser o que é. O que sobra vai
+A terceira tem um limite, e o limite é estreito de propósito. Critério que diz
+que a instrução está no `SKILL.md` é verificável por asserção sobre o texto —
+fraca, e real. O que não tem verificação nenhuma é critério que **proíbe** uma
+ação futura do agente: nenhuma asserção prova que algo não será feito. Só essa
+forma é isenta.
+
+A isenção larga — "requisito sobre comportamento de skill" — seria portão aberto,
+e a população que o atravessaria é conhecida: três dos quatro enunciados fracos
+deste repositório vivem na capability `skills` e se declarariam isentos. A exceção
+engoliria a regra que este requisito existe para instituir.
+
+Em troca de não ter teste, o critério isento é nomeado dentro da própria revisão
+como não-testável por construção. Isenção anotada é diferente de isenção
+implícita: a primeira deixa rastro de que alguém olhou, a segunda é indistinguível
+de descuido — que é `absence-is-not-compliance` outra vez, agora sobre a revisão. O que sobra vai
 ao autor em vez de virar juízo da skill, que é REQ-SKL-005 fazendo o trabalho que
 já era dele.
 
