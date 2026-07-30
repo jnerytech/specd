@@ -2,9 +2,9 @@
 id: "001-refuse"
 change: 2026-07-30-sync-unborn-capability
 req: [REQ-SYNC-018]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["3d1c297104e3d7aa9740f9a2fcb31103ab686193"]
 ---
 
 ## Objetivo
