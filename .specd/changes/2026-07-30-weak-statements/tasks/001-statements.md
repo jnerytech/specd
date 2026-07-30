@@ -2,9 +2,9 @@
 id: "001-statements"
 change: 2026-07-30-weak-statements
 req: [REQ-EFF-003, REQ-EFF-004, REQ-SKL-001, REQ-SKL-003, REQ-SKL-004, REQ-SKL-005, REQ-SKL-006]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["392a72c4ecf392b9bd09a837d7a1371b3a3e2cce"]
 ---
 
 ## Objetivo
