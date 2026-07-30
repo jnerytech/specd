@@ -2,9 +2,9 @@
 id: "001-preconditions"
 change: 2026-07-30-archive-preconditions
 req: [REQ-ARC-002, REQ-ARC-015]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["05940f4945322852838057966aebae557e366506"]
 ---
 
 ## Objetivo

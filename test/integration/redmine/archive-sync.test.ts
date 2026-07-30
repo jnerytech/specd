@@ -51,6 +51,17 @@ function makeBase(capability: string, board = true): string {
 function addChange(root: string, capability: string): string {
   const dir = join(root, ".specd", "changes", "demo-change");
   mkdirSync(join(dir, "tasks"), { recursive: true });
+  // REQ-FMT-011 and REQ-CFG-012: a change declares `change` and `status`, and a
+  // card wherever the board demands one. These fixtures had neither and passed
+  // only while `archive` did not read the schema layer — the state they
+  // described is one this repository's own gate rejects. A declared card is
+  // accepted in either mode, so it is written whether or not the board is on.
+  writeFileSync(
+    join(dir, "proposal.md"),
+    `---\nchange: demo-change\nstatus: active\n` +
+      `card:\n  ref: "1"\n  url: "${env.url}/issues/1"\n---\n\n# demo-change\n`,
+    "utf8",
+  );
   writeFileSync(
     join(dir, "delta.md"),
     `---
