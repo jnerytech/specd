@@ -11,16 +11,26 @@ retired: []
 
 - `npm pack` lista um diretório por skill, cada um com `SKILL.md`
 - `files` do `package.json` inclui a árvore das skills
-- Nenhuma skill referencia caminho fora do pacote
+- Nenhum `SKILL.md` referencia caminho que suba do diretório do pacote
 - O tarball continua sem `.env`, `.specd/`, `sandbox/` e `test/`
 
-Skill que mora só neste repositório serve a este repositório. O ciclo é o
-produto, e produto que só o autor consegue rodar não foi entregue.
+O statement afirma sobre as quatro skills e a âncora alcançava uma: apagar
+qualquer das outras três não movia o gate. A lista de âncoras passa a declarar o
+conjunto que o statement quantifica, e o gate resolve cada entrada — apagar
+qualquer uma reprova.
+
+O critério que dizia "nenhuma skill referencia caminho fora do pacote" não tinha
+teste, e não tinha porque não dizia o que observar. Reescrito para o que se
+observa: caminho relativo que sobe de diretório. Critério que ninguém consegue
+verificar é prosa com marcador, e este era.
 
 ```yaml anchors
 - file: package.json
   symbol: "\"files\""
 - file: skills/specd-explore/SKILL.md
+- file: skills/specd-propose/SKILL.md
+- file: skills/specd-apply-change/SKILL.md
+- file: skills/specd-archive-change/SKILL.md
 ```
 
 ### REQ-SKL-002 — Installing the skills is asked for and never silent
@@ -55,19 +65,25 @@ editou sem perguntar é as duas coisas erradas de uma vez.
 - Versão maior ou igual prossegue
 - A mensagem de parada nomeia a versão instalada e a exigida
 
-A skill viaja no pacote e o pacote é instalado em versão qualquer. Skill nova
-citando comando que a CLI instalada não tem falha de um jeito específico e
-ruim: o comando não existe, a skill improvisa, e improvisar aqui significa
-reconstruir a spec efetiva por conta própria.
+A âncora era `src/init/skills.ts :: SKILL_MANIFEST`, que resolve e não realiza: o
+manifesto instala as skills, e a parada que o statement descreve mora no texto de
+cada uma delas. Âncora que resolve sem realizar o comportamento é pior que âncora
+ausente — ela resolve para sempre, o gate nunca reclama, e o requisito passa a
+afirmar verificação que ninguém faz, enquanto a ausente ao menos aparece no
+`coverage` e no `anchor suggest`.
+
+O statement não muda: ele já estava certo. Muda para onde ele aponta.
 
 ```yaml anchors
-- file: src/init/skills.ts
-  symbol: "SKILL_MANIFEST"
+- file: skills/specd-explore/SKILL.md
+- file: skills/specd-propose/SKILL.md
+- file: skills/specd-apply-change/SKILL.md
+- file: skills/specd-archive-change/SKILL.md
 ```
 
 ### REQ-SKL-004 — A skill reads the spec through the CLI
 
-**Statement.** Every specd skill SHALL obtain the effective specification from the specd spec command.
+**Statement.** Every specd skill that needs the effective specification SHALL obtain it from the specd spec command.
 
 **Acceptance.**
 
@@ -75,13 +91,20 @@ reconstruir a spec efetiva por conta própria.
 - Cada skill que precisa da spec efetiva cita `specd spec --json`
 - Ler um arquivo que `specd spec` apontou continua permitido; reconstruir o overlay não
 
+O statement dizia `Every specd skill` e o comportamento não é de todas: a skill
+de archive entrega a change ao `specd archive`, que calcula o overlay sozinho. A
+quantificação passa a nomear a condição — precisar da spec efetiva — e as âncoras
+declaram exatamente as três skills em que isso acontece.
+
 A fronteira entre as duas camadas é esta linha. A skill prepara material e lê o
 veredito; ela não recalcula o que o CLI decide. Overlay reconstruído por LLM é
-decisão de LLM no caminho do ciclo, com a agravante de ser invisível — ninguém
-vê que a spec que a skill leu não é a que o gate lê.
+decisão de LLM no caminho do ciclo, com a agravante de ser invisível — ninguém vê
+que a spec que a skill leu não é a que o gate lê.
 
 ```yaml anchors
 - file: skills/specd-explore/SKILL.md
+- file: skills/specd-propose/SKILL.md
+- file: skills/specd-apply-change/SKILL.md
 ```
 
 ### REQ-SKL-005 — A decision goes to the author through the question tool
@@ -94,17 +117,23 @@ vê que a spec que a skill leu não é a que o gate lê.
 - Nenhuma skill instrui a escolher o candidato mais provável
 - Card ambíguo, duas changes abertas sobre o mesmo requisito e delta que contradiz a capability param o ciclo e viram pergunta
 
+O statement quantifica sobre qualquer skill do ciclo, e o comportamento é mesmo
+das quatro. O que faltava era a âncora cobrir o que ele afirma.
+
 Pergunta em prosa no meio de uma resposta longa se perde e volta respondida pela
-metade. A ferramenta força opções mutuamente exclusivas e registra a escolha —
-e o que não é apresentado para decisão explícita não foi decidido, foi assumido.
+metade. A ferramenta força opções mutuamente exclusivas e registra a escolha — e
+o que não é apresentado para decisão explícita não foi decidido, foi assumido.
 
 ```yaml anchors
+- file: skills/specd-explore/SKILL.md
 - file: skills/specd-propose/SKILL.md
+- file: skills/specd-apply-change/SKILL.md
+- file: skills/specd-archive-change/SKILL.md
 ```
 
 ### REQ-SKL-006 — A configured board that cannot be reached stops the skill
 
-**Statement.** IF a board is configured and cannot be reached, THEN the specd skill SHALL stop and report the failure.
+**Statement.** IF a board is configured and cannot be reached, THEN every specd skill that talks to the board SHALL stop and report the failure.
 
 **Acceptance.**
 
@@ -113,11 +142,18 @@ e o que não é apresentado para decisão explícita não foi decidido, foi assu
 - Falha de credencial, falha de rede e card não encontrado têm o mesmo desfecho
 - A rodada hostil da validação prova a parada
 
+O statement dizia `the specd skill`, no singular indefinido, e a âncora alcançava
+uma. O comportamento é das três que tocam o board: a skill de apply não fala com
+ele por decisão — o board recebe intenção e resultado, não ruído de execução — e
+afirmar sobre ela seria contradizer a matriz de escrita.
+
 Board configurado e inalcançável é falha, não ausência. Cair para o modo sem
 board transforma "não consegui verificar" em "verifiquei e está tudo certo", que
 são resultados diferentes e um deles nunca é verde.
 
 ```yaml anchors
+- file: skills/specd-explore/SKILL.md
+- file: skills/specd-propose/SKILL.md
 - file: skills/specd-archive-change/SKILL.md
 ```
 
