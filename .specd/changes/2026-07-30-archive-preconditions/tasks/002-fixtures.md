@@ -2,9 +2,9 @@
 id: "002-fixtures"
 change: 2026-07-30-archive-preconditions
 req: [REQ-ARC-002]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["369a5209afa769dae6b607ee0f3d6cff880c106c"]
 ---
 
 ## Objetivo
