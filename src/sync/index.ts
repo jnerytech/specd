@@ -229,6 +229,11 @@ export async function sync(options: SyncOptions = {}): Promise<SyncReport> {
   const tree = buildSpecTree(root);
   const planned = planBoardItems(tree.roots, config.board.mapping);
 
+  // REQ-SYNC-018: before `readStates` touches the network and long before
+  // anything is written. The check needs no request, so it happens at the
+  // earliest point it can.
+  assertCapabilitiesExist(root, planned, readOpenChanges(root));
+
   // Every capability on disk, not only the ones with planned items: a
   // capability whose requirements were all removed still holds the links whose
   // cards have to be dealt with.
@@ -626,6 +631,62 @@ function readLinksByCapability(
     links.set(capability, readBoardLinks(readFileSync(file, "utf8"), file));
   }
   return links;
+}
+
+// REQ-SYNC-018 — A capability that exists only in a delta stops the run before
+// the first write.
+//
+// REQ-SYNC-007 puts the link in the frontmatter of the capability file, and
+// under Modelo B that file is born when `archive` applies the delta. Writing
+// the cards first and finding the file missing afterwards left the board with
+// items nothing links to — and the next attempt created them again, because a
+// missing link reads as "never synced" rather than as "synced without a
+// record". Spending before checking is the order costly-ops-are-not-silent
+// inverts.
+export function assertCapabilitiesExist(
+  root: string,
+  planned: readonly PlannedItem[],
+  changes: readonly OpenChange[],
+): void {
+  const missing = [
+    ...new Set(
+      planned
+        .map((item) => item.capability)
+        .filter((capability) => !existsSync(capabilityFile(root, capability))),
+    ),
+  ].sort();
+  if (missing.length === 0) return;
+
+  throw new SyncError(
+    `${missing.length === 1 ? "A capability" : "Capabilities"} planned for the board ${
+      missing.length === 1 ? "has" : "have"
+    } no file under .specd/specs/ yet:\n` +
+      missing
+        .map(
+          (capability) =>
+            `  - ${capability} (${join(".specd", "specs", `${capability}.md`)})` +
+            `${declaredBy(capability, changes)}`,
+        )
+        .join("\n") +
+      `\nUnder Modelo B a capability is born when \`specd archive\` applies the delta that ` +
+      `introduces it, and REQ-SYNC-007 records the board link in that file. ` +
+      `Syncing the proposal of a capability that does not exist yet would create cards ` +
+      `nothing links to, so nothing was written — archive the change first, then sync.`,
+  );
+}
+
+// Which open change declares the capability, when one does. Named so the
+// message points at the delta to read rather than at a name in the air.
+function declaredBy(
+  capability: string,
+  changes: readonly OpenChange[],
+): string {
+  const owner = changes.find((change) =>
+    [...(change.delta?.added ?? []), ...(change.delta?.modified ?? [])].some(
+      (entry) => entry.capability === capability,
+    ),
+  );
+  return owner === undefined ? "" : `, declared by ${owner.name}`;
 }
 
 function capabilityFile(root: string, capability: string): string {
