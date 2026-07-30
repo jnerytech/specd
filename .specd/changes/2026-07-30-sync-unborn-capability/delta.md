@@ -21,7 +21,8 @@ existe em disco.
 - Nenhum item é criado no board antes da recusa
 - A mensagem nomeia a capability, a change cujo delta a declara, e o caminho que faltou
 - A mensagem diz que a capability nasce no `archive`, e que sincronizar a proposta dela exige arquivar antes
-- `--dry-run` recusa do mesmo jeito, e a recusa não faz requisição nenhuma
+- `--dry-run` recusa do mesmo jeito
+- A recusa não consulta o board, nem para ler definições de campo
 - Requisito de delta cuja capability já existe continua sincronizando
 
 REQ-SYNC-007 põe a ligação na frontmatter do arquivo da capability, e sob Modelo
@@ -32,9 +33,15 @@ tentativa seguinte criando tudo de novo, porque ausência de ligação é "nunca
 sincronizado" e não "já sincronizado sem registro". Gastar primeiro e verificar
 depois é a ordem que costly-ops-are-not-silent inverte.
 
-A recusa não consulta rede, então acontece no ponto mais cedo do fluxo, junto das
-outras que já param a corrida — a de órfã não sancionada e a de conflito. É a
-mesma disciplina de REQ-SYNC-005: levantar antes da primeira escrita e não
+A recusa lê o disco e nada mais, então vem antes até do adaptador. A primeira
+versão a colocou depois de `loadFieldBindings`, e o critério "não faz requisição
+nenhuma" era falso em qualquer repositório com `[[board.fields]]` — o teste
+passava porque a fixture não declarava campo nenhum, que é a premissa do ambiente
+de autoria se verificando a si mesma. Ordenar por custo não é estética: com o
+board fora do ar, a recusa tardia devolveria erro de definição de campo em vez do
+motivo real.
+
+Vale a mesma disciplina de REQ-SYNC-005: levantar antes da primeira escrita e não
 escrever nem o que estaria bem, porque meia sincronização deixa o board num
 estado que nenhum dos dois lados descreve.
 

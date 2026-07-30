@@ -222,17 +222,17 @@ export async function sync(options: SyncOptions = {}): Promise<SyncReport> {
         : { globalPath: options.globalPath }),
     });
 
-  const adapter = options.adapter ?? createAdapter(config);
-  const bindings = await loadFieldBindings(adapter, config.board.fields);
-  const boundIds = bindings.map((binding) => binding.id);
-
   const tree = buildSpecTree(root);
   const planned = planBoardItems(tree.roots, config.board.mapping);
 
-  // REQ-SYNC-018: before `readStates` touches the network and long before
-  // anything is written. The check needs no request, so it happens at the
-  // earliest point it can.
+  // REQ-SYNC-018: ahead of the adapter, so the refusal costs nothing at all —
+  // not a write, not a request, not even the field definitions. It reads the
+  // disk and nothing else, and a check that cheap belongs first.
   assertCapabilitiesExist(root, planned, readOpenChanges(root));
+
+  const adapter = options.adapter ?? createAdapter(config);
+  const bindings = await loadFieldBindings(adapter, config.board.fields);
+  const boundIds = bindings.map((binding) => binding.id);
 
   // Every capability on disk, not only the ones with planned items: a
   // capability whose requirements were all removed still holds the links whose

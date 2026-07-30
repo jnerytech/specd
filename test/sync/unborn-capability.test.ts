@@ -25,6 +25,10 @@ card = "optional"
 capability = "Epic"
 requirement = "Story"
 collapse = ["task"]
+
+[[board.fields]]
+name = "Cliente"
+constant = "ACME"
 `;
 
 // Every write rejects. A refusal that reached the board would fail here rather
@@ -40,6 +44,55 @@ function refusingAdapter(): BoardAdapter {
     read: () => Promise.reject(new Error("no request may be made")),
     describeFields: () => Promise.resolve([]),
   };
+}
+
+// Records every call instead of rejecting it, so a test can assert that the
+// normal path still reaches the board — and that the refusal never does.
+function recordingAdapter() {
+  const calls: string[] = [];
+  const adapter: BoardAdapter = {
+    provider: "test",
+    create: (draft) => {
+      calls.push(`create:${draft.title}`);
+      return Promise.resolve({
+        id: String(calls.length),
+        url: `http://board.invalid/issues/${calls.length}`,
+      });
+    },
+    update: () => {
+      calls.push("update");
+      return Promise.resolve();
+    },
+    link: () => {
+      calls.push("link");
+      return Promise.resolve();
+    },
+    close: () => {
+      calls.push("close");
+      return Promise.resolve();
+    },
+    transition: () => {
+      calls.push("transition");
+      return Promise.resolve();
+    },
+    read: () => {
+      calls.push("read");
+      return Promise.resolve(undefined);
+    },
+    describeFields: () => {
+      calls.push("describeFields");
+      return Promise.resolve([
+        {
+          id: 1,
+          name: "Cliente",
+          format: "string",
+          required: false,
+          multiple: false,
+        },
+      ]);
+    },
+  };
+  return { calls, adapter };
 }
 
 // A change whose delta introduces a capability that has no file on disk, which
@@ -106,6 +159,30 @@ describe("sync refuses a capability born in a delta — REQ-SYNC-018", () => {
         adapter: refusingAdapter(),
       }),
     ).rejects.toBeInstanceOf(SyncError);
+  });
+
+  it("asks the board nothing before refusing, not even the field definitions", async () => {
+    const { root, globalPath } = workspace({ newCapability: true });
+    const { calls, adapter } = recordingAdapter();
+
+    await expect(
+      sync({ cwd: root, globalPath, adapter }),
+    ).rejects.toBeInstanceOf(SyncError);
+
+    // The configuration declares a field, so a refusal placed after
+    // `loadFieldBindings` would have asked for the definitions by now.
+    expect(calls).toEqual([]);
+  });
+
+  it("still syncs a requirement of a delta whose capability exists", async () => {
+    const { root, globalPath } = workspace({ newCapability: false });
+    const { calls, adapter } = recordingAdapter();
+
+    const report = await sync({ cwd: root, globalPath, adapter });
+
+    expect(calls).toContain("describeFields");
+    expect(calls.some((call) => call.startsWith("create:"))).toBe(true);
+    expect(report.counts.create).toBeGreaterThan(0);
   });
 
   it("lets a requirement of a delta through when its capability exists", () => {
