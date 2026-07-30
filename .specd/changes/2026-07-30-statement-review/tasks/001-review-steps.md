@@ -2,9 +2,9 @@
 id: "001-review-steps"
 change: 2026-07-30-statement-review
 req: [REQ-SKL-007, REQ-SKL-008]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["8a41a38c046f20746b712bb45ecd5a8f5fa92cf7"]
 ---
 
 ## Objetivo
