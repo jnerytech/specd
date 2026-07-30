@@ -4,7 +4,9 @@ change: 2026-07-30-sync-unborn-capability
 req: [REQ-SYNC-018]
 status: done
 evidence:
-  commits: ["3d1c297104e3d7aa9740f9a2fcb31103ab686193"]
+  commits:
+    - "3d1c297104e3d7aa9740f9a2fcb31103ab686193"
+    - "83e1b31844095124ce6cc2751c00d8b0fb3abb10"
 ---
 
 ## Objetivo
