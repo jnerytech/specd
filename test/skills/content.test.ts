@@ -177,8 +177,9 @@ describe("propose leaves the record — REQ-SKL-009", () => {
     expect(propose).toMatch(/o comando \*\*recusa\*\*/);
   });
 
-  it("writes it after the delta exists", () => {
-    expect(propose).toMatch(/Depois de o delta estar escrito/);
+  it("writes it after the tasks, and says why the command demands them", () => {
+    expect(propose).toMatch(/Depois do passo 4/);
+    expect(propose).toContain("ausência de task não prova");
   });
 });
 

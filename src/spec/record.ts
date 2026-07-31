@@ -75,6 +75,28 @@ export function proposeRecord(
   // apply it — the command wrote the post-apply state without complaining, which
   // is exactly the empty cut it exists to prevent. A rule kept only in the layer
   // that forgets is a rule that will be forgotten.
+  const declared = [
+    ...(open.delta?.added ?? []),
+    ...(open.delta?.modified ?? []),
+  ];
+  // Absence of a task does not prove that nothing was implemented, so it is not
+  // read as "the window is open". The dangerous path is reachable by simply not
+  // creating tasks: implement, record without them, create them as `pending`
+  // afterwards, and the archive cut comes out empty for a change where
+  // everything moved.
+  //
+  // A change that only removes requirements declares nothing to record and
+  // needs no task by REQ-VER-004, so it is not caught by this: its record is
+  // empty either way.
+  if (open.tasks.length === 0 && declared.length > 0) {
+    throw new OperationalError(
+      `Change "${change}" declares requirements and has no task, so there is no way to tell ` +
+        `whether the implementation has started.\n` +
+        `The proposal record is written before it does. Write the tasks of the change first — ` +
+        `they are required by the coverage layer anyway — and record then. Nothing was written.`,
+    );
+  }
+
   const started = open.tasks.filter((task) => task.status !== "pending");
   if (started.length > 0) {
     throw new OperationalError(

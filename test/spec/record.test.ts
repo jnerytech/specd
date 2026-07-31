@@ -65,7 +65,7 @@ function workspace(
 // REQ-EFF-005 — the record is computed, not transcribed.
 describe("propose record — REQ-EFF-005", () => {
   it("records statement, criteria and anchors of what the change declares", () => {
-    const { root } = workspace();
+    const { root } = workspace({ taskStatus: "pending" });
 
     const record = proposeRecord(CHANGE, { cwd: root });
     const [requirement] = record.requirements;
@@ -77,7 +77,7 @@ describe("propose record — REQ-EFF-005", () => {
   });
 
   it("leaves out what the change does not declare", () => {
-    const { root } = workspace();
+    const { root } = workspace({ taskStatus: "pending" });
 
     const ids = proposeRecord(CHANGE, { cwd: root }).requirements.map(
       (entry) => entry.id,
@@ -88,9 +88,11 @@ describe("propose record — REQ-EFF-005", () => {
   });
 
   it("computes resolution by resolving each declared anchor", () => {
-    const resolved = proposeRecord(CHANGE, { cwd: workspace().root });
+    const resolved = proposeRecord(CHANGE, {
+      cwd: workspace({ taskStatus: "pending" }).root,
+    });
     const dangling = proposeRecord(CHANGE, {
-      cwd: workspace({ anchors: DANGLING }).root,
+      cwd: workspace({ anchors: DANGLING, taskStatus: "pending" }).root,
     });
 
     expect(resolved.requirements[0]?.anchors[0]?.resolved).toBe(true);
@@ -101,7 +103,11 @@ describe("propose record — REQ-EFF-005", () => {
     // The failure mode of deriving resolution from a layer's report: with
     // `anchors` disabled the report is empty and everything would read as
     // resolved.
-    const { root } = workspace({ anchors: DANGLING, levels: '"schema"' });
+    const { root } = workspace({
+      anchors: DANGLING,
+      levels: '"schema"',
+      taskStatus: "pending",
+    });
 
     expect(
       proposeRecord(CHANGE, { cwd: root }).requirements[0]?.anchors[0]
@@ -110,7 +116,7 @@ describe("propose record — REQ-EFF-005", () => {
   });
 
   it("refuses a change that is not open, naming the ones that are", () => {
-    const { root } = workspace();
+    const { root } = workspace({ taskStatus: "pending" });
 
     expect(() => proposeRecord("2026-07-absent", { cwd: root })).toThrowError(
       OperationalError,
@@ -134,14 +140,32 @@ describe("propose record — REQ-EFF-005", () => {
     expect(proposeRecord(CHANGE, { cwd: root }).requirements).toHaveLength(1);
   });
 
-  it("writes when the change has no task at all", () => {
+  it("refuses a change that declares requirements and has no task", () => {
+    // Absence of a task does not prove the implementation has not started, and
+    // reading it as proof leaves the hole reachable by not creating tasks.
     const { root } = workspace();
 
-    expect(proposeRecord(CHANGE, { cwd: root }).requirements).toHaveLength(1);
+    expect(() => proposeRecord(CHANGE, { cwd: root })).toThrowError(
+      /declares requirements and has no task/,
+    );
+  });
+
+  it("writes for a change whose delta only removes", () => {
+    const { root } = makeWorkspace({
+      config: "",
+      specs: { demo: capability({ name: "demo", id: "REQ-DEMO-001" }) },
+      change: {
+        name: CHANGE,
+        delta: delta({ change: CHANGE, removed: ["REQ-DEMO-001"] }),
+      },
+    });
+
+    // Nothing declared, nothing to record, and no task required of it.
+    expect(proposeRecord(CHANGE, { cwd: root }).requirements).toEqual([]);
   });
 
   it("writes the record inside the change directory", () => {
-    const { root } = workspace();
+    const { root } = workspace({ taskStatus: "pending" });
 
     const { path } = writeProposeRecord(CHANGE, { cwd: root });
 
@@ -155,7 +179,7 @@ describe("propose record — REQ-EFF-005", () => {
   });
 
   it("exits 0 through the CLI with a dangling anchor", async () => {
-    const { root } = workspace({ anchors: DANGLING });
+    const { root } = workspace({ anchors: DANGLING, taskStatus: "pending" });
     const out: string[] = [];
 
     const status = await main(["propose-record", "--change", CHANGE], {
@@ -170,7 +194,7 @@ describe("propose record — REQ-EFF-005", () => {
   });
 
   it("exits 2 through the CLI when the change is not open", async () => {
-    const { root } = workspace();
+    const { root } = workspace({ taskStatus: "pending" });
 
     const status = await main(
       ["propose-record", "--change", "2026-07-absent"],

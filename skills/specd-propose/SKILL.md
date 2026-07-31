@@ -150,7 +150,8 @@ ainda não existem. Vermelho é problema de formato, e volta para o passo 3.
 specd propose-record --change <nome>
 ```
 
-Depois de o delta estar escrito. O comando grava `propose.json` no diretório da
+Depois do passo 4: o comando recusa change que declara requisito e não tem task,
+porque ausência de task não prova que a implementação não começou. O comando grava `propose.json` no diretório da
 change com, por requisito que a change declara, o statement, os critérios, as
 âncoras e se cada uma resolve **neste instante** — resolvendo cada âncora, não
 lendo relatório de camada.

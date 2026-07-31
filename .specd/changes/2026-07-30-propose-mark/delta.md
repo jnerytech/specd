@@ -23,7 +23,8 @@ passa a ser lido dele em vez de deduzido.
 - O resultado não muda quando `anchors` está fora de `verify.levels`
 - Change inexistente sai 2 nomeando as changes abertas
 - Change com alguma task fora de `pending` sai 2 nomeando a task, sem escrever
-- Change sem task nenhuma escreve, porque a implementação não começou
+- Change que declara requisito e não tem task sai 2, sem escrever
+- Change cujo delta só remove escreve, porque não declara requisito nem precisa de task
 - O comando informa e nunca julga: sai 0 com âncora pendurada, 2 quando não consegue escrever
 
 O registro precisava ser dado, não transcrição. Nenhuma saída deste CLI afirma
@@ -44,8 +45,16 @@ recorte vazio contra o qual a regra existe. Regra que vive só na camada que
 esquece é regra que será esquecida, e "existe task fora de `pending`" é condição
 que o parser já sabe responder.
 
-Change sem task nenhuma escreve, porque aí a implementação não começou — a
-ausência de task é estado legítimo do propose, não sinal de janela fechada.
+Ausência de task não é janela aberta. Ela não prova que nada foi implementado, e
+ler assim é inferir conformidade de dado que não existe — o caminho perigoso fica
+alcançável por simplesmente não criar tasks: implementar, gravar o registro sem
+elas, criá-las depois como `pending`, e o recorte do archive sai vazio para uma
+change onde tudo mudou. No caminho feliz a pergunta nem aparece, porque a skill
+escreve as tasks antes de gravar o registro.
+
+Change cujo delta só remove é a exceção, e é exceção por não ter o que a regra
+protege: ela não declara requisito, não precisa de task por REQ-VER-004, e seu
+registro é vazio de qualquer forma.
 
 ```yaml anchors
 - file: src/spec/record.ts
