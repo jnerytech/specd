@@ -139,6 +139,74 @@ describe("archive preconditions — REQ-ARC-002", () => {
   });
 });
 
+// REQ-ARC-016 — archiving requires the proposal record.
+describe("archive demands the proposal record — REQ-ARC-016", () => {
+  function withoutRecord(): string {
+    const workspace = makeWorkspace({
+      config: "",
+      specs: {
+        demo: capability({
+          name: "demo",
+          id: "REQ-DEMO-001",
+          anchors: RESOLVING,
+        }),
+      },
+      files: { "src/present.ts": "export function present(): void {}\n" },
+      change: {
+        name: CHANGE,
+        delta: delta({ change: CHANGE, removed: ["REQ-DEMO-001"] }),
+        record: false,
+      },
+    });
+    spawnSync("git", ["init", "-q"], { cwd: workspace.root, shell: false });
+    return workspace.root;
+  }
+
+  it("refuses a change with no record, naming the command that writes it", async () => {
+    const root = withoutRecord();
+
+    await expect(archive(CHANGE, { cwd: root })).rejects.toThrow(
+      /propose-record --change/,
+    );
+  });
+
+  it("writes nothing and moves nothing when it refuses", async () => {
+    const root = withoutRecord();
+
+    await expect(archive(CHANGE, { cwd: root })).rejects.toThrowError();
+    expect(readOpenChanges(root).map((change) => change.name)).toEqual([
+      CHANGE,
+    ]);
+  });
+
+  it("archives with an empty record, because empty is a mark", async () => {
+    const root = build();
+
+    // `build` writes `{ requirements: [] }`, which is what a change with
+    // nothing to record leaves behind.
+    await expect(archive(CHANGE, { cwd: root })).resolves.toBeDefined();
+  });
+
+  it("refuses a record that does not parse", async () => {
+    const root = build();
+    writeFileSync(join(root, ".specd", "changes", CHANGE, "propose.json"), "{");
+
+    await expect(archive(CHANGE, { cwd: root })).rejects.toThrow(
+      /does not parse/,
+    );
+  });
+
+  it("refuses a record of a version it does not write", async () => {
+    const root = build();
+    writeFileSync(
+      join(root, ".specd", "changes", CHANGE, "propose.json"),
+      JSON.stringify({ version: 99, change: CHANGE, requirements: [] }),
+    );
+
+    await expect(archive(CHANGE, { cwd: root })).rejects.toThrow(/version 99/);
+  });
+});
+
 // REQ-ARC-015 — the cut: this change and what it rewrites.
 describe("scoped diagnostics — REQ-ARC-015", () => {
   function context(root: string) {

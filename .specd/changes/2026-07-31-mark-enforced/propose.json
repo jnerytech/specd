@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "change": "2026-07-31-mark-enforced",
+  "requirements": [
+    {
+      "id": "REQ-SKL-009",
+      "statement": "WHEN the specd propose skill finishes writing a delta, the skill SHALL leave the proposal record in the change by running the command that writes it, whatever the delta declares.",
+      "acceptance": [
+        "A skill roda `specd propose-record` e não monta o arquivo por conta própria",
+        "O registro é gravado depois de o delta estar escrito",
+        "A skill roda o comando também quando o delta só remove requisito; o registro vazio que resulta é o marco daquela change",
+        "Delta reescrito enquanto toda task está `pending` regrava o registro",
+        "Registro existente não é regravado depois que qualquer task saiu de `pending`",
+        "Nenhuma outra skill do ciclo escreve no registro"
+      ],
+      "anchors": [
+        {
+          "file": "skills/specd-propose/SKILL.md",
+          "resolved": true
+        }
+      ]
+    },
+    {
+      "id": "REQ-ARC-016",
+      "statement": "IF the change carries no readable proposal record, THEN the specd archive command SHALL exit with code 2 without writing anything.",
+      "acceptance": [
+        "Change sem `propose.json` sai 2 nomeando o comando que o grava",
+        "Registro presente arquiva, mesmo quando a lista de requisitos está vazia",
+        "Registro ilegível, ou de versão desconhecida, recusa igual e nomeia o arquivo",
+        "Nenhum arquivo é escrito e nenhum diretório é movido quando aborta",
+        "A recusa acontece junto das outras pré-condições, antes de qualquer escrita"
+      ],
+      "anchors": [
+        {
+          "file": "src/archive/index.ts",
+          "symbol": "export function assertProposalRecord",
+          "resolved": false
+        }
+      ]
+    }
+  ]
+}

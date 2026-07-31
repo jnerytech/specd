@@ -100,6 +100,14 @@ achado 3, aparecendo onde ela não incomoda ninguém, porque lá não há o que
 coletar. Não é o achado 3 e não foi consertado; fica registrado para não voltar
 como surpresa quando o significado do campo mudar.
 
+**Registro vazio é indistinguível de registro prematuro.** Achado em 2026-07-31
+na exploração da change `2026-07-31-mark-enforced`. `propose-record` grava
+`requirements: []` para change cujo delta só remove, e esse arquivo é igual ao
+que seria gravado por engano antes de o delta ter requisito. Se a cobrança do
+archive passar a exigir marco sempre, isso deixa de importar — o requisito que
+nascer depois entra na revisão pela entrada "ausente do registro". Nas outras
+saídas, importa. Não consertado.
+
 **Decisão pendente: o método de sandbox não está no ciclo.** As duas janelas de
 revisão de enunciado leem o que o requisito **diz**. Nenhuma alcança divergência
 entre o que ele diz e o que o comando **faz** — e é ali que os defeitos deste

@@ -167,6 +167,12 @@ describe("propose leaves the record — REQ-SKL-009", () => {
     expect(propose).toMatch(/N\u00e3o monte esse arquivo \u00e0 m\u00e3o/);
   });
 
+  it("records whatever the delta declares, including nothing", () => {
+    expect(propose).toMatch(/Rode \*\*sempre\*\*/);
+    expect(propose).toContain("o delta só remove requisito");
+    expect(propose).toContain("recusa change sem marco");
+  });
+
   it("names what a transcription error would cost", () => {
     expect(propose).toContain("recorte vazio");
     expect(propose).toContain("direção perigosa");

@@ -156,6 +156,12 @@ change com, por requisito que a change declara, o statement, os critérios, as
 âncoras e se cada uma resolve **neste instante** — resolvendo cada âncora, não
 lendo relatório de camada.
 
+Rode **sempre**, inclusive quando o delta só remove requisito: o registro vazio
+que resulta é o marco daquela change, e `specd archive` recusa change sem marco.
+Change que abre só com `REMOVED` pode ganhar requisito durante o apply, e sem o
+registro ela chegaria ao archive declarando requisito, sem marco e sem poder mais
+gravar um.
+
 Não monte esse arquivo à mão e não copie campo de saída nenhuma. Erro de
 transcrição em `resolved` produz recorte vazio na `specd-archive-change`, que é
 a direção perigosa: a revisão informaria "nada mudou" para uma change onde tudo

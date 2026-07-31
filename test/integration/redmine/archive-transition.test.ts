@@ -67,6 +67,14 @@ change: demo-change
     "utf8",
   );
 
+  // REQ-ARC-016: `archive` demands the proposal record, and an empty one is a
+  // mark rather than an absence — these fixtures have nothing to record.
+  writeFileSync(
+    join(dir, "propose.json"),
+    `${JSON.stringify({ version: 1, change: "demo-change", requirements: [] }, null, 2)}\n`,
+    "utf8",
+  );
+
   const git = (...args: string[]): string =>
     execFileSync("git", args, {
       cwd: root,

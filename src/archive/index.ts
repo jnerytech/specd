@@ -31,6 +31,12 @@ import { createAdapter } from "../sync/adapters/index.js";
 import { readBoardLinks, type BoardLink } from "../sync/link.js";
 import { sync, type SyncReport } from "../sync/index.js";
 import { planApplication, type ApplicationPlan } from "./apply.js";
+import {
+  RECORD_FILE,
+  RECORD_VERSION,
+  recordPath,
+  type ProposeRecord,
+} from "../spec/record.js";
 
 // REQ-ARC-011 — Archive syncs only when asked.
 //
@@ -265,6 +271,10 @@ export async function archive(
     specsDir,
   );
 
+  // REQ-ARC-016: before the preconditions of REQ-ARC-002 and long before any
+  // write, because a missing mark is knowable without reading a single layer.
+  assertProposalRecord(root, change.name);
+
   await assertArchivable(
     change,
     { root, config, fast: true, effective },
@@ -461,6 +471,51 @@ function targetCapabilities(
     if (existing !== undefined) capabilities.add(existing.capability);
   }
   return [...capabilities];
+}
+
+// REQ-ARC-016 — Archiving requires the proposal record.
+//
+// The archive used to fall back to a wide review cut when the mark was missing.
+// That is the right answer to absence, and it is what made absence painless —
+// a safe fallback nobody feels is a fallback that becomes permanent, and the
+// option chosen for the mark was decaying into the one that had been rejected.
+//
+// The demand is "there is no mark", not "a mark was possible", because
+// REQ-SKL-009 has every change write one, including the change with nothing to
+// record. A composite predicate would be a second rule to keep in step with the
+// one in `propose-record`, and the asymmetry between them is where the hole
+// would come back.
+export function assertProposalRecord(root: string, change: string): void {
+  const path = recordPath(root, change);
+  const relative = `.specd/changes/${change}/${RECORD_FILE}`;
+
+  const refuse = (reason: string): never => {
+    throw new OperationalError(
+      `Change "${change}" ${reason}\n` +
+        `The archive review reads it to tell what changed since the proposal, and without it ` +
+        `there is no way to tell — which is not the same as nothing having changed.\n` +
+        `Run \`specd propose-record --change ${change}\` at proposal time. Nothing was written.`,
+    );
+  };
+
+  if (!existsSync(path)) refuse(`has no ${relative}.`);
+
+  let record: ProposeRecord;
+  try {
+    record = JSON.parse(readFileSync(path, "utf8")) as ProposeRecord;
+  } catch (cause) {
+    return refuse(
+      `has a ${relative} that does not parse: ${cause instanceof Error ? cause.message : String(cause)}.`,
+    );
+  }
+  // Unreadable and absent are the same information to whoever depends on it,
+  // and treating the first as a valid mark is absence-is-not-compliance in the
+  // dangerous direction.
+  if (record.version !== RECORD_VERSION) {
+    refuse(
+      `has a ${relative} of version ${String(record.version)}, and this specd writes version ${RECORD_VERSION}.`,
+    );
+  }
 }
 
 // REQ-ARC-002 — Preconditions gate the operation.

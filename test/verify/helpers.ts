@@ -18,7 +18,13 @@ export interface WorkspaceSpec {
   // `delta.md` of an open change, keyed by change name. The `proposal.md`
   // REQ-FMT-011 requires is written alongside it unless `proposal` overrides
   // it — every workspace with a change would otherwise have to spell one out.
-  change?: { name: string; delta: string; proposal?: string };
+  change?: {
+    name: string;
+    delta: string;
+    proposal?: string;
+    // Skip the proposal record, for the tests that exercise its absence.
+    record?: false;
+  };
   // Skip the default capability, leaving the project without `.specd/specs/`.
   emptyProject?: boolean;
 }
@@ -59,6 +65,16 @@ export function makeWorkspace(spec: WorkspaceSpec): Workspace {
       `.specd/changes/${spec.change.name}/proposal.md`,
       spec.change.proposal ?? proposal({ change: spec.change.name }),
     );
+    // REQ-ARC-016: every change carries a proposal record, and an empty one is
+    // a mark rather than an absence. The tests that exercise the refusal delete
+    // it; the rest would otherwise all describe a state `archive` rejects.
+    if (spec.change.record !== false) {
+      write(
+        root,
+        `.specd/changes/${spec.change.name}/propose.json`,
+        `${JSON.stringify({ version: 1, change: spec.change.name, requirements: [] }, null, 2)}\n`,
+      );
+    }
   }
 
   const workspace = {
