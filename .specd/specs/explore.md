@@ -182,3 +182,42 @@ escritos por gente, e adivinhar qual está certo é adivinhar.
 - file: src/explore/card-ref.ts
   symbol: "assertCardMatchesChange"
 ```
+
+### REQ-EXP-012 — The manifest says how much was collected
+
+**Statement.** The specd explore command SHALL record in the manifest how much of the declared collection succeeded, as one of `all`, `partial` or `none`.
+
+**Acceptance.**
+
+- `all` quando existe fonte declarada e toda fonte terminou com status `ok`
+- `partial` quando alguma fonte terminou `ok` e alguma não
+- `none` quando nenhuma fonte terminou `ok`, inclusive quando nenhuma foi declarada
+- O campo é independente de `usable`: um bundle pode ser `usable` e ter coletado `none`
+- A saída do comando nomeia o estado, e não apenas `usable`
+
+`usable` afirma uma coisa só, e afirma corretamente: nenhuma fonte declarada
+obrigatória falhou. Com zero fontes declaradas isso é verdade vacuamente
+verdadeira — a lista está vazia, e vazio satisfaz "nenhuma falhou". O nome promete
+suficiência e o cálculo entrega ausência de falha declarada, e é essa distância
+que produz `bundle: usable` para uma execução que não tentou coletar nada.
+
+O campo novo não corrige `usable`, e isso é escolha: a camada `provenance` lê
+`usable` por REQ-VER-003, e mudar o sentido de um campo que outra camada
+interpreta trocaria um defeito por uma migração silenciosa. O que faltava não era
+consertar a resposta, era ter a pergunta — quanto foi coletado é informação que o
+manifest não tinha, e nenhuma leitura dele conseguia recuperar.
+
+Três estados e não dois pela razão de sempre: verificou-e-coletou,
+verificou-e-faltou, e não-havia-o-que-verificar são resultados diferentes, e
+juntar o terceiro com o primeiro é o que `absence-is-not-compliance` proíbe.
+
+`none` cobre "nenhuma fonte declarada" e "todas falharam" com o mesmo valor
+porque a lista de fontes do manifest já distingue os dois casos, e um estado a
+mais só para isso seria estado que ninguém lê.
+
+```yaml anchors
+- file: src/explore/manifest.ts
+  symbol: "export type CollectionExtent"
+- file: src/explore/index.ts
+  symbol: "export function collectionExtent"
+```
