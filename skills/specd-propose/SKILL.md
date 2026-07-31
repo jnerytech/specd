@@ -144,6 +144,38 @@ specd verify --fast
 Verde com warnings de âncora é o estado esperado de uma proposta: os símbolos
 ainda não existem. Vermelho é problema de formato, e volta para o passo 3.
 
+### Gravar o registro do propose
+
+Depois do gate, porque o estado de âncora só existe depois dele. Grave em
+`propose.json`, no diretório da change, um registro por requisito que o delta
+declara:
+
+```json
+{
+  "version": 1,
+  "requirements": [
+    {
+      "id": "REQ-XXX-001",
+      "statement": "…",
+      "acceptance": ["…"],
+      "anchors": [{ "file": "src/…", "symbol": "…", "resolved": false }]
+    }
+  ]
+}
+```
+
+`statement`, `acceptance` e `anchors` são **copiados** de `specd spec --json`;
+`resolved` vem do relatório do `specd verify`, que diz quais âncoras estão
+penduradas. Não calcule nada, não resuma nada, não reescreva texto — o valor
+deste arquivo é ser cópia.
+
+Delta reescrito ainda aqui reescreve o registro. Requisito que o delta não
+declara não entra.
+
+É isto que dá referente ao recorte da `specd-archive-change`: nada mais no
+repositório registra que uma âncora **esteve** pendurada, e sem esse dado a
+revisão de lá vira leitura de tudo, todo archive.
+
 ## 6. Sincronizar com o board, havendo board
 
 ```bash

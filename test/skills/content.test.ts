@@ -130,31 +130,69 @@ describe("archive reviews what changed — REQ-SKL-008", () => {
     );
   });
 
-  it("takes in a requirement rewritten during the apply", () => {
-    expect(archive).toContain("reescrito durante o apply");
-  });
-
-  it("takes in a requirement that did not exist at proposal time", () => {
-    expect(archive).toContain("requisito que não existia no propose");
-  });
-
   it("keeps one rule about an open task, and says the CLI does not enforce it", () => {
     expect(archive).toContain("pré-condição dura, não pergunta");
     expect(archive).not.toMatch(/task ficou `pending`/);
     expect(archive).toContain("O CLI não impõe isso");
   });
 
-  it("takes in an anchor that went from dangling to resolved", () => {
-    expect(archive).toContain("passou de pendurada a resolvida");
-    expect(archive).toContain("declaração\n  inalterada");
-  });
-
-  it("leaves out what did not change", () => {
-    expect(archive).toMatch(/Fica de fora o requisito que n\u00e3o mudou/);
+  it("leaves out what matches the record", () => {
+    expect(archive).toMatch(
+      /Fica de fora o requisito id\u00eantico ao registro/,
+    );
   });
 
   it("stops the archive and asks, instead of rewriting the anchor", () => {
     expect(archive).toContain("para o arquivamento");
     expect(archive).toMatch(/n\u00e3o reescreve \u00e2ncora/);
+  });
+});
+
+// REQ-SKL-009 — the proposal leaves a record of what it wrote.
+describe("propose records what it wrote — REQ-SKL-009", () => {
+  const propose = skill("specd-propose");
+
+  it("writes the record inside the change directory", () => {
+    expect(propose).toContain("propose.json");
+    expect(propose).toContain("no diretório da change");
+  });
+
+  it("records statement, criteria, anchors and their resolution", () => {
+    expect(propose).toContain('"statement"');
+    expect(propose).toContain('"acceptance"');
+    expect(propose).toContain('"resolved"');
+  });
+
+  it("copies from the CLI instead of computing or summarizing", () => {
+    expect(propose).toContain("specd spec --json");
+    expect(propose).toMatch(/N\u00e3o calcule nada, n\u00e3o resuma nada/);
+  });
+
+  it("writes it after the gate, where the anchor state exists", () => {
+    expect(propose).toMatch(
+      /Depois do gate, porque o estado de \u00e2ncora s\u00f3 existe depois dele/,
+    );
+  });
+});
+
+// REQ-SKL-008 — the cut is read from the record, and its absence is declared.
+describe("archive reads the cut from the record — REQ-SKL-008", () => {
+  const archive = skill("specd-archive-change");
+
+  it("names the record as the source of the cut", () => {
+    expect(archive).toContain("propose.json");
+    expect(archive).toMatch(/O recorte \u00e9 \*\*lido\*\*, n\u00e3o deduzido/);
+  });
+
+  it("keeps the three entries, stated against the record", () => {
+    expect(archive).toContain("diferem do registrado");
+    expect(archive).toContain("ausente do registro");
+    expect(archive).toContain("registro anotou pendurada");
+  });
+
+  it("declares the wide cut when no record exists, out loud", () => {
+    expect(archive).toMatch(/Sem `propose\.json` na change/);
+    expect(archive).toContain("largo por ausência de marco");
+    expect(archive).toContain("vestido de verde");
   });
 });

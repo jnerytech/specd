@@ -51,19 +51,29 @@ depois.
 Uma pergunta só, e sobre um recorte estreito: **a âncora realiza o que o
 statement afirma?**
 
+O recorte é **lido**, não deduzido. A fonte é o `propose.json` que a
+`specd-propose` gravou na change; o estado de agora vem de `specd spec --json` e
+do relatório do gate.
+
 Entram na revisão:
 
-- requisito cujo texto foi reescrito durante o apply
-- **requisito que não existia no propose** — o passo 4 desta mesma família manda
+- requisito cujo statement ou critérios diferem do registrado
+- **requisito ausente do registro** — o passo 4 da `specd-apply-change` manda
   escrever no delta o que a execução descobriu, e esse requisito não passou pela
   revisão do propose; é o caminho mais provável de enunciado ruim, escrito sob
   pressão de implementação
-- âncora que passou de pendurada a resolvida — mesmo com a declaração
-  inalterada, porque o que mudou foi o símbolo passar a existir
+- âncora que o registro anotou pendurada e que hoje resolve — mesmo com a
+  declaração inalterada, porque o que mudou foi o símbolo passar a existir
 
-Fica de fora o requisito que não mudou e cuja âncora já resolvia no propose.
-Reler o delta inteiro aqui é revisão que alguém pula, e revisão pulada é pior
-que revisão ausente: parece existir.
+Fica de fora o requisito idêntico ao registro cujas âncoras já resolviam lá.
+Reler o delta inteiro é revisão que alguém pula, e revisão pulada é pior que
+revisão ausente: parece existir.
+
+**Sem `propose.json` na change** — change antiga, ou escrita sem passar pela
+skill — todo requisito dela entra, e você diz isso em voz alta: o recorte foi
+largo por ausência de marco, não por haver tanta coisa mudada. Recorte vazio
+declarado sem registro é "não consegui verificar" vestido de verde, e isso não
+acontece aqui.
 
 Âncora que resolve para símbolo que **não** realiza o comportamento enunciado é
 o achado que esta revisão existe para pegar. Ela resolve para sempre, o gate
