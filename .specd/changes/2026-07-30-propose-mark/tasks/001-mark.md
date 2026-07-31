@@ -2,9 +2,9 @@
 id: "001-mark"
 change: 2026-07-30-propose-mark
 req: [REQ-SKL-008, REQ-SKL-009]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["7524882120b68df2e81037227ecbbfe48d077f1d"]
 ---
 
 ## Objetivo
