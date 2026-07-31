@@ -122,6 +122,12 @@ produziu todos os defeitos relevantes deste repositório e **não está no ciclo
 skills também não. O que salvou hoje foi prática informal de quem estava
 conduzindo.
 
+Mais uma instância, 2026-07-31: antes de commitar a change `mark-enforced`, subi
+o Redmine e rodei a suíte de integração, porque na vez anterior em que não rodei
+as fixtures quebraram. Foi hábito de quem estava conduzindo, não passo do ciclo —
+e o hábito pegou o que nenhuma das duas janelas de revisão pegaria: as fixtures
+descreviam changes sem marco, estado que o requisito novo passou a recusar.
+
 O custo dos dois lados, para a decisão não ser tomada de um lado só:
 
 - **Rodada por change é cara.** Montar alvo, executar o ciclo inteiro, escrever o

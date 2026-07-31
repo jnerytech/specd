@@ -328,3 +328,42 @@ sendo arquivada.
 - file: src/archive/index.ts
   symbol: "export async function transitionArchivedItems"
 ```
+
+### REQ-ARC-016 — Archiving requires the proposal record
+
+**Statement.** IF the change carries no readable proposal record, THEN the specd archive command SHALL exit with code 2 without writing anything.
+
+**Acceptance.**
+
+- Change sem `propose.json` sai 2 nomeando o comando que o grava
+- Registro presente arquiva, mesmo quando a lista de requisitos está vazia
+- Registro ilegível, ou de versão desconhecida, recusa igual e nomeia o arquivo
+- Nenhum arquivo é escrito e nenhum diretório é movido quando aborta
+- A recusa acontece junto das outras pré-condições, antes de qualquer escrita
+
+O `archive` caía para recorte largo quando o marco faltava. É o comportamento
+certo diante da ausência, e é o que tornava a ausência indolor — fallback seguro
+que ninguém sente é fallback que vira permanente. A saída escolhida para o marco
+decaía sozinha para a que tinha sido descartada, por erosão e não por decisão.
+
+Isso já aconteceu, e o registro dessa change não existirá nunca: a
+`2026-07-31-usable-vacuous` foi arquivada sem marco, e a janela dela fechou antes
+de alguém notar.
+
+A cobrança não é "o marco era possível", é "não há marco" — porque com
+REQ-SKL-009 toda change grava, inclusive a que não tem o que registrar. Predicado
+composto seria uma segunda regra a manter sincronizada com a do
+`propose-record`, e a assimetria entre as duas é onde o furo voltaria.
+
+Registro ilegível recusa junto com registro ausente porque "não consegui ler" e
+"não existe" são a mesma informação para quem depende dele — e tratar o primeiro
+como se fosse marco válido seria `absence-is-not-compliance` na direção
+perigosa.
+
+Sem flag de dispensa. A válvula é por onde o descuido volta, e foi a razão de
+descartar a recusa dura sem condição.
+
+```yaml anchors
+- file: src/archive/index.ts
+  symbol: "export function assertProposalRecord"
+```

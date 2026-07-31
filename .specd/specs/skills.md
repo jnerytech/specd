@@ -246,41 +246,32 @@ ausente, porque parece existir.
 
 ### REQ-SKL-009 — The proposal leaves a record of what it wrote
 
-**Statement.** WHEN the specd propose skill finishes writing a delta, the skill SHALL leave the proposal record in the change by running the command that writes it.
+**Statement.** WHEN the specd propose skill finishes writing a delta, the skill SHALL leave the proposal record in the change by running the command that writes it, whatever the delta declares.
 
 **Acceptance.**
 
 - A skill roda `specd propose-record` e não monta o arquivo por conta própria
 - O registro é gravado depois de o delta estar escrito
+- A skill roda o comando também quando o delta só remove requisito; o registro vazio que resulta é o marco daquela change
 - Delta reescrito enquanto toda task está `pending` regrava o registro
 - Registro existente não é regravado depois que qualquer task saiu de `pending`
 - Nenhuma outra skill do ciclo escreve no registro
 
-O registro é escrito uma vez, e a janela em que ele pode ser reescrito fecha
-quando a implementação começa. Sem isso, rodar a skill de propose de novo depois
-do apply grava o estado pós-apply, o recorte sai vazio, e a revisão devolve "nada
-mudou" para uma change onde tudo mudou — que é a saída descartada na exploração,
-entrando por outra porta. `pending` é o marcador porque é o que separa proposta de
-implementação sem inventar estado novo.
+O caso que faltava é estreito e real: change que abre declarando só `REMOVED`
+não precisa de marco nem de task, a janela fecha quando a primeira task fecha, e
+o passo 4 da skill de apply autoriza um requisito a nascer durante a
+implementação. No archive ela declararia requisito, não teria marco, e não
+poderia mais gravar um.
 
-Pela mesma razão nenhuma outra skill escreve ali. Se o apply reescrevesse o
-registro, o recorte daria vazio sempre e o mecanismo inteiro viraria decoração.
+Gravar sempre fecha isso por não deixar o caso existir. A change teria
+`propose.json` vazio desde a abertura, e o requisito nascido no apply fica
+**ausente do registro** — que é a segunda entrada do recorte de REQ-SKL-008. Ele
+entra na revisão em vez de encalhar o arquivamento.
 
-O registro não depende de git, não força commit e não abre rede. Quem o computa é
-o CLI, por REQ-EFF-005; a skill só decide **quando** rodá-lo, que é a divisão que
-o ciclo inteiro pratica — a camada determinística calcula, a camada de julgamento
-orquestra e lê.
-
-Precedente de forma nos dois lados. `explore/manifest.json` já é artefato de
-máquina dentro da change, versionado junto do trabalho que justifica, lido
-depois. E o `synced_hash` já é estado gravado ao lado da coisa que descreve, para
-responder exatamente "mudou desde a última vez".
-
-O estado de resolução da âncora entra por uma razão que as outras saídas não
-alcançavam: nada no repositório registra que uma âncora **esteve** pendurada. O
-relatório do gate mostra o estado de agora, e o de ontem não é recuperável — sem
-este registro, o critério de REQ-SKL-008 sobre âncora que passou a resolver é
-inverificável, por mais bem escrito que esteja.
+O ganho maior é do outro lado: com toda change gravando, a cobrança do archive
+não precisa perguntar o que o delta declara. "Não há marco" basta, e a regra que
+o `archive` aplica passa a ser a mesma que qualquer pessoa consegue verificar
+olhando o diretório da change.
 
 ```yaml anchors
 - file: skills/specd-propose/SKILL.md
