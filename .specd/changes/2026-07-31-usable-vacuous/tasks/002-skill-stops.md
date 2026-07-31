@@ -2,9 +2,9 @@
 id: "002-skill-stops"
 change: 2026-07-31-usable-vacuous
 req: [REQ-SKL-010]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["64acf9c61b2c10b1ccdbbb6215c0876a7ac3fd24"]
 ---
 
 ## Objetivo
