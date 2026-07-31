@@ -202,48 +202,86 @@ já era dele.
 
 ### REQ-SKL-008 — The archiving skill reviews what changed since the proposal
 
-**Statement.** WHEN the specd archive skill runs, the skill SHALL ask of every requirement that did not exist at proposal time, or whose text or anchor resolution changed since it, whether its anchors realize the behaviour the statement describes.
+**Statement.** WHEN the specd archive skill runs, the skill SHALL ask whether the anchors realize the behaviour the statement describes, of every requirement whose current state differs from the one the proposal recorded, and of every requirement of the change when no proposal record exists.
 
 **Acceptance.**
 
-- Requisito reescrito durante o apply entra na revisão
-- Requisito que não existia no propose entra na revisão
-- Âncora que passou de pendurada a resolvida entra na revisão, mesmo com a declaração inalterada
-- Requisito inalterado e com âncora já resolvida no propose fica fora
+- Requisito cujo statement ou critérios mudaram desde o registro entra na revisão
+- Requisito ausente do registro entra na revisão
+- Âncora registrada como pendurada e que hoje resolve entra na revisão, mesmo com a declaração inalterada
+- Requisito idêntico ao registro, com as mesmas âncoras resolvendo, fica fora
+- Sem registro na change, todo requisito dela entra, e a skill diz que o recorte foi largo por ausência de marco
+- Registro ilegível, ou de versão que a skill não conhece, tem o mesmo desfecho que registro ausente
 - Âncora que resolve para símbolo que não realiza o comportamento enunciado vira pergunta ao autor, e o arquivamento espera
 - A skill não reescreve âncora por conta própria
 
-No propose essa pergunta não tem resposta: o requisito é `origin: delta` e o
-símbolo pode não existir, então "a âncora realiza o comportamento?" só produziria
-resposta inventada. No archive ela tem — o apply escreveu o código, e a âncora
-que estava pendurada agora resolve.
+O recorte tinha um referente que não existia. "O que mudou desde o propose"
+supunha um marco, e nenhuma change desta sequência o produziu: `delta.md` e o
+trabalho do apply entraram no mesmo commit, nas três conferidas. A única fonte
+para datar era a memória de quem estava na sessão, que é o que esta revisão
+existe para não aceitar — e na prática o recorte virou largo por precaução, que é
+justamente a revisão cara que esta posição não sustenta.
 
-Requisito que nasce durante o apply é a terceira entrada, e ele escapava das duas
-janelas pela letra: não passou pelo propose, seu texto nunca foi *reescrito*, e a
-âncora que ele declara aponta para código que já existe naquele instante, então
-nunca esteve *pendurada*. É também o caminho mais provável de enunciado ruim —
-escrito sob pressão de implementação, sem a cerimônia do propose. O passo de
-`specd-apply-change` que manda escrever no delta o que a execução descobriu é a
-razão de o delta ser a superfície de escrita, e era a porta por onde requisito
-entrava sem ninguém ler.
+Com o registro de REQ-SKL-009 o recorte passa a ser lido. As três entradas
+continuam as mesmas, agora com como observar cada uma: texto que difere do
+registrado, requisito que não está lá, âncora que o registro anotou pendurada e
+que hoje resolve.
 
-O critério sobre requisito reescrito durante o apply não é exercitado por
-nenhum dos quatro enunciados fracos, e fica assim mesmo, com a instância real
-escrita ao lado: REQ-ARC-014 teve a âncora reescrita durante o apply, no mesmo
-commit em que o símbolo nasceu — `export function` virou `export async function`
-porque a resolução é literal. Critério cuja única evidência vem de fora do
-conjunto de avaliação é mais fraco que os outros, e está declarado como tal.
+A ausência de registro tem resposta declarada em vez de acidente: recorte largo,
+dito em voz alta. Registro ilegível cai no mesmo lugar — arquivo corrompido ou de
+versão desconhecida é informação que não se tem, e tratá-lo como "nada mudou"
+seria a mesma troca que este requisito recusa. Change antiga, ou escrita sem passar pela skill, não fica sem
+revisão — fica com a revisão cara, e sabendo que é por isso. Falhar para o lado
+largo é a direção segura; a alternativa que fracassaria para o lado vazio foi
+medida e recusada na exploração desta change.
 
-Âncora que passou a resolver conta como mudança mesmo com a declaração intacta, e
-essa leitura é o requisito inteiro. A âncora errada de REQ-SKL-003 nunca mudou de
-texto: mudou de estado, e foi ao mudar de estado que virou observável. Ler "o que
-mudou" como diferença de texto deixaria a segunda janela quase vazia.
-
-O escopo é estreito porque o archive é o pior momento para descobrir enunciado
-ruim — o gate está verde, as tasks estão fechadas, e voltar ao delta custa. Uma
-revisão cara nesta posição é uma revisão que alguém pula, e revisão pulada é pior
-que revisão ausente, porque parece existir.
+O escopo continua estreito porque o archive é o pior momento para descobrir
+enunciado ruim — gate verde, tasks fechadas, e voltar ao delta custa. Revisão
+cara nesta posição é revisão que alguém pula, e revisão pulada é pior que revisão
+ausente, porque parece existir.
 
 ```yaml anchors
 - file: skills/specd-archive-change/SKILL.md
+```
+
+### REQ-SKL-009 — The proposal leaves a record of what it wrote
+
+**Statement.** WHEN the specd propose skill finishes writing a delta, the skill SHALL leave the proposal record in the change by running the command that writes it.
+
+**Acceptance.**
+
+- A skill roda `specd propose-record` e não monta o arquivo por conta própria
+- O registro é gravado depois de o delta estar escrito
+- Delta reescrito enquanto toda task está `pending` regrava o registro
+- Registro existente não é regravado depois que qualquer task saiu de `pending`
+- Nenhuma outra skill do ciclo escreve no registro
+
+O registro é escrito uma vez, e a janela em que ele pode ser reescrito fecha
+quando a implementação começa. Sem isso, rodar a skill de propose de novo depois
+do apply grava o estado pós-apply, o recorte sai vazio, e a revisão devolve "nada
+mudou" para uma change onde tudo mudou — que é a saída descartada na exploração,
+entrando por outra porta. `pending` é o marcador porque é o que separa proposta de
+implementação sem inventar estado novo.
+
+Pela mesma razão nenhuma outra skill escreve ali. Se o apply reescrevesse o
+registro, o recorte daria vazio sempre e o mecanismo inteiro viraria decoração.
+
+O registro não depende de git, não força commit e não abre rede. Quem o computa é
+o CLI, por REQ-EFF-005; a skill só decide **quando** rodá-lo, que é a divisão que
+o ciclo inteiro pratica — a camada determinística calcula, a camada de julgamento
+orquestra e lê.
+
+Precedente de forma nos dois lados. `explore/manifest.json` já é artefato de
+máquina dentro da change, versionado junto do trabalho que justifica, lido
+depois. E o `synced_hash` já é estado gravado ao lado da coisa que descreve, para
+responder exatamente "mudou desde a última vez".
+
+O estado de resolução da âncora entra por uma razão que as outras saídas não
+alcançavam: nada no repositório registra que uma âncora **esteve** pendurada. O
+relatório do gate mostra o estado de agora, e o de ontem não é recuperável — sem
+este registro, o critério de REQ-SKL-008 sobre âncora que passou a resolver é
+inverificável, por mais bem escrito que esteja.
+
+```yaml anchors
+- file: skills/specd-propose/SKILL.md
 ```

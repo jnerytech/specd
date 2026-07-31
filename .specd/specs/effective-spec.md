@@ -95,3 +95,52 @@ comando que abre rede nesses lugares falha por motivo que não é do repositóri
 - file: test/spec/exit-contract.test.ts
   symbol: "reaches no network module"
 ```
+
+### REQ-EFF-005 — The proposal record is computed, not transcribed
+
+**Statement.** The specd propose-record command SHALL write, for every requirement a named change declares, its statement, its acceptance criteria, its anchors and whether each anchor resolves at the moment of the write.
+
+**Acceptance.**
+
+- Requisito de outra change, ou de `.specd/specs/`, não entra no arquivo
+- `resolved` é calculado resolvendo cada âncora declarada, e não lido do relatório de nenhuma camada
+- O resultado não muda quando `anchors` está fora de `verify.levels`
+- Change inexistente sai 2 nomeando as changes abertas
+- Change com alguma task fora de `pending` sai 2 nomeando a task, sem escrever
+- Change que declara requisito e não tem task sai 2, sem escrever
+- Change cujo delta só remove escreve, porque não declara requisito nem precisa de task
+- O comando informa e nunca julga: sai 0 com âncora pendurada, 2 quando não consegue escrever
+
+O registro precisava ser dado, não transcrição. Nenhuma saída deste CLI afirma
+que uma âncora **resolve**: `verify --json` e `status --json` listam as
+penduradas, e derivar o resto por ausência produz "tudo resolvido" quando a
+camada `anchors` está desligada — inferência por ausência devolvendo verde, que é
+o que `absence-is-not-compliance` recusa. O comando resolve cada âncora
+declarada e responde pelo que resolveu.
+
+Uma skill copiando campo a campo do JSON de dois comandos erraria em silêncio, e
+erro em `resolved` produz recorte vazio, que é a direção perigosa. Persistir aqui
+é persistir cálculo que `resolveAnchor` já faz.
+
+A janela também é imposta aqui, e não só pedida no texto da skill. Ela foi furada
+na primeira oportunidade de aplicá-la, nesta mesma change: o comando rodou com uma
+task já `done` e gravou o estado pós-apply sem reclamar, que é precisamente o
+recorte vazio contra o qual a regra existe. Regra que vive só na camada que
+esquece é regra que será esquecida, e "existe task fora de `pending`" é condição
+que o parser já sabe responder.
+
+Ausência de task não é janela aberta. Ela não prova que nada foi implementado, e
+ler assim é inferir conformidade de dado que não existe — o caminho perigoso fica
+alcançável por simplesmente não criar tasks: implementar, gravar o registro sem
+elas, criá-las depois como `pending`, e o recorte do archive sai vazio para uma
+change onde tudo mudou. No caminho feliz a pergunta nem aparece, porque a skill
+escreve as tasks antes de gravar o registro.
+
+Change cujo delta só remove é a exceção, e é exceção por não ter o que a regra
+protege: ela não declara requisito, não precisa de task por REQ-VER-004, e seu
+registro é vazio de qualquer forma.
+
+```yaml anchors
+- file: src/spec/record.ts
+  symbol: "export function proposeRecord"
+```
