@@ -4,7 +4,9 @@ change: 2026-07-30-propose-mark
 req: [REQ-SKL-008, REQ-SKL-009]
 status: done
 evidence:
-  commits: ["7524882120b68df2e81037227ecbbfe48d077f1d"]
+  commits:
+    - "7524882120b68df2e81037227ecbbfe48d077f1d"
+    - "3ac3a58d60dfc8adf00907d60a4a54a6195341c0"
 ---
 
 ## Objetivo
