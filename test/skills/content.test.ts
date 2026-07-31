@@ -148,30 +148,37 @@ describe("archive reviews what changed — REQ-SKL-008", () => {
   });
 });
 
-// REQ-SKL-009 — the proposal leaves a record of what it wrote.
-describe("propose records what it wrote — REQ-SKL-009", () => {
+// REQ-SKL-009 — no other skill of the cycle writes the record.
+describe("apply never touches the record — REQ-SKL-009", () => {
+  const apply = skill("specd-apply-change");
+
+  it("forbids writing the propose record", () => {
+    expect(apply).toContain("Nunca toque no `propose.json`");
+    expect(apply).toContain("recorte dar vazio sempre");
+  });
+});
+
+// REQ-SKL-009 — the proposal leaves the record by running the command.
+describe("propose leaves the record — REQ-SKL-009", () => {
   const propose = skill("specd-propose");
 
-  it("writes the record inside the change directory", () => {
-    expect(propose).toContain("propose.json");
-    expect(propose).toContain("no diretório da change");
+  it("runs the command instead of assembling the file", () => {
+    expect(propose).toContain("specd propose-record --change");
+    expect(propose).toMatch(/N\u00e3o monte esse arquivo \u00e0 m\u00e3o/);
   });
 
-  it("records statement, criteria, anchors and their resolution", () => {
-    expect(propose).toContain('"statement"');
-    expect(propose).toContain('"acceptance"');
-    expect(propose).toContain('"resolved"');
+  it("names what a transcription error would cost", () => {
+    expect(propose).toContain("recorte vazio");
+    expect(propose).toContain("direção perigosa");
   });
 
-  it("copies from the CLI instead of computing or summarizing", () => {
-    expect(propose).toContain("specd spec --json");
-    expect(propose).toMatch(/N\u00e3o calcule nada, n\u00e3o resuma nada/);
+  it("closes the rewrite window when the implementation starts", () => {
+    expect(propose).toMatch(/enquanto toda task est\u00e1 `pending`/);
+    expect(propose).toMatch(/o comando \*\*recusa\*\*/);
   });
 
-  it("writes it after the gate, where the anchor state exists", () => {
-    expect(propose).toMatch(
-      /Depois do gate, porque o estado de \u00e2ncora s\u00f3 existe depois dele/,
-    );
+  it("writes it after the delta exists", () => {
+    expect(propose).toMatch(/Depois de o delta estar escrito/);
   });
 });
 
@@ -188,6 +195,11 @@ describe("archive reads the cut from the record — REQ-SKL-008", () => {
     expect(archive).toContain("diferem do registrado");
     expect(archive).toContain("ausente do registro");
     expect(archive).toContain("registro anotou pendurada");
+  });
+
+  it("treats an unreadable record like an absent one", () => {
+    expect(archive).toContain("ilegível ou de versão que você não conhece");
+    expect(archive).toContain("ausência de marco\nlegível");
   });
 
   it("declares the wide cut when no record exists, out loud", () => {

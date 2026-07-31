@@ -63,6 +63,12 @@ onde a realidade corrige a intenção sem contaminar a verdade realizada.
 Mexeu em requisito? Confira se o `req` das tasks acompanha, ou `coverage`
 reprova.
 
+**Nunca toque no `propose.json`.** Ele é o registro do que a proposta dizia, e é
+contra ele que a `specd-archive-change` recorta a revisão. Reescrevê-lo aqui
+faria o recorte dar vazio sempre — o mecanismo inteiro viraria decoração, e a
+revisão que ele sustenta passaria a informar que nada mudou justamente nas
+changes em que mais coisa muda.
+
 ## 5. Rodar o gate
 
 ```bash

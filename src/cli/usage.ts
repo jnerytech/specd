@@ -98,6 +98,21 @@ export const SCOPE_USAGE = {
       "rebuild it. Informs; never judges. Always exits 0.",
   },
 
+  "propose-record": {
+    signature: ["specd propose-record --change <name>"],
+    summary: "Record what a change's delta proposes, with each anchor's state.",
+    options: [
+      {
+        flags: "--change <name>",
+        summary: "The open change whose delta is recorded",
+      },
+    ],
+    note:
+      "Writes propose.json inside the change. Each anchor is resolved as it is\n" +
+      "written, so the record does not depend on which layers verify.levels\n" +
+      "enables. Informs; never judges. Always exits 0 when it can write.",
+  },
+
   read: {
     signature: [
       "specd read [path...] [--all] [--full] [--port <number>] [--open]",

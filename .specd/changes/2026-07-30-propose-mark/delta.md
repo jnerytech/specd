@@ -1,6 +1,6 @@
 ---
 change: 2026-07-30-propose-mark
-target: [skills]
+target: [skills, effective-spec]
 ---
 
 # Delta — propose-mark
@@ -10,24 +10,76 @@ passa a ser lido dele em vez de deduzido.
 
 ## ADDED
 
+### REQ-EFF-005 — The proposal record is computed, not transcribed
+
+**Capability.** effective-spec
+
+**Statement.** The specd propose-record command SHALL write, for every requirement a named change declares, its statement, its acceptance criteria, its anchors and whether each anchor resolves at the moment of the write.
+
+**Acceptance.**
+
+- Requisito de outra change, ou de `.specd/specs/`, não entra no arquivo
+- `resolved` é calculado resolvendo cada âncora declarada, e não lido do relatório de nenhuma camada
+- O resultado não muda quando `anchors` está fora de `verify.levels`
+- Change inexistente sai 2 nomeando as changes abertas
+- Change com alguma task fora de `pending` sai 2 nomeando a task, sem escrever
+- Change sem task nenhuma escreve, porque a implementação não começou
+- O comando informa e nunca julga: sai 0 com âncora pendurada, 2 quando não consegue escrever
+
+O registro precisava ser dado, não transcrição. Nenhuma saída deste CLI afirma
+que uma âncora **resolve**: `verify --json` e `status --json` listam as
+penduradas, e derivar o resto por ausência produz "tudo resolvido" quando a
+camada `anchors` está desligada — inferência por ausência devolvendo verde, que é
+o que `absence-is-not-compliance` recusa. O comando resolve cada âncora
+declarada e responde pelo que resolveu.
+
+Uma skill copiando campo a campo do JSON de dois comandos erraria em silêncio, e
+erro em `resolved` produz recorte vazio, que é a direção perigosa. Persistir aqui
+é persistir cálculo que `resolveAnchor` já faz.
+
+A janela também é imposta aqui, e não só pedida no texto da skill. Ela foi furada
+na primeira oportunidade de aplicá-la, nesta mesma change: o comando rodou com uma
+task já `done` e gravou o estado pós-apply sem reclamar, que é precisamente o
+recorte vazio contra o qual a regra existe. Regra que vive só na camada que
+esquece é regra que será esquecida, e "existe task fora de `pending`" é condição
+que o parser já sabe responder.
+
+Change sem task nenhuma escreve, porque aí a implementação não começou — a
+ausência de task é estado legítimo do propose, não sinal de janela fechada.
+
+```yaml anchors
+- file: src/spec/record.ts
+  symbol: "export function proposeRecord"
+```
+
 ### REQ-SKL-009 — The proposal leaves a record of what it wrote
 
 **Capability.** skills
 
-**Statement.** WHEN the specd propose skill finishes writing a delta, the skill SHALL record inside the change directory, for every requirement the delta declares, its statement, its acceptance criteria, its anchors and whether each anchor resolved.
+**Statement.** WHEN the specd propose skill finishes writing a delta, the skill SHALL leave the proposal record in the change by running the command that writes it.
 
 **Acceptance.**
 
-- O registro fica no diretório da change, versionado com ela
-- Cada requisito do delta aparece com statement, critérios, âncoras e o estado de resolução de cada âncora
-- Os valores são copiados de `specd spec --json` e do relatório do gate; a skill não calcula nem resume
-- Requisito que o delta não declara não entra no registro
-- Delta reescrito ainda no propose reescreve o registro
+- A skill roda `specd propose-record` e não monta o arquivo por conta própria
+- O registro é gravado depois de o delta estar escrito
+- Delta reescrito enquanto toda task está `pending` regrava o registro
+- Registro existente não é regravado depois que qualquer task saiu de `pending`
+- Nenhuma outra skill do ciclo escreve no registro
 
-O registro não depende de git, não força commit e não abre rede. Gravar estado é
-registro, não decisão, então não encosta em `no-llm-in-decision-path` — a skill
-copia o que dois comandos determinísticos produziram, e não resume nem interpreta
-nenhum deles.
+O registro é escrito uma vez, e a janela em que ele pode ser reescrito fecha
+quando a implementação começa. Sem isso, rodar a skill de propose de novo depois
+do apply grava o estado pós-apply, o recorte sai vazio, e a revisão devolve "nada
+mudou" para uma change onde tudo mudou — que é a saída descartada na exploração,
+entrando por outra porta. `pending` é o marcador porque é o que separa proposta de
+implementação sem inventar estado novo.
+
+Pela mesma razão nenhuma outra skill escreve ali. Se o apply reescrevesse o
+registro, o recorte daria vazio sempre e o mecanismo inteiro viraria decoração.
+
+O registro não depende de git, não força commit e não abre rede. Quem o computa é
+o CLI, por REQ-EFF-005; a skill só decide **quando** rodá-lo, que é a divisão que
+o ciclo inteiro pratica — a camada determinística calcula, a camada de julgamento
+orquestra e lê.
 
 Precedente de forma nos dois lados. `explore/manifest.json` já é artefato de
 máquina dentro da change, versionado junto do trabalho que justifica, lido
@@ -57,6 +109,7 @@ inverificável, por mais bem escrito que esteja.
 - Âncora registrada como pendurada e que hoje resolve entra na revisão, mesmo com a declaração inalterada
 - Requisito idêntico ao registro, com as mesmas âncoras resolvendo, fica fora
 - Sem registro na change, todo requisito dela entra, e a skill diz que o recorte foi largo por ausência de marco
+- Registro ilegível, ou de versão que a skill não conhece, tem o mesmo desfecho que registro ausente
 - Âncora que resolve para símbolo que não realiza o comportamento enunciado vira pergunta ao autor, e o arquivamento espera
 - A skill não reescreve âncora por conta própria
 
@@ -73,7 +126,9 @@ registrado, requisito que não está lá, âncora que o registro anotou pendurad
 que hoje resolve.
 
 A ausência de registro tem resposta declarada em vez de acidente: recorte largo,
-dito em voz alta. Change antiga, ou escrita sem passar pela skill, não fica sem
+dito em voz alta. Registro ilegível cai no mesmo lugar — arquivo corrompido ou de
+versão desconhecida é informação que não se tem, e tratá-lo como "nada mudou"
+seria a mesma troca que este requisito recusa. Change antiga, ou escrita sem passar pela skill, não fica sem
 revisão — fica com a revisão cara, e sabendo que é por isso. Falhar para o lado
 largo é a direção segura; a alternativa que fracassaria para o lado vazio foi
 medida e recusada na exploração desta change.

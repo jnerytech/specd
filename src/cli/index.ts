@@ -14,6 +14,7 @@ import { formatUninstallResult, uninstallHooks } from "../hooks/uninstall.js";
 import { formatInitResult, init } from "../init/index.js";
 import { EPHEMERAL_PORT, openInBrowser, read } from "../read/index.js";
 import { formatSpec, specReport } from "../spec/index.js";
+import { formatProposeRecord, writeProposeRecord } from "../spec/record.js";
 import { formatStatus, status } from "../status/index.js";
 import { formatSyncReport, sync } from "../sync/index.js";
 import { verify } from "../verify/index.js";
@@ -47,6 +48,7 @@ export function registerCommands(): Map<string, Command> {
     verifyCommand,
     statusCommand,
     specCommand,
+    proposeRecordCommand,
     readCommand,
     exploreCommand,
     syncCommand,
@@ -134,6 +136,34 @@ const specCommand: Command = {
         ? `${JSON.stringify(report, null, 2)}\n`
         : `${formatSpec(report)}\n`,
     );
+    return Promise.resolve(EXIT.OK);
+  },
+};
+
+// REQ-EFF-005: computes the record rather than transcribing it, and answers in
+// this CLI's contract — exit 0 with a dangling anchor, because a dangling anchor
+// at proposal time is the normal state of a proposal (REQ-CLI-001).
+const proposeRecordCommand: Command = {
+  name: "propose-record",
+  summary: "Record what a change's delta proposes, with each anchor's state",
+  run(argv, io): Promise<ExitCode> {
+    if (helpRequested(argv)) return help("propose-record", io);
+    const { positional, options } = parseArguments(
+      argv,
+      ["--change"],
+      [],
+      "propose-record",
+    );
+    if (positional.length > 0) {
+      throw new UsageError("Takes no positional argument.", "propose-record");
+    }
+    const change = options.get("--change");
+    if (change === undefined) {
+      throw new UsageError("--change is required.", "propose-record");
+    }
+
+    const { record, path } = writeProposeRecord(change, { cwd: io.cwd });
+    io.stdout(`${formatProposeRecord(record, path)}\n`);
     return Promise.resolve(EXIT.OK);
   },
 };

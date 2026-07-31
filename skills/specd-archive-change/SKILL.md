@@ -69,9 +69,10 @@ Fica de fora o requisito idêntico ao registro cujas âncoras já resolviam lá.
 Reler o delta inteiro é revisão que alguém pula, e revisão pulada é pior que
 revisão ausente: parece existir.
 
-**Sem `propose.json` na change** — change antiga, ou escrita sem passar pela
-skill — todo requisito dela entra, e você diz isso em voz alta: o recorte foi
-largo por ausência de marco, não por haver tanta coisa mudada. Recorte vazio
+**Sem `propose.json` na change** — change antiga, escrita sem passar pela skill,
+ou com o arquivo ilegível ou de versão que você não conhece — todo requisito dela
+entra, e você diz isso em voz alta: o recorte foi largo por ausência de marco
+legível, não por haver tanta coisa mudada. Recorte vazio
 declarado sem registro é "não consegui verificar" vestido de verde, e isso não
 acontece aqui.
 
