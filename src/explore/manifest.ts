@@ -17,6 +17,12 @@ export interface ManifestSource {
   error?: string;
 }
 
+// REQ-EXP-012 — three states, because collected-everything, collected-some and
+// collected-nothing are different facts. `none` covers "nothing was declared"
+// and "everything failed" with one value: the source list below distinguishes
+// them, and a fourth state nobody reads is a state nobody maintains.
+export type CollectionExtent = "all" | "partial" | "none";
+
 export interface ExploreManifest {
   // Manifest format version, so a later reader can tell shapes apart.
   version: 1;
@@ -26,7 +32,14 @@ export interface ExploreManifest {
   collectedAt: string;
   // True when every required source reported `ok` (REQ-EXP-003). The
   // provenance layer reads this.
+  //
+  // It is vacuously true when nothing was declared: an empty list satisfies
+  // "none failed". That is why REQ-EXP-012 exists beside it rather than
+  // replacing it — `provenance` reads this field, and changing its meaning
+  // would be a silent migration.
   usable: boolean;
+  // REQ-EXP-012: how much of the declared collection succeeded.
+  collected: CollectionExtent;
   sources: ManifestSource[];
 }
 

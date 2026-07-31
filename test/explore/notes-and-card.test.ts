@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import { OperationalError } from "../../src/core/operational.js";
-import { explore } from "../../src/explore/index.js";
+import { collectionExtent, explore } from "../../src/explore/index.js";
 import {
   assertCardMatchesChange,
   parseCardRef,
@@ -131,5 +131,45 @@ describe("card conflict — REQ-EXP-011", () => {
     const result = await explore({ card: "4821", change: CHANGE, cwd: root });
 
     expect(result.manifest.card.id).toBe("4821");
+  });
+});
+
+// REQ-EXP-012 — the manifest says how much was collected.
+describe("collection extent — REQ-EXP-012", () => {
+  it("reports none when nothing was declared", async () => {
+    const { root } = workspace();
+
+    const result = await explore({ card: "4821", change: CHANGE, cwd: root });
+
+    // `usable` is vacuously true here, which is the whole reason the field
+    // beside it exists.
+    expect(result.manifest.usable).toBe(true);
+    expect(result.manifest.collected).toBe("none");
+  });
+
+  it("reports all when every declared source collected", () => {
+    expect(
+      collectionExtent([
+        { name: "a", type: "git", required: false, status: "ok" },
+        { name: "b", type: "git", required: false, status: "ok" },
+      ]),
+    ).toBe("all");
+  });
+
+  it("reports partial when some collected and some did not", () => {
+    expect(
+      collectionExtent([
+        { name: "a", type: "git", required: false, status: "ok" },
+        { name: "b", type: "board", required: false, status: "failed" },
+      ]),
+    ).toBe("partial");
+  });
+
+  it("reports none when every declared source failed", () => {
+    expect(
+      collectionExtent([
+        { name: "a", type: "board", required: false, status: "failed" },
+      ]),
+    ).toBe("none");
   });
 });

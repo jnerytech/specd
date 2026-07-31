@@ -7,6 +7,7 @@ import { loadChangeFrontmatter } from "../parser/change.js";
 import { assertCardMatchesChange, parseCardRef } from "./card-ref.js";
 import {
   writeManifest,
+  type CollectionExtent,
   type ExploreManifest,
   type ManifestSource,
 } from "./manifest.js";
@@ -91,6 +92,7 @@ export async function explore(options: ExploreOptions): Promise<ExploreResult> {
     },
     collectedAt: (options.now ?? new Date()).toISOString(),
     usable: requiredFailures(sources).length === 0,
+    collected: collectionExtent(sources),
     sources,
   };
 
@@ -107,6 +109,20 @@ export async function explore(options: ExploreOptions): Promise<ExploreResult> {
     bundlePath: directory,
     notesPath: notesPath(root, options.change),
   };
+}
+
+// REQ-EXP-012 — How much of the declared collection succeeded.
+//
+// `usable` answers "did anything declared as required fail", which is vacuously
+// true when nothing was declared at all — a bundle that never tried to collect
+// reports the same value as one that collected everything. This answers the
+// question that was missing.
+export function collectionExtent(
+  sources: readonly ManifestSource[],
+): CollectionExtent {
+  const ok = sources.filter((source) => source.status === "ok");
+  if (ok.length === 0) return "none";
+  return ok.length === sources.length ? "all" : "partial";
 }
 
 // REQ-EXP-003 — Required sources gate the bundle.

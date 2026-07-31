@@ -288,7 +288,11 @@ function formatManifest(result: Awaited<ReturnType<typeof explore>>): string {
       `  ${source.status.padEnd(7)} ${source.name} [${flag}]${detail}`,
     );
   }
-  lines.push(result.manifest.usable ? "bundle: usable" : "bundle: not usable");
+  // REQ-EXP-012: `usable` alone reads as "there is context here" even when
+  // nothing was collected, so the extent is printed beside it.
+  lines.push(
+    `bundle: ${result.manifest.usable ? "usable" : "not usable"}, collected ${result.manifest.collected}`,
+  );
   // REQ-EXP-010: the path is named whether or not the file is there. The
   // command does not write it, and a location nobody states is one everybody
   // invents differently.

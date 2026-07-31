@@ -209,3 +209,33 @@ describe("archive reads the cut from the record — REQ-SKL-008", () => {
     expect(archive).toContain("vestido de verde");
   });
 });
+
+// REQ-SKL-010 — a board with nothing collected stops the exploring skill.
+describe("nothing collected with a board stops explore — REQ-SKL-010", () => {
+  const explore = skill("specd-explore");
+
+  it("stops on `collected: none` when a board is configured", () => {
+    expect(explore).toMatch(/Com board configurado e `collected: none`, pare/);
+  });
+
+  it("says the stop holds even though the command exited 0", () => {
+    expect(explore).toContain("mesmo que o comando tenha\nsaído 0");
+    expect(explore).toContain("vacuamente verdadeiro");
+  });
+
+  it("distinguishes nothing declared from declared and failed", () => {
+    expect(explore).toContain("nenhuma fonte declarada");
+    expect(explore).toContain("as declaradas falharam");
+  });
+
+  it("forbids declaring a source on its own, and asks instead", () => {
+    expect(explore).toMatch(/N\u00e3o declare fonte por conta pr\u00f3pria/);
+    expect(explore).toContain("ferramenta de pergunta do host");
+  });
+
+  it("does not stop without a board", () => {
+    expect(explore).toMatch(
+      /Sem board configurado, `collected: none` n\u00e3o para nada/,
+    );
+  });
+});

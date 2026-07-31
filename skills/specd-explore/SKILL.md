@@ -95,6 +95,27 @@ inexistente — é **falha**, não ausência. **Pare.** Não caia para o modo se
 board: "não consegui verificar" não é "verifiquei e está certo"
 (`absence-is-not-compliance`).
 
+Depois de rodar, leia o que o bundle diz ter coletado — a saída traz
+`collected all | partial | none`, e o manifest carrega o mesmo campo.
+
+**Com board configurado e `collected: none`, pare**, mesmo que o comando tenha
+saído 0. Sair 0 ali significa só que nenhuma fonte declarada obrigatória falhou,
+e isso é vacuamente verdadeiro quando nenhuma foi declarada. O repositório diz
+ter board e o bundle não traz nada dele.
+
+Diga qual dos dois casos é, lendo a lista de fontes do manifest:
+
+- **nenhuma fonte declarada** — a configuração não pede coleta de board nenhuma;
+  o problema é de `[[explore.sources]]`, não desta execução
+- **as declaradas falharam** — nomeie o erro de cada uma
+
+Não declare fonte por conta própria para resolver. Isso é configuração do
+repositório, e o que cabe aqui é nomear o que falta e perguntar ao autor pela
+ferramenta de pergunta do host.
+
+Sem board configurado, `collected: none` não para nada: não há o que coletar, e
+o escopo vem da descrição de quem roda a skill.
+
 ## 6. Explorar o código
 
 Arquivos e símbolos que existem de fato, requisitos que já cobrem a região,
