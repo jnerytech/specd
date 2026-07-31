@@ -2,9 +2,9 @@
 id: "001-archive-demands"
 change: 2026-07-31-mark-enforced
 req: [REQ-ARC-016]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["18e4015bb52fdee67024306361d51885f3dd7bb0"]
 ---
 
 ## Objetivo

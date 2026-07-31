@@ -2,9 +2,9 @@
 id: "002-propose-always-records"
 change: 2026-07-31-mark-enforced
 req: [REQ-SKL-009]
-status: pending
+status: done
 evidence:
-  commits: []
+  commits: ["18e4015bb52fdee67024306361d51885f3dd7bb0"]
 ---
 
 ## Objetivo
