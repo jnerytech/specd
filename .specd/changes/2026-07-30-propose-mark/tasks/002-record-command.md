@@ -4,7 +4,9 @@ change: 2026-07-30-propose-mark
 req: [REQ-EFF-005]
 status: done
 evidence:
-  commits: ["3ac3a58d60dfc8adf00907d60a4a54a6195341c0"]
+  commits:
+    - "3ac3a58d60dfc8adf00907d60a4a54a6195341c0"
+    - "e202995b604c5b921d479fc84e3bc30455e49d55"
 ---
 
 ## Objetivo
