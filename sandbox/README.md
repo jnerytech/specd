@@ -1,7 +1,18 @@
 # sandbox — experimentação manual
 
-**Esta pasta é ignorada pelo git.** Só este README é versionado. O conteúdo
-é descartável: pode ser apagado e rebaixado a qualquer momento sem perda.
+**Três coisas moram aqui, e só duas são versionadas.**
+
+- `runs/*.md` e `RELATORIO.md` **entram no git**. São a evidência de que um
+  comportamento mudou e a fila que orienta o próximo trabalho; fora do
+  repositório não sobrevivem a um clone, e o link de uma pendência para a run
+  que a mediu vira referência morta.
+- `runs/<n>/` e o resto — alvos de rodada, clones, container — **ficam fora**.
+  São projetos completos, alguns com `.git` próprio, grandes e regeneráveis a
+  partir da receita que cada registro carrega.
+
+Todo registro de run diz como o alvo dele foi montado. Isso é condição para o
+alvo poder ficar de fora: registro que só faz sentido com o diretório ao lado
+não se sustenta depois do clone.
 
 ## O que foi baixado
 
@@ -24,7 +35,7 @@ Comportamento interessante descoberto aqui não fica aqui. Deve ser
 promovido para `test/fixtures/`, que é versionado e roda no CI. O sandbox
 não é executado por nenhum teste — nada aqui protege contra regressão.
 
-## Como recriar
+## Como recriar o alvo .NET
 
 ```bash
 mkdir -p sandbox

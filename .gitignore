@@ -19,9 +19,21 @@ npm-debug.log*
 .reference/*
 !.reference/README.md
 
-# Experimentação manual. Descartável.
+# Experimentação manual. Três coisas com propriedades opostas moram aqui.
+#
+# Os registros de run e o índice de pendências são versionados: são a evidência
+# de que um comportamento mudou, e a fila que orienta o próximo trabalho. Fora
+# do repositório eles não sobrevivem a um clone, e o link de uma pendência para
+# a run que a mediu vira referência morta.
+#
+# Os alvos de rodada não entram: são projetos completos, alguns com `.git`
+# próprio, grandes e regeneráveis a partir da receita que cada registro carrega.
 sandbox/*
 !sandbox/README.md
+!sandbox/RELATORIO.md
+!sandbox/runs/
+sandbox/runs/*
+!sandbox/runs/*.md
 
 # ATENÇÃO: test/fixtures/ NÃO entra aqui.
 # São repositórios sintéticos com drift conhecido, usados pelos testes.
